@@ -661,17 +661,19 @@ export default function MiradorSite() {
           <div style={{ fontSize: 11, fontFamily: FM, color: "#64748b", letterSpacing: 2, marginBottom: 16, textAlign: "center" }}>THE DAVIS GEOMETRIC ECOSYSTEM · ONE EQUATION, MULTIPLE MANIFOLDS</div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
             {[
-              { name: "HERALD", desc: "Viral surveillance", stat: "Omicron 95d early", url: "parallax.sh" },
-              { name: "GEODESIC", desc: "Cancer detection", stat: "Flower manifolds", url: "parallax.sh" },
-              { name: "TESSERA", desc: "Antimicrobial resistance", stat: "Fiber bundles", url: "parallax.sh" },
-              { name: "CHIHIRO", desc: "Plasma stability", stat: "Sub-10ms, 152 tests", url: "chihiro.sh" },
+              { name: "HERALD", desc: "Viral surveillance", stat: "Omicron 95d early", url: "https://parallax.sh" },
+              { name: "GEODESIC", desc: "Cancer detection", stat: "Flower manifolds", url: "https://parallax.sh" },
+              { name: "TESSERA", desc: "Antimicrobial resistance", stat: "Fiber bundles", url: "https://parallax.sh" },
+              { name: "CHIHIRO", desc: "Plasma stability", stat: "Sub-10ms, 152 tests", url: "https://chihiro.sh" },
               { name: "MIRADOR", desc: "Therapeutic design", stat: "This page", url: "#" },
             ].map(p => (
-              <div key={p.name} style={{ padding: "10px 16px", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 6, textAlign: "center", width: 130 }}>
+              <a key={p.name} href={p.url} target={p.url === "#" ? undefined : "_blank"} rel="noopener noreferrer" style={{ padding: "10px 16px", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 6, textAlign: "center", width: 130, textDecoration: "none", display: "block" }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = "#3b82f6"}
+                onMouseLeave={e => e.currentTarget.style.borderColor = "#1e1e30"}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", fontFamily: FM }}>{p.name}</div>
                 <div style={{ fontSize: 9, color: "#64748b", marginTop: 2 }}>{p.desc}</div>
                 <div style={{ fontSize: 8, color: "#475569", marginTop: 2 }}>{p.stat}</div>
-              </div>
+              </a>
             ))}
           </div>
         </section>
