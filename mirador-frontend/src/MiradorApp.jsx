@@ -490,7 +490,7 @@ export default function MiradorApp() {
         doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.5);
         doc.line(ML, doc.internal.pageSize.getHeight() - 36, W - MR, doc.internal.pageSize.getHeight() - 36);
         doc.setFont("helvetica", "normal"); doc.setFontSize(6.5); doc.setTextColor(...GRAY);
-        doc.text("Davis Lab  |  C = tau/K  |  Branch XI Therapeutic Geometry", ML, doc.internal.pageSize.getHeight() - 24);
+        doc.text("MIRADOR  |  C = tau/K  |  Branch XI Therapeutic Geometry", ML, doc.internal.pageSize.getHeight() - 24);
         doc.text(`Page ${i}`, W - MR, doc.internal.pageSize.getHeight() - 24, { align: "right" });
       }
     };
@@ -527,10 +527,10 @@ export default function MiradorApp() {
     doc.rect(ML, y, CW, 60);
     doc.setFillColor(...NAVY); doc.rect(ML, y, CW, 14, "F");
     doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(255, 255, 255);
-    doc.text("CLINICAL RECOMMENDATIONS \u2014 BOTTOM LINE UP FRONT", ML + 6, y + 10);
+    doc.text("CLINICAL RECOMMENDATIONS -- BOTTOM LINE UP FRONT", ML + 6, y + 10);
     doc.setFont("courier", "bold"); doc.setFontSize(8); doc.setTextColor(...NAVY);
     doc.text(`>> PRESCRIBE: Ceftaroline fosamil ${d.pharmacokinetics.dose} mg IV q12h`, ML + 6, y + 24);
-    doc.text(`>> TAPER:     Vancomycin immediately (trough ${d.patient.vanco_trough} \u00b5g/mL \u2014 near-toxic)`, ML + 6, y + 37);
+    doc.text(`>> TAPER:     Vancomycin immediately (trough ${d.patient.vanco_trough} ug/mL -- near-toxic)`, ML + 6, y + 37);
     doc.text(`>> MONITOR:   eGFR + creatinine at 48h  |  mecA sequencing at Day 7`, ML + 6, y + 50);
     y += 74;
 
@@ -545,15 +545,15 @@ export default function MiradorApp() {
     h1("Section 1  —  Governing Framework");
     body("The MIRADOR coherence score C quantifies the ability of a drug to maintain sustained target engagement in the context of the patient's physiological barriers. It is defined as C = tau / K, where tau (topological persistence) equals the drug dosing interval in hours and K is the ADMET Curvature — a composite patient-specific impedance scalar. For beta-lactam antibiotics exhibiting time-dependent bactericidal activity, C is analogous to the %T>MIC index used in standard PK/PD optimisation.");
     y += 6;
-    h2("Translation: MIRADOR terms \u2192 standard PK/PD equivalent");
+    h2("Translation: MIRADOR terms -> standard PK/PD equivalent");
     doc.autoTable({
       startY: y, margin: { left: ML, right: MR },
       head: [["MIRADOR term", "Standard PK/PD equivalent"]],
       body: [
-        ["C = \u03c4/K",             "%T>MIC optimisation"],
-        ["\u03c4 (tau)",             "Dosing interval (hours)"],
-        ["K",                        "Patient-specific impedance scalar (ADMET composite)"],
-        ["\u03bb (lambda)",           "Mutation emergence probability"],
+        ["C = tau/K",              "%T>MIC optimisation"],
+        ["tau",                   "Dosing interval (hours)"],
+        ["K",                     "Patient-specific impedance scalar (ADMET composite)"],
+        ["lambda",                "Mutation emergence probability"],
         ["Gate open probability",    "Fractional time active site is thermally accessible"],
       ],
       headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 7.5, fontStyle: "bold" },
@@ -655,7 +655,7 @@ export default function MiradorApp() {
     body("Resistance eigenvalues rank escape mutations by net selection advantage: high binding disruption combined with low conformational stability penalty yields high lambda and high clinical probability. Top 4 correspond to all clinically observed ceftaroline resistance mutations.");
     y += 4;
     const domEsc = d.escape_geodesics[0];
-    body(`The dominant escape route is ${domEsc.mutation} (\u03bb = ${domEsc.lam.toFixed(2)}, PDB ${domEsc.pdb}), with a mutation emergence probability of ${(domEsc.lam / d.escape_geodesics.reduce((s,e) => s+e.lam,0) * 100).toFixed(0)}% of total escape probability mass. mecA sequencing at Day 7 is recommended to detect early emergence.`, 0);
+    body(`The dominant escape route is ${domEsc.mutation} (lambda = ${domEsc.lam.toFixed(2)}, PDB ${domEsc.pdb}), with a mutation emergence probability of ${(domEsc.lam / d.escape_geodesics.reduce((s,e) => s+e.lam,0) * 100).toFixed(0)}% of total escape probability mass. mecA sequencing at Day 7 is recommended to detect early emergence.`, 0);
     y += 6;
     doc.autoTable( {
       startY: y, margin: { left: ML, right: MR },
@@ -690,7 +690,7 @@ export default function MiradorApp() {
     y += 14;
     hline(y, 0.5, [203, 213, 225]); y += 10;
     doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(...GRAY);
-    doc.text("Davis Lab  |  Davis Geometric  |  Branch XI Therapeutic Geometry", W / 2, y, { align: "center" }); y += 12;
+    doc.text("MIRADOR  |  Davis Geometric  |  Branch XI Therapeutic Geometry", W / 2, y, { align: "center" }); y += 12;
     doc.text("The equation does not change. The manifold changes. The medicine follows.", W / 2, y, { align: "center" });
 
     addHF();
