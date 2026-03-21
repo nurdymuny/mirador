@@ -723,7 +723,12 @@ export default function MiradorSite() {
                   color: "#e2e8f0", fontFamily: FS, fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box",
                 }} />
               </div>
-              <button onClick={() => setSubmitted(true)} style={{
+              <button onClick={() => {
+                const subject = encodeURIComponent("MIRADOR Collaboration Inquiry");
+                const body = encodeURIComponent(`Role: ${role || "(not specified)"}\n\n${msg || "(no message)"}\n\nFrom: ${email}`);
+                window.open(`mailto:bee_davis@alumni.brown.edu?subject=${subject}&body=${body}`);
+                setSubmitted(true);
+              }} style={{
                 width: "100%", padding: "12px 0", background: "#f59e0b", color: "#08080f", border: "none",
                 borderRadius: 6, fontFamily: FS, fontSize: 13, fontWeight: 700, letterSpacing: 1, cursor: "pointer",
               }}>LET'S VALIDATE TOGETHER</button>
@@ -737,7 +742,7 @@ export default function MiradorSite() {
 
       {/* ============ FOOTER ============ */}
       <footer style={{ borderTop: "1px solid #1a1a2e", padding: "40px 24px", textAlign: "center" }}>
-        <div style={{ fontFamily: FM, fontSize: 10, color: "#334155", letterSpacing: 2 }}>DAVIS LAB · DAVIS GEOMETRIC</div>
+        <div style={{ fontFamily: FM, fontSize: 10, color: "#334155", letterSpacing: 2 }}>DAVIS GEOMETRIC</div>
         <div style={{ fontFamily: F, fontSize: 14, color: "#475569", marginTop: 8, fontStyle: "italic" }}>The equation does not change. The manifold changes. The medicine follows.</div>
         <div style={{ fontFamily: FM, fontSize: 10, color: "#1e293b", marginTop: 8 }}>C = τ/K</div>
         <div style={{ fontSize: 9, color: "#475569", marginTop: 16, lineHeight: 1.8 }}>
