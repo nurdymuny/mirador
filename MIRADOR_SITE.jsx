@@ -512,7 +512,7 @@ export default function MiradorSite() {
               Every number is sourced and cited inline.
             </div>
 
-            <a href="https://mirador.davisgeometric.com/demo" style={{
+            <a href="#demo" style={{
               display: "inline-block", padding: "12px 40px", background: "#22c55e", color: "#08080f",
               borderRadius: 6, fontFamily: FS, fontSize: 13, fontWeight: 700, letterSpacing: 1,
               textDecoration: "none",
