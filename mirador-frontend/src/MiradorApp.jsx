@@ -16,6 +16,16 @@ async function loadJsPDF() {
 
 const FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 
+function useIsMobile() {
+  const [mob, setMob] = useState(window.innerWidth < 640);
+  useEffect(() => {
+    const h = () => setMob(window.innerWidth < 640);
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
+  }, []);
+  return mob;
+}
+
 function generateProteinBackbone(nResidues = 60) {
   const atoms = [], bonds = [];
   // PBP2a transpeptidase domain — α-helix + allosteric gate region (res 22-38)
@@ -681,6 +691,7 @@ export default function MiradorApp() {
     addHF();
     doc.save("MIRADOR_Report.pdf");
   };
+  const mob = useIsMobile();
   const eigenLabels = ["N146K (proximal)", "E150K (gate)", "Y446N (active site)", "E239K (allosteric)"];
   const eigenMech = [
     "Proximal gate — steric effect on β-lactam orientation. ΔΔG_fold = 0.8 kcal/mol (lowest fitness cost). Crystal structure: PDB 4BL3.",
@@ -710,10 +721,10 @@ export default function MiradorApp() {
       </div>
 
       {/* BODY */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 0, maxWidth: 1200, margin: "0 auto", padding: "12px 16px" }}>
+      <div style={{ display: "flex", flexDirection: mob ? "column" : "row", alignItems: "flex-start", gap: 0, maxWidth: 1200, margin: "0 auto", padding: mob ? "8px 10px" : "12px 16px" }}>
 
         {/* LEFT: STAGES */}
-        <div style={{ flex: "1 1 540px", minWidth: 0, marginRight: 16 }}>
+        <div style={{ flex: "1 1 auto", minWidth: 0, marginRight: mob ? 0 : 16 }}>
 
         {/* ===== STAGE 0: THE PATIENT ===== */}
         <StageCard stage={0} current={stage} title="THE PATIENT" subtitle="Why is the current treatment failing?" accent="#ef4444" onAdvance={() => setStage(1)} advanceLabel="SHOW ME THE TARGET" onJumpTo={() => setStage(0)}>
@@ -722,7 +733,7 @@ export default function MiradorApp() {
           <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, marginBottom: 8, paddingBottom: 4, borderBottom: "1px solid #1a1a2e" }}>
             PATIENT PROFILE <span style={{ color: "#3b82f6", fontSize: 9, letterSpacing: 0 }}>editable</span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "max-content 1fr max-content 1fr", columnGap: 16, rowGap: 8, alignItems: "center", marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: mob ? "max-content 1fr" : "max-content 1fr max-content 1fr", columnGap: 16, rowGap: 8, alignItems: "center", marginBottom: 16 }}>
             <span style={{ color: "#64748b", fontSize: 10 }}>Age</span>
             <FieldCtrl value={pt.age} onChange={v => updatePt("age", v)} unit="years" />
             <span style={{ color: "#64748b", fontSize: 10 }}>eGFR</span>
@@ -739,7 +750,7 @@ export default function MiradorApp() {
 
           {/* ── CURRENT TREATMENT ── */}
           <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, marginBottom: 8, paddingBottom: 4, borderBottom: "1px solid #1a1a2e" }}>CURRENT TREATMENT</div>
-          <div style={{ display: "grid", gridTemplateColumns: "max-content 1fr max-content 1fr", columnGap: 16, rowGap: 8, alignItems: "center", marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: mob ? "max-content 1fr" : "max-content 1fr max-content 1fr", columnGap: 16, rowGap: 8, alignItems: "center", marginBottom: 16 }}>
             <span style={{ color: "#64748b", fontSize: 10 }}>Drug</span>
             <span style={{ color: "#94a3b8", fontSize: 10 }}>Vancomycin</span>
             <span style={{ color: "#64748b", fontSize: 10 }}>Trough</span>
@@ -1051,7 +1062,7 @@ export default function MiradorApp() {
       </div>{/* end LEFT */}
 
         {/* RIGHT: EXPLAINER PANEL */}
-        <div style={{ flex: "0 0 300px", position: "sticky", top: 54, maxHeight: "calc(100vh - 66px)", overflowY: "auto", background: "#0a0a14", border: "1px solid #1a1a2e", borderRadius: 8, padding: "16px", animation: "explainerFade 0.4s ease" }}>
+        <div style={{ flex: mob ? "1 1 auto" : "0 0 300px", position: mob ? "static" : "sticky", top: 54, maxHeight: mob ? "none" : "calc(100vh - 66px)", overflowY: "auto", background: "#0a0a14", border: "1px solid #1a1a2e", borderRadius: 8, padding: "16px", animation: "explainerFade 0.4s ease", marginTop: mob ? 12 : 0 }}>
           {stage === 0 && (
             <>
               <div style={{ fontSize: 9, color: "#ef4444", letterSpacing: 2, marginBottom: 10 }}>THE MATH · STAGE 1</div>
