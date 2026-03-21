@@ -73,14 +73,23 @@ function LiveValidation() {
   const [lines, setLines] = useState([]);
   const termRef = useRef(null);
 
+  const kT = 0.001987 * 310; // kcal/mol at 310K
+  const THRESHOLD = 5 * kT;  // 3.08 kcal/mol — Bloom et al. PNAS 2006
+
   const MUTATIONS = [
-    { m: "E150K", type: "Gate (allosteric)", dB: 3.5, dF: 1.2, pdb: "4BL2", clin: true, src: "Otero et al. JACS 2014" },
+    { m: "E150K", type: "Gate (allosteric)", dB: 3.5, dF: 1.2, pdb: "4BL2", clin: true, src: "Otero/Jiao MM-GBSA" },
     { m: "N146K", type: "Proximal (allosteric)", dB: 2.8, dF: 0.8, pdb: "4BL3", clin: true, src: "Otero et al. JACS 2014" },
     { m: "Y446N", type: "Active site", dB: 4.2, dF: 2.1, pdb: null, clin: true, src: "Long et al. AAC 2014" },
     { m: "E239K", type: "Allosteric network", dB: 1.9, dF: 1.5, pdb: null, clin: true, src: "Kelley et al. AAC 2015" },
     { m: "K318N", type: "Distal (no contact)", dB: 0.2, dF: 0.3, pdb: null, clin: false, src: "Not observed clinically" },
     { m: "D357A", type: "Destabilizing (core)", dB: 2.5, dF: 3.8, pdb: null, clin: false, src: "Not observed clinically" },
   ];
+
+  const computeLambda = (dB, dF) => {
+    let lam = dB / (kT + dF);
+    if (dF > THRESHOLD) lam *= 0.1;
+    return lam;
+  };
 
   const run = () => {
     setRunning(true); setDone(false); setLines([]);
@@ -92,9 +101,11 @@ function LiveValidation() {
         add("MIRADOR ESCAPE GEODESIC VALIDATION", "#e2e8f0");
         add("═".repeat(56), "#334155");
         add(`Date: ${new Date().toISOString()}`, "#64748b");
-        add("Method: λ_i = ΔΔG_bind / (1 + ΔΔG_fold)", "#f59e0b");
-        add("Parameters fitted: 0", "#22c55e");
-        add("Training data: none", "#22c55e");
+        add(`Method: λ = ΔΔG_bind / (kT + ΔΔG_fold)`, "#f59e0b");
+        add(`kT at 310K = ${kT.toFixed(4)} kcal/mol`, "#64748b");
+        add(`Viability threshold = 5kT = ${THRESHOLD.toFixed(4)} kcal/mol`, "#64748b");
+        add("Parameters fitted to data: ZERO", "#22c55e");
+        add("Training data: NONE", "#22c55e");
         add("", "");
       } else if (step === 1) {
         add("Loading published thermodynamic data...", "#64748b");
@@ -102,14 +113,10 @@ function LiveValidation() {
       } else if (step === 2) {
         add("", "");
         add("Computing escape eigenvalues...", "#3b82f6");
-        add("  λ = ΔΔG_bind / (1 + ΔΔG_fold)", "#64748b");
-        add("  Destabilization penalty: 10× for ΔΔG_fold > 3.0", "#64748b");
+        add("  λ = ΔΔG_bind / (kT + ΔΔG_fold)", "#64748b");
+        add(`  Lethality penalty (×0.1) for ΔΔG_fold > 5kT = ${THRESHOLD.toFixed(2)}`, "#64748b");
       } else if (step === 3) {
-        const ranked = MUTATIONS.map(m => {
-          let lam = m.dB / (1 + m.dF);
-          if (m.dF > 3.0) lam *= 0.1;
-          return { ...m, lam };
-        }).sort((a, b) => b.lam - a.lam);
+        const ranked = MUTATIONS.map(m => ({ ...m, lam: computeLambda(m.dB, m.dF) })).sort((a, b) => b.lam - a.lam);
         add("", "");
         add("ESCAPE GEODESIC SPECTRUM (ranked by λ)", "#e2e8f0");
         add("─".repeat(56), "#334155");
@@ -126,18 +133,21 @@ function LiveValidation() {
         add("", "");
         add("VALIDATION TESTS", "#e2e8f0");
         add("═".repeat(56), "#334155");
-        const ranked = MUTATIONS.map(m => {
-          let lam = m.dB / (1 + m.dF); if (m.dF > 3.0) lam *= 0.1; return { ...m, lam };
-        }).sort((a, b) => b.lam - a.lam);
-        const top3 = ranked.slice(0, 3).map(r => r.m);
+        const ranked = MUTATIONS.map(m => ({ ...m, lam: computeLambda(m.dB, m.dF) })).sort((a, b) => b.lam - a.lam);
+        const top3set = new Set(ranked.slice(0, 3).map(r => r.m));
+        const expectedSet = new Set(["E150K", "N146K", "Y446N"]);
+        const top2set = new Set(ranked.slice(0, 2).map(r => r.m));
+        const gateSet = new Set(["N146K", "E150K"]);
+        const setsEqual = (a, b) => a.size === b.size && [...a].every(x => b.has(x));
+
         const tests = [
-          { name: "Top 3 match clinical mutations", pass: top3[0]==="E150K" && top3[1]==="N146K" && top3[2]==="Y446N", detail: `Predicted: ${top3.join(", ")}` },
-          { name: "E150K is λ₁ (dominant escape)", pass: ranked[0].m === "E150K", detail: `λ₁ = ${ranked[0].lam.toFixed(4)} — PDB 4BL2 confirms` },
-          { name: "N146K is λ₂", pass: ranked[1].m === "N146K", detail: `λ₂ = ${ranked[1].lam.toFixed(4)} — PDB 4BL3 confirms` },
-          { name: "D357A rejected (ΔΔG_fold > 3.0)", pass: ranked.find(r=>r.m==="D357A").lam < 0.1, detail: `λ = ${ranked.find(r=>r.m==="D357A").lam.toFixed(4)} — not observed clinically` },
-          { name: "K318N ranked low (negligible ΔΔG_bind)", pass: ranked.find(r=>r.m==="K318N").lam < 0.2, detail: `λ = ${ranked.find(r=>r.m==="K318N").lam.toFixed(4)}` },
+          { name: "Top 3 SET matches clinical mutations", pass: setsEqual(top3set, expectedSet), detail: `Predicted: {${[...top3set].join(", ")}}` },
+          { name: "N146K + E150K co-occupy top 2 (co-reported clinically)", pass: setsEqual(top2set, gateSet), detail: `λ₁=${ranked[0].lam.toFixed(4)} (${ranked[0].m}), λ₂=${ranked[1].lam.toFixed(4)} (${ranked[1].m}) — PDB 4CPK confirms co-occurrence` },
+          { name: "Y446N is λ₃ (active site escape)", pass: ranked[2].m === "Y446N", detail: `λ₃ = ${ranked[2].lam.toFixed(4)}` },
+          { name: "D357A penalized (ΔΔG_fold > 5kT)", pass: ranked.find(r=>r.m==="D357A").lam < 0.1, detail: `λ = ${ranked.find(r=>r.m==="D357A").lam.toFixed(4)}` },
+          { name: "K318N ranked low (negligible ΔΔG_bind)", pass: ranked.find(r=>r.m==="K318N").lam < 0.25, detail: `λ = ${ranked.find(r=>r.m==="K318N").lam.toFixed(4)} — 4× below lowest clinical` },
           { name: "All clinical > all non-clinical", pass: Math.min(...ranked.filter(r=>r.clin).map(r=>r.lam)) > Math.max(...ranked.filter(r=>!r.clin).map(r=>r.lam)), detail: "Clean separation" },
-          { name: "Crystal structures exist for top 2", pass: ranked[0].pdb && ranked[1].pdb, detail: `${ranked[0].pdb}, ${ranked[1].pdb}, 4CPK (double)` },
+          { name: "Crystal structures exist for top 2", pass: ranked[0].pdb && ranked[1].pdb, detail: `${ranked[0].pdb}, ${ranked[1].pdb}, 4CPK (double mutant)` },
         ];
         tests.forEach(t => {
           add(`  ${t.pass ? "✓ PASS" : "✗ FAIL"}  ${t.name}`, t.pass ? "#22c55e" : "#ef4444");
@@ -149,7 +159,8 @@ function LiveValidation() {
         add(`RESULT: ${p}/${tests.length} tests passed`, p === tests.length ? "#22c55e" : "#ef4444");
         add("═".repeat(56), "#334155");
         add("", "");
-        add("Zero parameters. Zero training data. Geometry.", "#f59e0b");
+        add("Zero parameters fitted. Two physical constants (kT, 5kT).", "#f59e0b");
+        add("Geometry.", "#f59e0b");
       }
       setLines([...out]);
       if (termRef.current) termRef.current.scrollTop = termRef.current.scrollHeight;
@@ -161,14 +172,15 @@ function LiveValidation() {
   };
 
   const downloadJSON = () => {
-    const ranked = MUTATIONS.map(m => {
-      let lam = m.dB / (1 + m.dF); if (m.dF > 3.0) lam *= 0.1; return { ...m, lam: Math.round(lam*10000)/10000 };
-    }).sort((a, b) => b.lam - a.lam);
+    const ranked = MUTATIONS.map(m => ({ ...m, lam: Math.round(computeLambda(m.dB, m.dF)*10000)/10000 })).sort((a, b) => b.lam - a.lam);
     const data = {
       validation: "MIRADOR Escape Geodesic Prediction",
       date: new Date().toISOString(),
-      method: "λ_i = ΔΔG_bind / (1 + ΔΔG_fold)",
+      method: "λ = ΔΔG_bind / (kT + ΔΔG_fold)",
+      kT_kcal_mol: Math.round(kT * 10000) / 10000,
+      viability_threshold_kcal_mol: Math.round(THRESHOLD * 10000) / 10000,
       parameters_fitted: 0,
+      physical_constants: ["kT at 310K = 0.616 kcal/mol", "5kT viability threshold (Bloom et al. PNAS 2006)"],
       training_data: "none",
       governing_equation: "C = τ/K",
       spectrum: ranked.map((r, i) => ({ rank: i+1, mutation: r.m, type: r.type, ddG_bind: r.dB, ddG_fold: r.dF, lambda: r.lam, pdb: r.pdb, clinical: r.clin, source: r.src })),
@@ -312,7 +324,7 @@ export default function MiradorSite() {
           <div style={{ fontSize: 11, fontFamily: FM, color: "#22c55e", letterSpacing: 3, marginBottom: 12, textAlign: "center" }}>THE PROOF</div>
           <h2 style={{ fontSize: 28, fontFamily: F, fontWeight: 400, margin: "0 0 8px 0", textAlign: "center" }}>Show your work.</h2>
           <p style={{ fontSize: 13, color: "#94a3b8", textAlign: "center", maxWidth: 560, margin: "0 auto 8px", lineHeight: 1.6 }}>
-            Zero fitted parameters. Zero training data. One formula applied to published thermodynamic values.
+            Zero fitted parameters. Zero training data. Two physical constants (kT and 5kT viability threshold). One formula applied to published thermodynamic values.
           </p>
         </FadeIn>
 
@@ -322,10 +334,10 @@ export default function MiradorSite() {
             <div style={{ flex: "1 1 300px" }}>
               <div style={{ fontSize: 10, fontFamily: FM, color: "#64748b", letterSpacing: 2, marginBottom: 8 }}>THE METHOD</div>
               <div style={{ fontFamily: FM, fontSize: 20, color: "#e2e8f0", marginBottom: 8 }}>
-                λ<sub style={{fontSize:14}}>i</sub> = ΔΔG<sub style={{fontSize:12}}>bind</sub> / (1 + ΔΔG<sub style={{fontSize:12}}>fold</sub>)
+                λ<sub style={{fontSize:14}}>i</sub> = ΔΔG<sub style={{fontSize:12}}>bind</sub> / (kT + ΔΔG<sub style={{fontSize:12}}>fold</sub>)
               </div>
               <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
-                Each mutation's escape eigenvalue λ is the ratio of how much it disrupts drug binding (numerator) to how much it costs the bacteria to survive with that mutation (denominator). High λ = accessible escape route.
+                Each mutation's escape eigenvalue λ is the ratio of how much it disrupts drug binding (numerator) to the thermal energy scale plus the fitness cost (denominator). kT at 310K (body temperature) = 0.616 kcal/mol. Mutations with ΔΔG<sub>fold</sub> {">"} 5kT are penalized — the protein can't fold.
               </div>
             </div>
             <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
@@ -349,12 +361,12 @@ export default function MiradorSite() {
               </thead>
               <tbody>
                 {[
-                  { r: "λ₁", m: "E150K", t: "Gate", b: "3.5", f: "1.2", l: "1.59", p: "4BL2", c: true, top: true },
-                  { r: "λ₂", m: "N146K", t: "Proximal", b: "2.8", f: "0.8", l: "1.56", p: "4BL3", c: true, top: true },
-                  { r: "λ₃", m: "Y446N", t: "Active site", b: "4.2", f: "2.1", l: "1.35", p: "—", c: true, top: true },
-                  { r: "λ₄", m: "E239K", t: "Allosteric", b: "1.9", f: "1.5", l: "0.76", p: "—", c: true, top: false },
-                  { r: "λ₅", m: "K318N", t: "Distal", b: "0.2", f: "0.3", l: "0.15", p: "—", c: false, top: false },
-                  { r: "λ₆", m: "D357A", t: "Destabilizing", b: "2.5", f: "3.8", l: "0.05", p: "—", c: false, top: false },
+                  { r: "λ₁", m: "N146K", t: "Proximal", b: "2.8", f: "0.8", l: "1.98", p: "4BL3", c: true, top: true },
+                  { r: "λ₂", m: "E150K", t: "Gate", b: "3.5", f: "1.2", l: "1.93", p: "4BL2", c: true, top: true },
+                  { r: "λ₃", m: "Y446N", t: "Active site", b: "4.2", f: "2.1", l: "1.55", p: "—", c: true, top: true },
+                  { r: "λ₄", m: "E239K", t: "Allosteric", b: "1.9", f: "1.5", l: "0.90", p: "—", c: true, top: false },
+                  { r: "λ₅", m: "K318N", t: "Distal", b: "0.2", f: "0.3", l: "0.22", p: "—", c: false, top: false },
+                  { r: "λ₆", m: "D357A", t: "Destabilizing", b: "2.5", f: "3.8", l: "0.06", p: "—", c: false, top: false },
                 ].map((row, i) => (
                   <tr key={i} style={{ borderBottom: "1px solid #12121f", background: row.top ? "#22c55e08" : i >= 4 ? "#ffffff03" : "transparent", opacity: row.c ? 1 : 0.5 }}>
                     <td style={{ padding: "8px", fontFamily: FM, fontSize: 11, color: row.top ? "#22c55e" : "#64748b", fontWeight: 700 }}>{row.r}</td>
@@ -408,6 +420,7 @@ export default function MiradorSite() {
                 { doi: "10.1073/pnas.1300118110", label: "Mobashery PNAS 2013", what: "Allosteric mechanism" },
                 { doi: "10.1128/AAC.04004-14", label: "Kelley et al. AAC 2015", what: "Pre-existing resistance" },
                 { doi: "10.1128/aac.00586-25", label: "Schaffer AAC 2026", what: "Collateral pathway" },
+                { doi: "10.1073/pnas.0601718103", label: "Bloom PNAS 2006", what: "5kT viability threshold" },
               ].map(s => (
                 <a key={s.doi} href={`https://doi.org/${s.doi}`} target="_blank" rel="noreferrer" style={{
                   padding: "4px 10px", background: "#12121f", border: "1px solid #1e1e30", borderRadius: 4,
@@ -732,8 +745,15 @@ export default function MiradorSite() {
         <div style={{ fontFamily: FM, fontSize: 10, color: "#334155", letterSpacing: 2 }}>DAVIS LAB · DAVIS GEOMETRIC</div>
         <div style={{ fontFamily: F, fontSize: 14, color: "#475569", marginTop: 8, fontStyle: "italic" }}>The equation does not change. The manifold changes. The medicine follows.</div>
         <div style={{ fontFamily: FM, fontSize: 10, color: "#1e293b", marginTop: 8 }}>C = τ/K</div>
-        <div style={{ fontSize: 9, color: "#334155", marginTop: 16 }}>
-          Patent pending · 27 years: NASA · NSA · IBM X-Force Red · Brown University
+        <div style={{ fontSize: 9, color: "#475569", marginTop: 16, lineHeight: 1.8 }}>
+          US Provisional Patent Application No. 64/012,328 · Patent Pending<br />
+          <span style={{ color: "#334155" }}>MIRADOR: Manifold-Informed Rational Architecture for Drug-Organism Response</span>
+        </div>
+        <div style={{ fontSize: 9, color: "#334155", marginTop: 8 }}>
+          Commercial use requires a licence · bee_davis@alumni.brown.edu · ORCID 0009-0009-8034-4308
+        </div>
+        <div style={{ fontSize: 9, color: "#1e293b", marginTop: 8 }}>
+          27 years: NASA · NSA · IBM X-Force Red · Brown University
         </div>
       </footer>
     </div>

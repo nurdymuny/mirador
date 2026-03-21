@@ -49,7 +49,17 @@
 \title{MIRADOR: Manifold of Immune Receptors And Drift-Optimized Responses\\[4pt]
 Geometry-First Co-Embedding for Vaccine and Antibody Design}
 
-\author[1]{Bee Rosa Davis}
+\author{Bee Rosa Davis\thanks{%
+  Correspondence: \texttt{bee\_davis@alumni.brown.edu}\quad
+  ORCID: \texttt{0009-0009-8034-4308}.\\[2pt]
+  \textbf{Patent notice.}
+  Subject matter described in this manuscript may relate to
+  US Provisional Patent Application No.\ 64/012,328:
+  ``MIRADOR: Manifold-Informed Rational Architecture for Drug-Organism Response,
+  Geometric Optimization of Therapeutic Coherence with Resistance Prediction via
+  Escape Geodesics on Drug-Target Fiber Bundles.''
+  Commercial use of the methods described herein may require a licence.
+}}
 
 \date{\today}
 
@@ -107,9 +117,9 @@ Davis manifolds formalize this geometry-first view for detection problems.\footn
 et al.\ for definitions of path families $\Pcal(L)$, distortion profiles $\varepsilon(L)$, and compositional
 error budgets.} A Davis manifold is a Riemannian state space equipped with benign path families,
 bounded geodesic--Euclidean distortion along those paths, and configuration margins tied to
-abstention and error budgets.\ :contentReference[oaicite:0]{index=0}  HERALD instantiates this framework for viral
+abstention and error budgets. HERALD instantiates this framework for viral
 surveillance: it constructs an antigenic pullback manifold on sequence space and uses path-wise
-drift statistics, Cantelli bounds, and a compositional error budget to bound dominance risk.\ :contentReference[oaicite:1]{index=1}
+drift statistics, Cantelli bounds, and a compositional error budget to bound dominance risk.
 In this sense, HERALD is a \emph{detector}: it forecasts where the pathogen is going and raises
 alerts when drift crosses antigenic margins.
 
@@ -176,7 +186,7 @@ whose images are endowed with pullback Riemannian metrics $g_A, g_R$ via the Euc
 on $\mathbb{R}^d$. The resulting manifolds $(\M_A, g_A)$ and $(\M_R, g_R)$ inherit the Davis
 structure: path families $\Pcal_A(L), \Pcal_R(L)$ of ``benign'' identity-preserving trajectories,
 and path-class-specific distortion profiles $\varepsilon_A(L), \varepsilon_R(L)$ that bound geodesic–
-Euclidean distortion along those paths.:contentReference[oaicite:3]{index=3}
+Euclidean distortion along those paths.
 
 Antigenic paths $\Gamma : [0,1] \to \M_A$ represent forecast drift trajectories with Riemannian
 arc length
@@ -325,7 +335,7 @@ once geometric distortion and sampling error are folded into the error budget.
 
 HERALD uses a \emph{forward} error budget: when geometric or linkage assumptions become
 vacuous, the system becomes conservative by treating uncertainty as risk (raising or widening
-alerts).\ :contentReference[oaicite:4]{index=4}  MIRADOR must behave differently. When geometry or linkage is vacuous,
+alerts). MIRADOR must behave differently. When geometry or linkage is vacuous,
 we cannot safely claim that a vaccine panel is good; we must instead declare that we cannot certify
 coverage.
 
@@ -413,8 +423,8 @@ antigens that evade a given panel. MIRADOR is therefore designed with a dual-use
 \end{itemize}
 
 Within these constraints, MIRADOR is intended as a theoretical capstone for the Davis program:
-Davis manifolds supply the geometry and error budgets;\ :contentReference[oaicite:7]{index=7}  HERALD instantiates
-geometry-first detection for antigenic drift;\ :contentReference[oaicite:8]{index=8}  MIRADOR adds a complementary,
+Davis manifolds supply the geometry and error budgets; HERALD instantiates
+geometry-first detection for antigenic drift; MIRADOR adds a complementary,
 mirror geometry for immune receptors and extends the Davis framework from bounding risk of
 failure to certifying probability of success for vaccine panels, subject to explicitly stated and
 auditable assumptions.
@@ -578,9 +588,15 @@ Let $R^{(A)}_0, R^{(A)}_1 \subset \M_A$ be non-empty closed reference sets summa
 \]
 The margins $(\kappa^{(A)}_{\mathrm{hard}}, \kappa^{(A)}_{\mathrm{soft}})$ are interpreted relative to these reference sets.
 
+\begin{definition}[Antigen manifold]
+\label{def:antigen-manifold}
+A \emph{Davis antigen manifold} is a tuple $(\M_A, g_A, c_A, h_A, \kappa^{(A)}_{\mathrm{hard}}, \kappa^{(A)}_{\mathrm{soft}})$ consisting of an encoder $f_A : \Acal \to \mathbb{R}^d$ with image $\M_A = f_A(\Acal)$ equipped with pullback metric $g_A$, a configuration map $c_A : \M_A \to \mathbb{R}^{p_A}$, a coarse label map $h_A$, and margins $(\kappa^{(A)}_{\mathrm{hard}}, \kappa^{(A)}_{\mathrm{soft}})$ as described above, supplemented by a benign path family $\Pcal_A(L_A^\star)$ and distortion profile $\varepsilon_A(\cdot)$ satisfying the non-vacuity condition~\eqref{eq:antigen-nonvacuity}.
+\end{definition}
+
 \paragraph{Benign antigen paths.}
 \begin{definition}[Benign antigen paths]
 \label{def:benign-antigen-paths}
+\label{def:mirror-paths}
 A (piecewise) smooth path on $\M_A$ is a map $\Gamma : [0,1] \to \M_A$. Its geodesic length is
 \[
   \ell_{g_A}(\Gamma) := \int_0^1 \bigl\|\dot{\Gamma}(t)\bigr\|_{g_A} \, dt.
@@ -670,6 +686,11 @@ The receptor manifold carries its own configuration structure, reflecting which 
 
 Let $R^{(R)}_{\mathrm{prod}}, R^{(R)}_{\mathrm{bad}} \subset \M_R$ be non-empty closed reference sets summarizing canonical productive and non-viable receptor configurations, respectively, and define distances $d_{g_R}(z, R^{(R)}_{\cdot})$ analogously.
 
+\begin{definition}[Receptor manifold]
+\label{def:receptor-manifold}
+A \emph{Davis receptor manifold} is a tuple $(\M_R, g_R, c_R, h_R, \kappa^{(R)}_{\mathrm{hard}}, \kappa^{(R)}_{\mathrm{soft}})$ consisting of an encoder $f_R : \Rcal \to \mathbb{R}^d$ with image $\M_R = f_R(\Rcal)$ equipped with pullback metric $g_R$, a configuration map $c_R : \M_R \to \mathbb{R}^{p_R}$, a coarse label map $h_R$, and margins $(\kappa^{(R)}_{\mathrm{hard}}, \kappa^{(R)}_{\mathrm{soft}})$ as described above, supplemented by a benign path family $\Pcal_R(L_R^\star)$ and distortion profile $\varepsilon_R(\cdot)$ satisfying the receptor-side non-vacuity condition.
+\end{definition}
+
 \paragraph{Benign receptor paths and design moves.}
 \begin{definition}[Benign receptor paths]
 \label{def:benign-receptor-paths}
@@ -731,6 +752,11 @@ Crucially, the complementary structure is enforced via \emph{asymmetric contrast
 \end{enumerate}
 This negative structure prevents trivial solutions in which all receptors collapse onto a single antigen centroid and is elaborated in the construction section (Section~\ref{sec:mirror-construction}).
 
+\begin{definition}[Complementary co-embedding]
+\label{def:complementary-coembedding}
+Given a Davis antigen manifold $(\M_A,g_A)$ and receptor manifold $(\M_R,g_R)$ both embedded in $\mathbb{R}^d$, a \emph{complementary co-embedding} is the pair $(u_A,u_R)$ together with a decreasing calibration function $\Phi_{\mathrm{bind}}$ such that the antigen--receptor distance $\delta(a,r) := \|u_A(a)-u_R(r)\|_2$ satisfies $\Phi_{\mathrm{bind}}(\delta(a,r)) \approx -\Delta G_{\mathrm{bind}}(a,r)$, with binding radius $\rho_{\mathrm{bind}} := \Phi_{\mathrm{bind}}^{-1}(\Delta G_{\mathrm{thresh}})$ for a pre-registered free-energy cutoff $\Delta G_{\mathrm{thresh}}$. The embeddings are trained with asymmetric contrastive objectives so that $u_R(r)$ lies near the center of mass of its cognate antigen cluster.
+\end{definition}
+
 \paragraph{Mirror manifolds (terminology).}
 The term ``mirror manifold'' in this work is purely metaphorical: it denotes the complementary, co-embedded pair $(\M_A,\M_R)$ together with the distance-based lock-and-key semantics above. It is not related to mirror symmetry in string theory or Calabi--Yau duals.
 
@@ -742,20 +768,20 @@ With the antigen and receptor manifolds coupled via a complementary co-embedding
 \paragraph{Forecasted drift and path distribution.}
 Let $\Pi_A(L)$ denote a forecast distribution over benign antigen drift paths $\Gamma : [0,1] \to \M_A$ drawn from $\Pcal_A(L)$ with $L \le L_A^\star$. This distribution encodes HERALD-style beliefs about where a lineage may drift over a given horizon (e.g., a season or other time window), restricted to the Davis-valid regime.
 
-\paragraph{Hit event and coverage.}
-Given a candidate receptor panel $V \subset \Rcal$, MIRADOR defines the \emph{hit} event for a path $\Gamma$ as
+\begin{definition}[Hit event and coverage]
+\label{def:hit-event}
+Given a candidate receptor panel $V \subset \Rcal$ and antigen path $\Gamma : [0,1] \to \M_A$ drawn from $\Pi_A(L)$, the \emph{hit} event is
 \[
   \Hit(V,\Gamma)
   := \Bigl\{\exists\,t \in [0,1],\ \exists\,r \in V :
          \delta\bigl(\Gamma(t), r\bigr) \le \rho_{\mathrm{bind}} \Bigr\},
 \]
-i.e., the path passes within the binding radius of at least one receptor in $V$ at some time along its evolution.
-
-The (true) coverage of $V$ under the forecast distribution is then
+i.e., the path passes within the binding radius of at least one receptor in $V$ at some time along its evolution. The \emph{coverage} of $V$ under the forecast distribution is
 \[
-  C(V) := \Pr_{\Gamma \sim \Pi_A(L)}\bigl(\Hit(V,\Gamma)\bigr),
+  C(V) := \Pr_{\Gamma \sim \Pi_A(L)}\bigl(\Hit(V,\Gamma)\bigr) \in [0,1].
 \]
-a number in $[0,1]$ once $\Pi_A(L)$ and $V$ are fixed. In later sections we will distinguish $C(V)$ from empirical estimates $\widehat{C}(V)$ obtained by sampling a finite number of drift paths from $\Pi_A(L)$ and discretizing them into representative antigenic states.
+In later sections we will distinguish $C(V)$ from empirical estimates $\widehat{C}(V)$ obtained by sampling a finite number of drift paths from $\Pi_A(L)$ and discretizing them into representative antigenic states.
+\end{definition}
 
 \paragraph{Geometric set cover viewpoint.}
 At a computational level, the path-wise definition above induces a finite set cover problem on a Riemannian manifold. Sampling $\Gamma^{(1)},\dots,\Gamma^{(N)} \sim \Pi_A(L)$ and discretizing each path into antigenic states $\{a_i\}_{i=1}^N$ with sufficient density to ensure $|\widehat{C}(V) - C(V)| \le \varepsilon_{\mathrm{samp}}$ with high probability, the design problem becomes:
