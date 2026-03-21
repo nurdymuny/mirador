@@ -4,6 +4,16 @@ const F = "'Instrument Serif', 'Georgia', serif";
 const FM = "'JetBrains Mono', 'Fira Code', monospace";
 const FS = "'DM Sans', 'Helvetica Neue', sans-serif";
 
+function useIsMobile() {
+  const [mob, setMob] = useState(window.innerWidth < 640);
+  useEffect(() => {
+    const h = () => setMob(window.innerWidth < 640);
+    window.addEventListener('resize', h);
+    return () => window.removeEventListener('resize', h);
+  }, []);
+  return mob;
+}
+
 // Fade-in on scroll
 function useFadeIn() {
   const ref = useRef(null);
@@ -207,7 +217,7 @@ function LiveValidation() {
       {lines.length > 0 && (
         <div ref={termRef} style={{
           marginTop: 12, background: "#0a0a12", border: "1px solid #1e1e30", borderRadius: 8,
-          padding: "16px 20px", maxHeight: 400, overflowY: "auto", fontFamily: FM, fontSize: 10.5, lineHeight: 1.7,
+          padding: "16px 20px", maxHeight: 400, overflow: "auto", fontFamily: FM, fontSize: 10.5, lineHeight: 1.7,
         }}>
           {lines.map((l, i) => (
             <div key={i} style={{ color: l.color, whiteSpace: "pre", minHeight: l.text ? "auto" : 8 }}>{l.text}</div>
@@ -237,6 +247,7 @@ export default function MiradorSite() {
   const [role, setRole] = useState("");
   const [msg, setMsg] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const mob = useIsMobile();
 
   return (
     <div style={{ background: "#08080f", color: "#e2e8f0", fontFamily: FS, minHeight: "100vh", overflowX: "hidden" }}>
@@ -256,7 +267,7 @@ export default function MiradorSite() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ fontSize: 18, fontWeight: 700, fontFamily: FM, letterSpacing: 4, color: "#e2e8f0" }}>MIRADOR</div>
         </div>
-        <div style={{ display: "flex", gap: 24, fontSize: 11, fontFamily: FS, color: "#64748b" }}>
+        <div style={{ display: mob ? "none" : "flex", gap: 24, fontSize: 11, fontFamily: FS, color: "#64748b" }}>
           {[["#proof","Proof"],["#problem","The Problem"],["#demo","Demo"],["#science","Science"],["#roadmap","Roadmap"],["#contact","Contact"]].map(([h,l]) => (
             <a key={h} href={h} style={{ color: "#64748b", textDecoration: "none", letterSpacing: 1 }}
               onMouseEnter={e => e.target.style.color = "#e2e8f0"} onMouseLeave={e => e.target.style.color = "#64748b"}>{l}</a>
@@ -314,7 +325,7 @@ export default function MiradorSite() {
       </section>
 
       {/* ============ THE PROOF ============ */}
-      <section id="proof" style={{ padding: "60px 24px 80px", maxWidth: 900, margin: "0 auto" }}>
+      <section id="proof" style={{ padding: mob ? "40px 16px" : "60px 24px 80px", maxWidth: 900, margin: "0 auto" }}>
         <FadeIn>
           <div style={{ fontSize: 11, fontFamily: FM, color: "#22c55e", letterSpacing: 3, marginBottom: 12, textAlign: "center" }}>THE PROOF</div>
           <h2 style={{ fontSize: 28, fontFamily: F, fontWeight: 400, margin: "0 0 8px 0", textAlign: "center" }}>Show your work.</h2>
@@ -430,7 +441,7 @@ export default function MiradorSite() {
       </section>
 
       {/* ============ THE PROBLEM ============ */}
-      <section id="problem" style={{ padding: "80px 24px", maxWidth: 900, margin: "0 auto" }}>
+      <section id="problem" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 900, margin: "0 auto" }}>
         <FadeIn>
           <div style={{ fontSize: 11, fontFamily: FM, color: "#ef4444", letterSpacing: 3, marginBottom: 12 }}>THE PROBLEM</div>
           <h2 style={{ fontSize: 32, fontFamily: F, fontWeight: 400, margin: "0 0 20px 0" }}>
@@ -476,7 +487,7 @@ export default function MiradorSite() {
       </section>
 
       {/* ============ DEMO ============ */}
-      <section id="demo" style={{ padding: "80px 24px", maxWidth: 900, margin: "0 auto" }}>
+      <section id="demo" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 900, margin: "0 auto" }}>
         <FadeIn>
           <div style={{ fontSize: 11, fontFamily: FM, color: "#22c55e", letterSpacing: 3, marginBottom: 12 }}>INTERACTIVE DEMO</div>
           <h2 style={{ fontSize: 32, fontFamily: F, fontWeight: 400, margin: "0 0 12px 0" }}>
@@ -498,7 +509,7 @@ export default function MiradorSite() {
                 { n: 4, l: "The Next Moves", c: "#f97316", d: "Predicted resistance" },
                 { n: 5, l: "The Prescription", c: "#10b981", d: "Dose, route, interval" },
               ].map(s => (
-                <div key={s.n} style={{ textAlign: "center", width: 120 }}>
+                <div key={s.n} style={{ textAlign: "center", width: mob ? 100 : 120 }}>
                   <div style={{ width: 36, height: 36, borderRadius: "50%", background: s.c + "22", border: `2px solid ${s.c}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", fontFamily: FM, fontSize: 14, fontWeight: 700, color: s.c }}>{s.n}</div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{s.l}</div>
                   <div style={{ fontSize: 9, color: "#64748b", marginTop: 2 }}>{s.d}</div>
@@ -538,7 +549,7 @@ export default function MiradorSite() {
       </section>
 
       {/* ============ THE SCIENCE ============ */}
-      <section id="science" style={{ padding: "80px 24px", maxWidth: 960, margin: "0 auto" }}>
+      <section id="science" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 960, margin: "0 auto" }}>
         <FadeIn>
           <div style={{ fontSize: 11, fontFamily: FM, color: "#a855f7", letterSpacing: 3, marginBottom: 12 }}>THE SCIENCE</div>
           <h2 style={{ fontSize: 32, fontFamily: F, fontWeight: 400, margin: "0 0 12px 0" }}>
@@ -570,7 +581,7 @@ export default function MiradorSite() {
 
         {/* The equation explained */}
         <FadeIn delay={0.3}>
-          <div style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 12, padding: "32px 40px", marginBottom: 40 }}>
+          <div style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 12, padding: mob ? "20px 16px" : "32px 40px", marginBottom: 40 }}>
             <div style={{ textAlign: "center", marginBottom: 24 }}>
               <div style={{ fontFamily: FM, fontSize: 36, letterSpacing: 6, color: "#e2e8f0" }}>
                 C = <span style={{ color: "#22c55e" }}>τ</span> / <span style={{ color: "#ef4444" }}>K</span>
@@ -612,7 +623,7 @@ export default function MiradorSite() {
       </section>
 
       {/* ============ ROADMAP ============ */}
-      <section id="roadmap" style={{ padding: "80px 24px", maxWidth: 800, margin: "0 auto" }}>
+      <section id="roadmap" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 800, margin: "0 auto" }}>
         <FadeIn>
           <div style={{ fontSize: 11, fontFamily: FM, color: "#10b981", letterSpacing: 3, marginBottom: 12 }}>ROADMAP</div>
           <h2 style={{ fontSize: 32, fontFamily: F, fontWeight: 400, margin: "0 0 32px 0" }}>
@@ -657,7 +668,7 @@ export default function MiradorSite() {
 
       {/* ============ ECOSYSTEM ============ */}
       <FadeIn>
-        <section style={{ padding: "40px 24px 60px", maxWidth: 800, margin: "0 auto" }}>
+        <section style={{ padding: mob ? "24px 16px 40px" : "40px 24px 60px", maxWidth: 800, margin: "0 auto" }}>
           <div style={{ fontSize: 11, fontFamily: FM, color: "#64748b", letterSpacing: 2, marginBottom: 16, textAlign: "center" }}>THE DAVIS GEOMETRIC ECOSYSTEM · ONE EQUATION, MULTIPLE MANIFOLDS</div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
             {[
@@ -667,7 +678,7 @@ export default function MiradorSite() {
               { name: "CHIHIRO", desc: "Plasma stability", stat: "Sub-10ms, 152 tests", url: "https://chihiro.sh" },
               { name: "MIRADOR", desc: "Therapeutic design", stat: "This page", url: "#" },
             ].map(p => (
-              <a key={p.name} href={p.url} target={p.url === "#" ? undefined : "_blank"} rel="noopener noreferrer" style={{ padding: "10px 16px", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 6, textAlign: "center", width: 130, textDecoration: "none", display: "block" }}
+              <a key={p.name} href={p.url} target={p.url === "#" ? undefined : "_blank"} rel="noopener noreferrer" style={{ padding: "10px 16px", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 6, textAlign: "center", width: mob ? "calc(50% - 6px)" : 130, textDecoration: "none", display: "block" }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = "#3b82f6"}
                 onMouseLeave={e => e.currentTarget.style.borderColor = "#1e1e30"}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", fontFamily: FM }}>{p.name}</div>
@@ -680,7 +691,7 @@ export default function MiradorSite() {
       </FadeIn>
 
       {/* ============ CONTACT ============ */}
-      <section id="contact" style={{ padding: "80px 24px", maxWidth: 640, margin: "0 auto" }}>
+      <section id="contact" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 640, margin: "0 auto" }}>
         <FadeIn>
           <div style={{ fontSize: 11, fontFamily: FM, color: "#f59e0b", letterSpacing: 3, marginBottom: 12, textAlign: "center" }}>COLLABORATE</div>
           <h2 style={{ fontSize: 32, fontFamily: F, fontWeight: 400, margin: "0 0 12px 0", textAlign: "center" }}>
