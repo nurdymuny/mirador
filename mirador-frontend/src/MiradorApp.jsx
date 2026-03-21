@@ -673,21 +673,6 @@ export default function MiradorApp() {
     note(`Tr(R) = ${trR.toFixed(2)}  |  lambda-1 dominance = ${(d.escape_geodesics[0].lam / trR * 100).toFixed(0)}% of total escape probability mass`);
     doc.addPage(); y = 54;
 
-    // ── S6: RECOMMENDATION ──
-    h1("Section 6  —  Clinical Recommendation");
-    const rec = d.recommendation;
-    doc.autoTable( {
-      startY: y, margin: { left: ML, right: MR },
-      head: [["Drug", "Dose", "Route", "Interval", "FDA basis"]],
-      body: [[rec.drug, `${rec.dose_mg} mg`, rec.route, rec.interval, `CrCl ${d.patient.egfr} mL/min -> 400mg q12h`]],
-      headStyles: { fillColor: NAVY, textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
-      styles: { fontSize: 7.5, font: "courier", cellPadding: 4, lineColor: [203, 213, 225], lineWidth: 0.25 },
-      alternateRowStyles: { fillColor: LIGHT },
-    });
-    y = doc.lastAutoTable.finalY + 14;
-    h2("Required monitoring actions");
-    rec.actions.forEach(a => { body(`• ${a}`); });
-    y += 14;
     hline(y, 0.5, [203, 213, 225]); y += 10;
     doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(...GRAY);
     doc.text("MIRADOR  |  Davis Geometric  |  Branch XI Therapeutic Geometry", W / 2, y, { align: "center" }); y += 12;
