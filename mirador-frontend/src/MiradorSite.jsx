@@ -334,10 +334,7 @@ export default function MiradorSite({ onLaunchDemo }) {
         borderBottom: "1px solid #1a1a2e",
         padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <MiradorLogo size={28} />
-          <span style={{ fontSize: 14, fontWeight: 700, fontFamily: FM, letterSpacing: 3 }}>MIRADOR</span>
-        </div>
+        <div style={{ fontSize: 18, fontWeight: 700, fontFamily: FM, letterSpacing: 4, color: "#e2e8f0" }}>MIRADOR</div>
         <div style={{ display: "flex", gap: 24, fontSize: 11, fontFamily: FS }}>
           {[["#proof","Proof"],["#problem","The Problem"],["#science","Science"],["#roadmap","Roadmap"],["#contact","Contact"]].map(([h, l]) => (
             <a key={h} href={h} style={{ color: "#64748b", textDecoration: "none", letterSpacing: 1 }}
