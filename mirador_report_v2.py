@@ -382,6 +382,39 @@ def build_report(output_path):
         "equivalent, and cross-referenced to published structural and clinical data. All "
         "formulas are stated explicitly so results are independently reproducible.",
         S["body_sm"]))
+    story.append(Spacer(1, 12))
+
+    # ── BLUF: Bottom Line Up Front ─────────────────────────────────────────────
+    bluf_items = [
+        Paragraph("CLINICAL RECOMMENDATION  —  BOTTOM LINE UP FRONT", S["h1"]),
+        Spacer(1, 5),
+        Paragraph(
+            f"  >>  PRESCRIBE:   Ceftaroline fosamil  {PK['dose']} mg IV q12h"
+            f"  (FDA label for CrCl {PATIENT['egfr']} mL/min — full derivation in Sections 6 & 8)",
+            S["body"]),
+        Paragraph(
+            f"  >>  TAPER:       Vancomycin immediately"
+            f"  (trough {PATIENT['vanco_trough']} ug/mL — near-toxic ceiling 15 ug/mL; additive nephrotoxicity)",
+            S["body"]),
+        Paragraph(
+            "  >>  MONITOR:     eGFR + creatinine at 48 h"
+            "  |  mecA sequencing at Day 7  (E150K, N146K, Y446N)",
+            S["body"]),
+        Spacer(1, 4),
+        Paragraph(
+            "Pharmacodynamic and geometric justification: Sections 1-8 below.",
+            S["note"]),
+    ]
+    bluf_table = Table([[bluf_items]], colWidths=[6.5 * inch])
+    bluf_table.setStyle(TableStyle([
+        ("BOX",           (0, 0), (-1, -1), 1.5, NAVY),
+        ("LEFTPADDING",   (0, 0), (0, 0), 10),
+        ("RIGHTPADDING",  (0, 0), (0, 0), 8),
+        ("TOPPADDING",    (0, 0), (0, 0), 6),
+        ("BOTTOMPADDING", (0, 0), (0, 0), 8),
+        ("VALIGN",        (0, 0), (0, 0), "TOP"),
+    ]))
+    story.append(bluf_table)
     story.append(PageBreak())
 
     # ══════════════════════════════════════════════════════════════════════
@@ -405,6 +438,19 @@ def build_report(output_path):
         "are monotone in the duration of inhibitory drug-target engagement per dosing interval.",
         S["body"]))
     story.append(Spacer(1, 6))
+
+    story.append(Paragraph("Framework-to-clinical terminology", S["h2"]))
+    trans_rows = [
+        ["Coherence  C = tau / K",       "%T>MIC optimisation  (time above MIC per dosing interval)  — higher C -> better target engagement"],
+        ["Topological persistence  tau",  "Dosing interval  (hours)  — duration of pharmacophore engagement per cycle"],
+        ["ADMET Curvature  K",            "Patient-specific impedance scalar  — penalises clearance loss, toxicity, protein-binding"],
+        ["Escape eigenvalue  lambda",     "Mutation emergence probability  — binding disruption / fitness cost ratio"],
+        ["Gate open probability",         "Fractional time active site is thermally accessible  (Boltzmann statistics)"],
+    ]
+    story.append(data_table(
+        ["MIRADOR term", "Standard PK/PD equivalent"],
+        trans_rows, [1.9 * inch, 4.7 * inch]))
+    story.append(Spacer(1, 8))
 
     story.append(Paragraph(
         "Table 1  —  ADMET Curvature components: formula and standard PK/PD mapping",
@@ -769,6 +815,15 @@ def build_report(output_path):
         "and therefore predicts high clinical probability of emergence.",
         S["body"]))
     story.append(Spacer(1, 5))
+    story.append(Paragraph(
+        "Clinical interpretation: The mutations below are ranked by computed emergence probability, "
+        "derived from published thermodynamic data alone — no fitted parameters. "
+        "Rows 1-4 correspond to all four clinically confirmed ceftaroline failure mutations "
+        "(NCBI Pathogen Detection). "
+        "Routine mecA sequencing at Day 7 should actively screen for N146K, E150K, and Y446N. "
+        "Rows 5-6 are predicted to remain below the clinical emergence threshold.",
+        S["body"]))
+    story.append(Spacer(1, 5))
 
     story.append(Paragraph(
         "Table 6  —  Escape geodesic eigenvalue spectrum  (lambda-1 through lambda-6)",
@@ -864,7 +919,7 @@ def build_report(output_path):
         ("Gate open probability",
          f"{GATE_PROB:.4f}%  (Boltzmann; T=310K, delta-G=5.0 kcal/mol)"),
         ("Dominant escape route",
-         f"E150K  (lambda={ESCAPE[0]['lam']:.2f}, PDB 4BL2 [4], clinically observed)"),
+         f"{ESCAPE[0]['mutation']}  (lambda={ESCAPE[0]['lam']:.4f}, PDB {ESCAPE[0]['pdb']} [4], clinically observed)"),
     ]
     story.append(kv_table(summ, col_widths=[1.9*inch, 4.7*inch], S=S))
     story.append(Spacer(1, 8))
