@@ -681,7 +681,10 @@ export default function MiradorApp() {
 
       {/* HEADER */}
       <div style={{ padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #1a1a2e", background: "linear-gradient(180deg, #0c0c18, #08080f)", position: "sticky", top: 0, zIndex: 10 }}>
-        <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 4, color: "#e2e8f0" }}>MIRADOR</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={() => { window.location.hash = ''; }} style={{ fontSize: 9, fontFamily: FONT, color: "#475569", background: "none", border: "1px solid #1e1e30", borderRadius: 4, padding: "4px 10px", cursor: "pointer" }}>← HOME</button>
+          <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 4, color: "#e2e8f0" }}>MIRADOR</div>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ fontSize: 10, color: "#475569" }}>STAGE {stage + 1} / 5</div>
           {stage > 0 && <button onClick={() => setStage(0)} style={{ fontSize: 9, fontFamily: FONT, color: "#475569", background: "none", border: "1px solid #1e1e30", borderRadius: 4, padding: "4px 10px", cursor: "pointer" }}>RESTART</button>}
