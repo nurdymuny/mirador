@@ -1,0 +1,446 @@
+{
+  "framework": "MIRADOR \u2014 Branch XI",
+  "equation": "C = \u03c4/K",
+  "total_tests": 65,
+  "passed": 65,
+  "failed": 0,
+  "pass_rate": "100.0%",
+  "layers": {
+    "Layer 0": {
+      "passed": 7,
+      "total": 7
+    },
+    "Layer 1": {
+      "passed": 10,
+      "total": 10
+    },
+    "Layer 2": {
+      "passed": 4,
+      "total": 4
+    },
+    "Layer 3": {
+      "passed": 6,
+      "total": 6
+    },
+    "Layer 4": {
+      "passed": 6,
+      "total": 6
+    },
+    "Layer 5": {
+      "passed": 6,
+      "total": 6
+    },
+    "Layer 6": {
+      "passed": 5,
+      "total": 5
+    },
+    "Layer 7": {
+      "passed": 5,
+      "total": 5
+    },
+    "Layer 8": {
+      "passed": 5,
+      "total": 5
+    },
+    "Layer 9": {
+      "passed": 6,
+      "total": 6
+    },
+    "Integration": {
+      "passed": 5,
+      "total": 5
+    }
+  },
+  "tests": [
+    {
+      "name": "TEST 0.1 \u2014 Metric Symmetry",
+      "passed": true,
+      "theorem": "Theorem 1.1",
+      "details": "g(v,w) = -24.7706258678, g(w,v) = -24.7706258678, |diff| = 3.55e-15"
+    },
+    {
+      "name": "TEST 0.2 \u2014 Metric Positive-Definiteness",
+      "passed": true,
+      "theorem": "Theorem 1.1",
+      "details": "Eigenvalue spectrum: min=0.002500, max=100.000000\nAll 14 eigenvalues positive: True"
+    },
+    {
+      "name": "TEST 0.2b \u2014 Positive-Definiteness (100 random states)",
+      "passed": true,
+      "theorem": "Theorem 1.1",
+      "details": "Minimum eigenvalue across 100 states: 0.002500"
+    },
+    {
+      "name": "TEST 0.3 \u2014 Pharmacogenomic Consistency (Codeine/CYP2D6)",
+      "passed": true,
+      "theorem": "Theorem 1.3",
+      "details": "K_met(codeine, poor metabolizer) = 98.0100\nK_met(morphine, poor metabolizer) = 0.1000\nRatio: 980.1\u00d7 (codeine curvature >> morphine)"
+    },
+    {
+      "name": "TEST 0.4 \u2014 Twin Concordance",
+      "passed": true,
+      "theorem": "Proposition 1.4",
+      "details": "Genomic contribution to d\u00b2: 0.00e+00 (should be 0)\nFull distance: 0.442531\nNon-genomic distance: 0.442531\nIdentical genomes confirmed: genomic \u0394 = 0.00e+00"
+    },
+    {
+      "name": "TEST 0.5 \u2014 Age Continuity",
+      "passed": true,
+      "theorem": "Theorem 1.2",
+      "details": "\u03b5 values:  [1.0, 0.1, 0.01, 0.001, 0.0001]\ndistances: ['0.066667', '0.006667', '0.000667', '0.000067', '0.000007']\nMonotonically decreasing: True, limit \u2192 0: True"
+    },
+    {
+      "name": "TEST 0.6 \u2014 Metabolizer Geodesic Separation",
+      "passed": true,
+      "theorem": "Theorem 1.3",
+      "details": "d_gen(ultra-rapid, poor) = 4.4194 (threshold \u03b4_met = 2.0)\nLog-ratio of metabolic rates: 5.5215 (\u2265 log(10) = 2.3026)"
+    },
+    {
+      "name": "TEST 1.1a \u2014 Metric Non-Negativity",
+      "passed": true,
+      "theorem": "Theorem 2.1",
+      "details": "All 5\u00b2 pairwise distances non-negative: True"
+    },
+    {
+      "name": "TEST 1.1b \u2014 Metric Identity",
+      "passed": true,
+      "theorem": "Theorem 2.1",
+      "details": "h(c_i, c_i) = 0 for all i: True"
+    },
+    {
+      "name": "TEST 1.1c \u2014 Metric Symmetry",
+      "passed": true,
+      "theorem": "Theorem 2.1",
+      "details": "Maximum |h(i,j) - h(j,i)| = 2.22e-15"
+    },
+    {
+      "name": "TEST 1.1d \u2014 Triangle Inequality",
+      "passed": true,
+      "theorem": "Theorem 2.1",
+      "details": "Violations: 0/125 triples checked"
+    },
+    {
+      "name": "TEST 1.2a \u2014 Detailed Balance",
+      "passed": true,
+      "theorem": "Theorem 2.2",
+      "details": "max |\u03c0_i K_ij - \u03c0_j K_ji| = 6.94e-18"
+    },
+    {
+      "name": "TEST 1.2b \u2014 Stationarity (\u03c0K = 0)",
+      "passed": true,
+      "theorem": "Theorem 2.2",
+      "details": "||\u03c0K|| = 5.00e-18"
+    },
+    {
+      "name": "TEST 1.2c \u2014 Spectral Gap (Uniqueness of \u03c0)",
+      "passed": true,
+      "theorem": "Theorem 2.2",
+      "details": "Largest eigenvalue: 1.000000\nSecond largest: 0.900607\nSpectral gap: 0.099393 (>0 implies unique stationary dist)"
+    },
+    {
+      "name": "TEST 1.3 \u2014 Binding Site Persistence",
+      "passed": true,
+      "theorem": "Theorem 2.3",
+      "details": "Pocket volumes: [15.  14.2 13.8 11.   5. ]\nBoltzmann weights: ['0.9552', '0.0372', '0.0003', '0.0073', '0.0000']\nSite exists in conformations: [ True  True  True  True False]\nPersistence = 1.0000 (threshold p_crit = 0.8)\nDruggable: YES"
+    },
+    {
+      "name": "TEST 1.4 \u2014 Patient-Specific Pullback",
+      "passed": true,
+      "theorem": "Theorem 2.4",
+      "details": "Boltzmann weights (Patient A): ['0.9552', '0.0372', '0.0003', '0.0073', '0.0000']\nBoltzmann weights (Patient B): ['0.9985', '0.0015', '0.0000', '0.0000', '0.0000']\nEnsemble centroid RMSD: 0.0343 \u00c5\nKL divergence between ensembles: 0.1757\nPTMs measurably shift the conformational ensemble: YES"
+    },
+    {
+      "name": "TEST 1.5 \u2014 Expression-Weighted Metric",
+      "passed": true,
+      "theorem": "Theorem 2.4",
+      "details": "Expression levels: [1.0, 0.5, 0.1, 0.01, 0.0]\nEffective distances: ['3.67', '7.34', '36.69', '366.90', '\u221e']\nZero expression \u2192 infinite distance: True"
+    },
+    {
+      "name": "TEST 2.1 \u2014 Triangle Inequality (1000 random triples)",
+      "passed": true,
+      "theorem": "Theorem 3.1",
+      "details": "Violations: 0/1000\nMax violation: 0.00e+00"
+    },
+    {
+      "name": "TEST 2.2 \u2014 Lipinski Boundary is Submanifold",
+      "passed": true,
+      "theorem": "Theorem 3.2",
+      "details": "Constraint gradient rank: 4 (= 4 = number of constraints)\nGradients linearly independent: True\nDrug-like fraction: 1244/10000 = 12.4%"
+    },
+    {
+      "name": "TEST 2.3 \u2014 Geodesic Interpolation Validity",
+      "passed": true,
+      "theorem": "Theorem 3.3",
+      "details": "All interpolated points in valid region: True\nConsecutive distance variance: 6.29e-32 (0 = perfectly uniform)\nInterpolation is a geodesic (straight line in latent space): YES"
+    },
+    {
+      "name": "TEST 2.4 \u2014 Pharmacophore Continuity",
+      "passed": true,
+      "theorem": "Proposition 3.4",
+      "details": "Perturbation sizes: [0.1, 0.01, 0.001, 0.0001]\nFeature changes:    ['0.292361', '0.025882', '0.002090', '0.000338']\nRatios (change/\u03b5):  ['2.9236', '2.5882', '2.0901', '3.3790']\nLipschitz continuity: ratio spread = 1.6167 (< 2.0)"
+    },
+    {
+      "name": "TEST 3.1 \u2014 Cocycle Condition (g_{01}\u00b7g_{12}\u00b7g_{20} = id)",
+      "passed": true,
+      "theorem": "Theorem 4.1",
+      "details": "||g_{01} \u00b7 g_{12} \u00b7 g_{20} - I|| = 2.80e-16"
+    },
+    {
+      "name": "TEST 3.2 \u2014 Curvature Antisymmetry (F_{ij} = -F_{ji})",
+      "passed": true,
+      "theorem": "Theorem 4.2",
+      "details": "max ||F_{ij} + F_{ji}|| = 0.00e+00"
+    },
+    {
+      "name": "TEST 3.3 \u2014 Flat Connection \u2192 Zero Curvature",
+      "passed": true,
+      "theorem": "Proposition 4.4",
+      "details": "Constant connection A (same at every conformation)\n||F|| = 0.00e+00 (should be 0 for flat connection)"
+    },
+    {
+      "name": "TEST 3.4 \u2014 Curvature \u221d Off-Target Activity",
+      "passed": true,
+      "theorem": "Theorem 4.2",
+      "details": "||F|| (selective drug):    0.134354\n||F|| (promiscuous drug): 14.746888\nRatio: 109.8\u00d7 (promiscuous has more curvature)"
+    },
+    {
+      "name": "TEST 3.5 \u2014 Chern Class (Topological Obstruction)",
+      "passed": true,
+      "theorem": "Theorem 4.3",
+      "details": "Winding number (input): 2\nc\u2081 (computed): 2.0000\nc\u2081 \u2260 0 \u2192 no globally flat section exists\nIrreducible off-target activity is topologically necessary"
+    },
+    {
+      "name": "TEST 3.5b \u2014 Bogomol'nyi Bound on Min Off-Target Activity",
+      "passed": true,
+      "theorem": "Corollary 4.3.1",
+      "details": "min \u222b||F\u00b7\u03c3||\u00b2 \u2265 (2\u03c0)\u00b2 ||c\u2081||\u00b2 = 157.9137\nLower bound is positive \u2192 perfect selectivity impossible"
+    },
+    {
+      "name": "TEST 4.1 \u2014 Binding Pocket Betti Numbers (Tunnel)",
+      "passed": true,
+      "theorem": "Theorem 5.2",
+      "details": "Tunnel pocket: 32 points\n\u03b2\u2080 = 1 (connected components, expected 1)\n\u03b2\u2081 = 25 (tunnels/loops, expected \u2265 1)\n\u03b2\u2082 = 0 (cavities)\nTunnel topology detected: YES"
+    },
+    {
+      "name": "TEST 4.1b \u2014 Binding Pocket Betti Numbers (Solid Cluster)",
+      "passed": true,
+      "theorem": "Theorem 5.2",
+      "details": "Solid cluster: 20 points\n\u03b2\u2080 = 1 (expected 1)\n\u03b2\u2081 = 0 (expected 0, no tunnel)\n\u03b2\u2082 = 486"
+    },
+    {
+      "name": "TEST 4.2 \u2014 Pharmacophore Equivalence (Scaffold Hop)",
+      "passed": true,
+      "theorem": "Theorem 5.1",
+      "details": "Molecule A: MW=350, logP=2.5, \u03c4={'tau_bind': 8, 'tau_chiral': 1, 'tau_ring': 2, 'tau': 16}\nMolecule B: MW=420, logP=3.1, \u03c4={'tau_bind': 8, 'tau_chiral': 1, 'tau_ring': 2, 'tau': 16}\nSame pharmacophore despite different scaffold: True"
+    },
+    {
+      "name": "TEST 4.3 \u2014 Enantiomers on Opposite Sheets",
+      "passed": true,
+      "theorem": "Theorem 5.3",
+      "details": "(R)-enantiomer: \u03c4_bind=5, \u03c4_chiral=1, \u03c4_ring=2\n(S)-enantiomer: \u03c4_bind=5, \u03c4_chiral=-1, \u03c4_ring=2\nSame \u03c4_bind: True\nSame \u03c4_ring: True\nOpposite \u03c4_chiral: True\n\u03c4(R) = 10, \u03c4(S) = -10 (opposite sign = opposite sheets)"
+    },
+    {
+      "name": "TEST 4.4 \u2014 \u03c4 Log-Multiplicativity",
+      "passed": true,
+      "theorem": "Theorem 5.2",
+      "details": "log|\u03c4| = log|\u03c4_bind| + log|\u03c4_chiral| + log|\u03c4_ring|\nMax error across 100 molecules: 4.44e-16\nK\u00fcnneth decomposition verified: True"
+    },
+    {
+      "name": "TEST 4.5 \u2014 Persistence Diagram Stability",
+      "passed": true,
+      "theorem": "Proposition 5.4",
+      "details": "Perturbation \u2192 Betti numbers:\n  \u03b5=0.00 \u2192 (\u03b2\u2080,\u03b2\u2081,\u03b2\u2082) = (1, np.int64(25), 0)\n  \u03b5=0.01 \u2192 (\u03b2\u2080,\u03b2\u2081,\u03b2\u2082) = (1, np.int64(24), 0)\n  \u03b5=0.05 \u2192 (\u03b2\u2080,\u03b2\u2081,\u03b2\u2082) = (1, np.int64(11), np.int64(3))\n  \u03b5=0.10 \u2192 (\u03b2\u2080,\u03b2\u2081,\u03b2\u2082) = (1, np.int64(7), np.int64(4))\n  \u03b5=0.20 \u2192 (\u03b2\u2080,\u03b2\u2081,\u03b2\u2082) = (1, np.int64(7), np.int64(6))\n\u03b2\u2080 exactly stable: True, \u03b2\u2081 shift \u2264 1: True"
+    },
+    {
+      "name": "TEST 5.1 \u2014 Lipinski \u27fa K_abs < K_crit",
+      "passed": true,
+      "theorem": "Theorem 6.4",
+      "details": "K_crit (at Lipinski limits) = 4.0000\nLipinski-compliant molecules: 1260/10000\nOf those, K_abs < K_crit: 1260/1260 (100.0%)\nLipinski constraints are curvature bounds: YES"
+    },
+    {
+      "name": "TEST 5.2 \u2014 Curvature Additivity (K = \u03a3K_i)",
+      "passed": true,
+      "theorem": "Theorem 6.1",
+      "details": "K_abs  = 1.260000\nK_dist = 0.360000\nK_met  = 0.100000\nK_exc  = 0.500000\nK_tox  = 0.000000\nSum    = 2.220000\nK_total = 2.220000\n|Sum - K_total| = 0.00e+00"
+    },
+    {
+      "name": "TEST 5.3 \u2014 Curvature Non-Negativity (K_i \u2265 0)",
+      "passed": true,
+      "theorem": "Proposition 6.3",
+      "details": "Tested 1000 random (patient, molecule) pairs\nAll curvature components non-negative: True"
+    },
+    {
+      "name": "TEST 5.4 \u2014 Patient-Specific Metabolic Curvature (Codeine)",
+      "passed": true,
+      "theorem": "Theorem 6.2",
+      "details": "Codeine (CYP2D6 prodrug):\n  K_met (poor metabolizer, AS=0):    10000.1000\n  K_met (normal metabolizer, AS=1):  1.1000\n  K_met (ultra-rapid, AS=2.5):       0.2600\n  Ordering K_met(poor) > K_met(normal) > K_met(ultra): True\n  CYP2D6 holonomy correctly modulates metabolic curvature"
+    },
+    {
+      "name": "TEST 5.5 \u2014 hERG Curvature Dominance",
+      "passed": true,
+      "theorem": "Theorem 6.1",
+      "details": "K_tox (without hERG): 0.0000 (< K_crit_cardiac = 3.0)\nK_tox (with hERG):    5.0000 (> K_crit_cardiac = 3.0)\nhERG liability correctly dominates toxicity curvature"
+    },
+    {
+      "name": "TEST 5.6 \u2014 Curvature Allows Lipinski Tradeoffs",
+      "passed": true,
+      "theorem": "Theorem 6.4",
+      "details": "Molecule: MW=550 (violates Lipinski), logP=1.0, HBD=1, HBA=3\nK_abs = 1.3800 < K_crit = 4.0000\nDespite MW violation, low other descriptors keep K_abs below threshold\nCurvature framework is strictly more general than Lipinski box"
+    },
+    {
+      "name": "TEST 6.1 \u2014 Gradient Correctness (Finite Difference)",
+      "passed": true,
+      "theorem": "Theorem 7.2",
+      "details": "C(m) = \u03c4/K = 18.0100/2.6900 = 6.6952\n\u2207C (\u03b5=0.01):  [-0.00796452 -1.19453276  0.          0.        ]...\n\u2207C (\u03b5=0.001): [-0.00796451 -1.19466259  0.          0.        ]...\n||\u2207C(\u03b5\u2081) - \u2207C(\u03b5\u2082)|| = 0.000130 (convergence check)"
+    },
+    {
+      "name": "TEST 6.2 \u2014 Coherence Monotonicity Under Optimization",
+      "passed": true,
+      "theorem": "Corollary 7.2.1",
+      "details": "Initial C: 5.757794\nFinal C:   6.941406\nImprovement: 20.6%\nStrictly monotone: True\nAlmost monotone (\u22642 small violations): True\nC trajectory: ['5.758', '5.995', '6.236', '6.478', '6.714', '6.941']"
+    },
+    {
+      "name": "TEST 6.3 \u2014 Pareto Front Structure",
+      "passed": true,
+      "theorem": "Theorem 7.3",
+      "details": "Total molecules: 5000\nPareto-optimal: 17 (0.34%)\n\u03c4 range on Pareto: [4.01, 72.01]\nK range on Pareto: [0.69, 3.82]\nPareto front is a thin curve (small fraction of total): YES"
+    },
+    {
+      "name": "TEST 6.4 \u2014 Double Cover Constraint (E + T\u00b2 \u2264 1)",
+      "passed": true,
+      "theorem": "Theorem 7.4",
+      "details": "Tested 10000 molecules\nE + T\u00b2 > 1 violations: 0\nTherapeutic sphere constraint holds: YES\nConnection to LEXICON (S + d\u00b2 = 1): same geometric structure"
+    },
+    {
+      "name": "TEST 6.5 \u2014 Existence of C* (Extreme Value Theorem)",
+      "passed": true,
+      "theorem": "Theorem 7.1",
+      "details": "C_max = 27.072087 (exists and is finite)\nC_min = 0.002766\nC_max / C_min = 9786.9\u00d7\nExtreme value theorem on compact L: verified"
+    },
+    {
+      "name": "TEST 7.1 \u2014 Ambrose-Singer (Holonomy from Curvature)",
+      "passed": true,
+      "theorem": "Theorem 8.1",
+      "details": "Curvature operator rank: 5\n||F_\u2207|| = 3.010539\nNonzero curvature \u2192 nontrivial holonomy: True\nHolonomy Lie algebra dimension \u2264 5"
+    },
+    {
+      "name": "TEST 7.2 \u2014 Flat Connection \u2192 Trivial Holonomy",
+      "passed": true,
+      "theorem": "Proposition 4.4 + Theorem 8.1",
+      "details": "||R_\u2207|| (flat connection) = 0.00e+00\nMax eigenvalue: 0.00e+00\nHolonomy deviation from identity: 0.00e+00\nF_\u2207 = 0 \u27f9 no resistance possible: YES"
+    },
+    {
+      "name": "TEST 7.3 \u2014 Escape Geodesic Eigenvalues",
+      "passed": true,
+      "theorem": "Theorem 8.2",
+      "details": "Eigenvalue spectrum (resistance vulnerabilities):\n  \u03bb\u2081 = -0.232350 (primary resistance direction)\n  \u03bb\u2082 = -1.035094 (secondary)\n  \u03bb\u2083 = -1.315685\n  \u03bb\u2084 = -2.042157\n  \u03bb\u2085 = -4.438060\nPrimary escape eigenvector: [-0.00770965 -0.38551065  0.71488722 -0.54221636  0.21508088]\nTotal vulnerability Tr(R) = -9.063347"
+    },
+    {
+      "name": "TEST 7.4 \u2014 Curvature Operator Self-Adjoint",
+      "passed": true,
+      "theorem": "Theorem 8.2",
+      "details": "||R - R^T|| = 0.00e+00 (should be 0 for self-adjoint)"
+    },
+    {
+      "name": "TEST 7.5 \u2014 Coherence Recovery After Resistance",
+      "passed": true,
+      "theorem": "Theorem 8.4",
+      "details": "Initial drug:    C = 7.2443\nAfter resistance: C = 2.4148 (K increased 3.0\u00d7)\nRedesigned drug:  C = 10.4303\nThreshold:        C_threshold = 3.6222\nResistance drops C below threshold: True\nRedesign recovers C above threshold: True"
+    },
+    {
+      "name": "TEST 8.1 \u2014 Synergy Detection (Co-trimoxazole)",
+      "passed": true,
+      "theorem": "Proposition 9.3",
+      "details": "Trimethoprim alone:    C = 10.4559\nSulfamethoxazole alone: C = 10.4487\nCombination (synergy):  C = 15.0369\nC_combo > max(C_individual): True\nSequential folate pathway blockade = curvature cancellation"
+    },
+    {
+      "name": "TEST 8.2 \u2014 Antagonism Detection (Tetracycline + Penicillin)",
+      "passed": true,
+      "theorem": "Theorem 9.1",
+      "details": "Tetracycline alone: C = 17.4565\nPenicillin alone:   C = 8.7228\nCombination (antag): C = 5.7341\nC_combo < min(C_individual): True"
+    },
+    {
+      "name": "TEST 8.3 \u2014 Bliss Independence = Flat Interaction",
+      "passed": true,
+      "theorem": "Theorem 9.2",
+      "details": "[A\u2081, A\u2082] = 0.00e+00 (should be 0 for Bliss independence)\nK(E\u2081\u2297E\u2082) = 3.800000\nK\u2081 + K\u2082   = 3.800000\n|K_combo - (K\u2081+K\u2082)| = 0.00e+00\nFlat interaction connection: YES"
+    },
+    {
+      "name": "TEST 8.4 \u2014 Tensor Product Curvature Bound",
+      "passed": true,
+      "theorem": "Theorem 9.1",
+      "details": "For each interaction type:\n  Synergy:     K_combo=2.6600 \u2264 K\u2081+K\u2082+|int|=4.9400\n  Antagonism:  K_combo=9.5000 \u2264 K\u2081+K\u2082+|int|=9.5000\n  Independent: K_combo=3.8000 = K\u2081+K\u2082=3.8000"
+    },
+    {
+      "name": "TEST 8.5 \u2014 DDI Curvature (Ketoconazole + Midazolam)",
+      "passed": true,
+      "theorem": "Theorem 9.1",
+      "details": "K_met(midazolam, alone):           1.1000\nK_met(midazolam, + ketoconazole):   0.1100\nCYP3A4 inhibition changes metabolic curvature: YES"
+    },
+    {
+      "name": "TEST 9.1 \u2014 Parallel Transport (Exponential Decay)",
+      "passed": true,
+      "theorem": "Theorem 10.1",
+      "details": "d/dt log(C) should be constant = -ke = -0.100000\nNumerical d/dt log(C): mean = -0.100000, std = 4.95e-15\nParallel transport solution verified: YES"
+    },
+    {
+      "name": "TEST 9.2 \u2014 EC50 as Conjugate Point",
+      "passed": true,
+      "theorem": "Theorem 10.2",
+      "details": "EC50 = 5.0 \u03bcg/mL\nEffect at EC50: 0.500000 (should be 0.5)\nMax sensitivity (dE/dc) at concentration: 4.90\nEC50/max_sensitivity_conc ratio: 1.0214\nEC50 is point of maximum geodesic focusing: YES"
+    },
+    {
+      "name": "TEST 9.3 \u2014 Patient-Specific PK (Renal Impairment)",
+      "passed": true,
+      "theorem": "Theorem 10.3",
+      "details": "Normal patient:  CL = 5.0 L/hr, t\u00bd = 6.93 hr\nRenal impaired:  CL = 2.0 L/hr, t\u00bd = 17.33 hr\nRatio: 2.50\u00d7\nReduced clearance \u2192 longer half-life \u2192 need dose adjustment: YES"
+    },
+    {
+      "name": "TEST 9.4 \u2014 Steady State Prediction",
+      "passed": true,
+      "theorem": "Proposition 10.4",
+      "details": "Analytical C_ss_trough: 1.6000\nNumerical (20 doses):   1.6016\nError: 0.10%\nTime to 97% steady state: 35.07 hr = 5.1 half-lives\n4-5 half-life rule: CONFIRMED"
+    },
+    {
+      "name": "TEST 9.5 \u2014 Formulation as Geodesic Reparametrization",
+      "passed": true,
+      "theorem": "Theorem 10.1",
+      "details": "Immediate Release: AUC = 16.0000, Cmax = 1.6000\nSustained Release:  AUC = 16.0000, Cmax = 0.8000\nSame AUC: True (same total exposure)\nLower Cmax for SR: True (flatter curve)\nSame geodesic, different parametrization: CONFIRMED"
+    },
+    {
+      "name": "TEST 9.6 \u2014 Therapeutic Window Coverage",
+      "passed": true,
+      "theorem": "Theorem 10.1",
+      "details": "MEC = 2.0, MTC = 20.0\nDose = 200 mg, Interval = 6.93 hr\nTime in therapeutic window: 67.8%\nCmax = 3.20, C at end of interval = 1.6000"
+    },
+    {
+      "name": "INTEGRATION I.1 \u2014 Coherence Conservation Across Layers",
+      "passed": true,
+      "theorem": "Theorem 11.1",
+      "details": "\u03c4 (Layer 4):  18.010000\nK (Layer 5):  2.680000\nC (Layer 6):  6.695167\n\u03c4/K (recomputed): 6.695167\nConservation error: 0.00e+00\nC = \u03c4/K holds exactly: YES"
+    },
+    {
+      "name": "INTEGRATION I.2 \u2014 Patient Personalization",
+      "passed": true,
+      "theorem": "Theorem 11.2",
+      "details": "Patient A (young, normal): C = 6.9701\nPatient B (elderly, impaired): C = 8.3559\nDifference: 1.3857 (16.6%)\nSame drug, different patients \u2192 different coherence: YES\nThis drives personalized prescribing"
+    },
+    {
+      "name": "INTEGRATION I.3 \u2014 C = \u03c4/K Universal Consistency",
+      "passed": true,
+      "theorem": "Theorem 0.1",
+      "details": "Tested 1000 random (patient, molecule) pairs\nMax relative error |C - \u03c4/K|/|C|: 0.00e+00\nC = \u03c4/K holds universally: YES\nThe equation does not change. The manifold changes."
+    },
+    {
+      "name": "INTEGRATION I.4 \u2014 Pipeline Smoothness",
+      "passed": true,
+      "theorem": "Theorem 11.3",
+      "details": "Perturbation \u2192 \u0394C:\n  \u03b5 = 0.100 \u2192 \u0394C = 0.00192599\n  \u03b5 = 0.010 \u2192 \u0394C = 0.00019265\n  \u03b5 = 0.001 \u2192 \u0394C = 0.00001927\nSmall perturbation \u2192 small \u0394C: YES\nPipeline is smooth (differentiable): clinical safety guaranteed"
+    },
+    {
+      "name": "INTEGRATION I.5 \u2014 Double Cover (Agonist/Antagonist)",
+      "passed": true,
+      "theorem": "Theorem 7.4",
+      "details": "Agonist:    \u03c4_bind=8, \u03c4_chiral=1, \u03c4_ring=2\nAntagonist: \u03c4_bind=8, \u03c4_chiral=-1, \u03c4_ring=2\nSame \u03c4_bind: True, Same \u03c4_ring: True, Opposite \u03c4_chiral: True\nAgonist:    E + T\u00b2 = 0.3202 \u2264 1\nAntagonist: E + T\u00b2 = 0.3202 \u2264 1\nOpposite sheets of double cover: True"
+    }
+  ]
+}

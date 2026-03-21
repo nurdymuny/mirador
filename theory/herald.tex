@@ -1,0 +1,1034 @@
+%====================================================
+% HERALD — Academic Draft (v0.1)
+%====================================================
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+% ---------- Encoding & Fonts ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{lmodern}
+\usepackage{newunicodechar}
+\newunicodechar{→}{\textrightarrow{}}
+\newunicodechar{∼}{\textasciitilde{}}
+\newunicodechar{≤}{\ensuremath{\leq}}
+\newunicodechar{−}{\ensuremath{-}}
+\newunicodechar{≈}{\ensuremath{\approx}}
+
+% ---------- Page Layout ----------
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\setstretch{1.08}
+
+% ---------- Math & Symbols ----------
+\usepackage{amsmath,amssymb,amsfonts,amsthm,bm}
+\usepackage{mathtools}
+\usepackage{tabularx}
+\usepackage{siunitx}
+\sisetup{detect-all=true}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\RR}{\mathbb{R}}
+
+% ---------- Graphics & Tables ----------
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{adjustbox}
+
+% ---------- Framed Boxes (for novelty framing) ----------
+\usepackage{mdframed}
+\usepackage{xcolor}
+
+% ---------- Algorithms ----------
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{float}  % Critical for [H] placement
+
+% Prevent algorithms from floating away
+\makeatletter
+\renewcommand{\fps@algorithm}{htbp}
+\setcounter{totalnumber}{10}
+\setcounter{topnumber}{10}
+\setcounter{bottomnumber}{10}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.9}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.8}
+\makeatother
+\setlength{\intextsep}{10pt plus 2pt minus 2pt}
+
+% ---------- Links & Clever Refs ----------
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalise,nameinlink]{cleveref}
+
+% ---------- Quotes & Lists ----------
+\usepackage{csquotes}
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=*, itemsep=2pt, topsep=2pt}
+\setlist[enumerate]{leftmargin=*, itemsep=2pt, topsep=2pt}
+
+% ---------- Theorem Envs ----------
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+
+% ---------- Title Block ----------
+\title{\textbf{HERALD: High-resolution Early Recognition of Antigenic Landscape Divergence}\\[0.5ex]
+\large Learned Riemannian Geometry for Real-Time Viral Surveillance}
+\author{Bee Rosa Davis\\
+\small NASA Mission Systems Engineer\\
+\small \texttt{bee\_davis@alumni.brown.edu}}
+\date{} % (leave empty for no date)
+
+% Optional: TOC polish
+\usepackage{tocloft}
+
+\begin{document}
+\maketitle
+\vspace{-1.5ex}
+
+\begin{abstract}
+Public-health surveillance remains fundamentally reactive: phylogenetic trees and string-edit distances detect concerning variants only after substantial spread. We present \textsc{HERALD} as a \emph{theoretical framework} for constructing an antigenically meaningful latent geometry from sparse neutralization and sequence-derived signals, and for mapping geometric drift to dominance risk under explicit assumptions.
+
+Formally, we (i)~define a pullback-metric construction with Jacobian/Laplacian regularization under which Euclidean latent displacements approximate functional geodesics within regimes of bounded geodesic–Euclidean distortion; (ii)~specify a probability-integral transform (PIT) fusion scheme that yields a drift statistic $D(t)$ with $O(\log n)$ amortized per-update complexity; (iii)~derive a margin-to-separation result for contrastive objectives (InfoNCE) and obtain a distance gap $\Delta$; (iv)~establish Cantelli-based probability bounds mapping $\Delta$ to immune-escape risk, requiring only finite second moments (no sub-Gaussian tails); and (v)~compose these elements into a \emph{conditional} end-to-end dominance lower bound with an explicit error budget covering drift detection, escape linkage, calibration, and coverage via abstention. We also formalize data-sufficiency requirements and provide component-wise complexity bounds that enable streaming deployment.
+
+\emph{Scope}: This manuscript is conceptual—it states definitions, assumptions, theorems, and \emph{proposed} evaluation protocols for future empirical work. It does not report retrospective or prospective performance, system latency, or calibration metrics. Within this scope, \textsc{HERALD} provides a principled mathematical foundation for geometry-based viral surveillance with compositional error bounds and OOD abstention.
+\end{abstract}
+
+
+\tableofcontents
+\newpage
+
+%========================
+\section{Introduction}
+%========================
+Phylogenetic pipelines and flat sequence distances conflate genotype similarity with functional similarity, obscuring early immune-escape signals until after substantial spread. The key obstacle is that the genotype$\!\to\!$phenotype map is curved and nonlinear: Hamming or tree distance is a poor proxy for antigenic effect, especially when immune-relevant mutations are sparse, epistatic, or context-dependent.
+
+\paragraph{Key idea.}
+Learn a \emph{Riemannian pullback manifold} whose geodesic distances capture antigenic relationships, then monitor \emph{movement} in that space. We apply smoothness regularization to control geodesic–Euclidean distortion, enabling Euclidean computations in latent space to approximate geodesic relationships within quantifiable bounds.
+
+\noindent \textit{We formalize this approach through the following contributions:}
+
+\begin{itemize}
+  \item \textbf{C1 (Construction).} We define a contrastive$+$proxy objective with \emph{Jacobian/Laplacian} regularization that induces a smooth pullback metric. We state the regime of validity for the Euclidean$\approx$geodesic approximation via a geodesic–Euclidean distortion bound (see §4.3).
+  \item \textbf{C2 (Drift statistic and complexity).} We specify a \emph{probability-integral transform (PIT)} fusion of sequence-, antigenic-, and structural-drift signals into a scalar $D(t)$ with $O(\log n)$ amortized per-update complexity, enabling streaming deployment in principle while keeping the analysis theoretical here.
+  \item \textbf{C3 (Risk and abstention).} We formalize a risk aggregator $R$ that combines drift, structural features, and convergence signals, and we link $R$ to growth via a hierarchical monotone calibration; we include an \emph{abstention} mechanism for out-of-distribution or high-uncertainty regimes, emphasizing coverage control rather than unconditional prediction.
+  \item \textbf{C4a (Margin-to-separation).} We derive a margin-to-separation result for InfoNCE contrastive objectives, obtaining a distance gap $\Delta$ between “escape” and “similar” pairs.
+  \item \textbf{C4b (Compositional guarantee).} We establish Cantelli-based probability bounds that map $\Delta$ to immune-escape risk, requiring only finite second moments (no sub-Gaussian tails), and we compose these pieces into a \emph{conditional} end-to-end dominance lower bound with an explicit error budget (for drift detection, escape linkage, and calibration), together with a \emph{conservative union-bound fallback} when conditional independence cannot be verified.
+  \item \textbf{C5 (Evaluation protocols).} We specify falsifiable evaluation protocols for future empirical work: metrics and thresholds, required baseline comparisons, data-sufficiency checks, and \emph{distortion audits} to quantify when the Euclidean$\approx$geodesic approximation holds.
+\end{itemize}
+
+
+%========================
+\section{HERALD Overview}
+%========================
+
+\textbf{Training (construction).}
+We ingest sequences, sparse neutralization assays, and structural/clinical context, and learn an embedding $f_\phi$ with Jacobian $J_\phi=\partial f_\phi/\partial x$, whose pullback metric $g_\phi = J_\phi^{\top} J_\phi$ is regularized for smoothness. The objective is to \emph{control geodesic--Euclidean distortion} so that Euclidean computations in latent space approximate antigenic geodesics within a bounded--distortion regime (Section~4.3 formalizes the distortion bound).
+
+\textbf{Runtime (traversal).}
+At runtime, given sequences at time $t$, we compute latent displacements and derive drift statistics for each signal type (sequence, antigenic, and structural; see Section~4.4). Each signal is normalized via a \emph{probability-integral transform (PIT)} and fused into a scalar drift score $D(t)$. We map $D(t)$ to decision‑relevant risk through a \emph{hierarchical monotone link} with \emph{time‑asymmetric} calibration (i.e., using only historical data; Section~4.7), and \emph{abstain} under out‑of‑distribution (OOD) or high‑uncertainty conditions. We derive per‑update complexity bounds for the algorithmic components (summarized in Section~4.9); this paper provides theoretical foundations and complexity analysis but does not report implementation benchmarks.
+
+\begin{figure}[H]
+  \centering
+  % \includegraphics[width=\linewidth]{fig_overview.pdf}
+  \caption{HERALD dataflow. \emph{Construction}: learn a smooth pullback manifold with geodesic--Euclidean distortion control. \emph{Traversal}: compute Euclidean distances in latent space, fuse signals via PIT to obtain $D(t)$, and map to risk with OOD abstention.}
+  \label{fig:overview}
+\end{figure}
+
+\begin{mdframed}[backgroundcolor=blue!5]
+\textbf{For Microbiologists: What This Framework Does}
+
+Traditional surveillance waits for a pathogenic variant (e.g., a new STEC serotype with novel virulence factors) to spread before detection. HERALD proposes detecting such variants earlier by:
+
+1. \textbf{Learning antigenic relationships} from sparse neutralization data (analogous to serotyping, but geometric)
+2. \textbf{Monitoring genetic drift} in real-time as sequences arrive (like tracking stx gene variants, but multi-dimensional)
+3. \textbf{Predicting dominance risk} before widespread clinical presentation (proactive rather than reactive)
+
+The mathematics formalizes how to construct a "map" where distance between variants reflects their functional difference (immune escape, virulence), not just genetic similarity. This could apply to tracking antibiotic resistance emergence in enteric pathogens or predicting which STEC strains might cause outbreaks.
+\end{mdframed}
+
+%========================
+\section{Novelty Framing: Construction vs Traversal}
+%========================
+\begin{mdframed}
+\textbf{What is new (construction vs. traversal).}
+The novelty lies in \emph{how the space is constructed}, not in how distances are computed at runtime.
+We optimize a composite objective
+\[
+\mathcal{L}=\alpha\,\mathcal{L}_{\text{base}}+\beta\,\mathcal{L}_{\text{antigenic}}+\gamma\,\mathcal{L}_{\text{proxy}}+\lambda\,\mathcal{L}_{\text{smooth}},
+\]
+to learn an embedding whose pullback metric is explicitly regularized (Jacobian/Laplacian smoothness).
+This \emph{construction} controls \emph{geodesic--Euclidean} distortion so that, within a bounded-distortion
+regime formalized in Section~4.3, Euclidean computations in latent space approximate geodesic
+distances that reflect antigenic divergence. Runtime \emph{traversal} is Euclidean by design; Euclidean
+distances acquire antigenic meaning because the geometry is constructed to ensure this correspondence.
+
+\textbf{Claim (theoretical statements).}
+Under the regularization framework and data conditions formalized in Section~4, we (i) derive a
+margin-to-separation result for InfoNCE that yields a latent distance gap $\Delta$; (ii) establish
+Cantelli-based probability bounds mapping $\Delta$ to immune-escape risk, requiring only finite
+second moments (no sub-Gaussian tails); and (iii) compose these into a \emph{conditional} end-to-end
+dominance lower bound with an explicit error budget (drift detection, escape linkage, and calibration).
+
+\textbf{Status (testable implications).}
+We provide definitions and theorems in Sections~4.6–4.8 and specify \emph{distortion audits} in
+Section~5.14 to test when the geodesic--Euclidean approximation holds. When distortion exceeds
+the stated bounds, the theoretical guarantees may not apply; Section~4.5 details OOD detection and
+abstention mechanisms for such cases. This manuscript is theoretical and reports no empirical results.
+\end{mdframed}
+
+
+%========================
+\section{Methods}
+%========================
+
+\subsection{Background \& Notation}
+Let $\mathcal{X}$ denote sequence space and $f_\phi:\mathcal{X}\to\mathbb{R}^d$ a learned embedding. The Jacobian is $J_\phi(x)=\partial f_\phi(x)/\partial x$ and the pullback metric is
+\begin{equation}
+g_\phi(x)=J_\phi(x)^{\top}J_\phi(x).
+\end{equation}
+Let $d_g(\cdot,\cdot)$ be the geodesic distance induced by $g_\phi$, and $\delta(x,x')=\|f_\phi(x)-f_\phi(x')\|_2$ the latent Euclidean distance.
+
+\paragraph{Section roadmap.}
+Sections~4.2--4.3 define the \emph{construction} phase; Sections~4.4--4.5 specify \emph{runtime} procedures; Sections~4.6--4.8 state theoretical guarantees; Section~4.9 analyzes computational complexity.
+
+\paragraph{Bounded-distortion regime (assumption).}
+There exist $(\varepsilon,L)$ and a class of mutation paths $\mathcal{P}_{\mathrm{epi}}(L)$ consisting of at most $L$ single-amino-acid substitutions restricted to predefined epitope positions such that, for any $x,x'$ connected by a path $\pi\in\mathcal{P}_{\mathrm{epi}}(L)$,
+\begin{equation}
+(1-\varepsilon)\,d_g(x,x') \;\le\; \delta(x,x') \;\le\; (1+\varepsilon)\,d_g(x,x') .
+\end{equation}
+All algorithmic uses of $\delta$ are interpreted within this \emph{bounded-distortion} regime. Section~4.3 formalizes distortion control; Section~5 specifies prospective distortion audits (this manuscript is theoretical and reports no empirical results in Section~5).
+
+\subsection{Data Model \& Signals (assumptions)}
+We consider three signal types defined on sequences or sequence pairs: \emph{sequence}, \emph{antigenic}, and \emph{structural}. When available, sparse neutralization assays provide binary/ordinal pair labels $Y\in\{+,-\}$ (``$+$'': similar; ``$-$'': escape) used only in the construction objective (Section~4.3) and theory (Sections~4.6--4.8). We assume:
+\begin{itemize}
+\item \textbf{A1 (Finite variance).} $\mathrm{Var}(\delta\mid Y=\pm)<\infty$.
+\item \textbf{A2 (Leakage control).} Any time-indexed estimates use strictly historical data (no look‑ahead).
+\item \textbf{A3 (Label noise).} Symmetric mislabeling at rate $\eta<\eta_{\max}<\tfrac{1}{2}$; separation bounds include an $O(\eta)$ slack (cf. Lemma~\ref{lem:margin}).
+\item \textbf{A4 (Signal informativeness).} Each signal has non‑zero association with antigenic divergence under the true metric (otherwise guarantees are vacuous).
+\end{itemize}
+Concrete feature choices (e.g., protein language-model embeddings, structural proxies) are illustrative; the theory depends on A1–A4 and the construction/regularization below.
+
+\subsection{Stage 1 — Manifold Construction (Pullback + Smoothness)}
+We learn $f_\phi$ by minimizing the composite objective
+\begin{align}
+\mathcal{L}
+&= \alpha\,\mathcal{L}_{\text{base}}
++ \beta\,\mathcal{L}_{\text{antigenic}}
++ \gamma\,\mathcal{L}_{\text{proxy}}
++ \lambda\,\mathcal{L}_{\text{smooth}}, \label{eq:masterloss}
+\\[-0.25em]
+\mathcal{L}_{\text{antigenic}}
+&= \mathbb{E}\!\left[
+-\log \frac{\exp(s(x,x^+)/\tau_c)}{\exp(s(x,x^+)/\tau_c)+\sum_{k=1}^{K}\exp(s(x,x_k^-)/\tau_c)}
+\right],
+\end{align}
+with score $s(x,x')=-\|f_\phi(x)-f_\phi(x')\|_2^2/(2\tau_c^2)$, temperature $\tau_c$, and $K$ negatives. Proxy terms softly encode biophysical heuristics where available.
+
+\paragraph{Smoothness regularization (curvature proxies).}
+To encourage smooth geometry we penalize Jacobian energy and/or graph Laplacian smoothness:
+\begin{equation}
+\mathcal{L}_{\text{smooth}} \;=\; \mathbb{E}_x \big\| \nabla_x f_\phi(x) \big\|_F^2
+\quad\text{or}\quad
+\mathcal{L}_{\text{smooth}} \;=\; \mathrm{Tr}(F^{\top} L F),
+\end{equation}
+where $F=[f_\phi(x_1),\ldots,f_\phi(x_n)]^{\top}$ and $L$ is a $k$NN Laplacian in sequence space. We do not claim certified global Lipschitz bounds; statements are restricted to the bounded-distortion regime.
+
+\begin{mdframed}[backgroundcolor=green!5]
+\textbf{Biological Analogy: Why Geometry Matters}
+
+Consider two E. coli isolates that differ by:
+- \textbf{Scenario A:} 10 mutations in housekeeping genes
+- \textbf{Scenario B:} 2 mutations in stx2 epitopes
+
+Traditional phylogenetic distance treats these equally (Hamming distance ≈ 10 vs 2). But \emph{functionally}, Scenario B may cause greater immune escape or altered toxin activity—hence greater public health risk.
+
+HERALD's construction learns to place Scenario B \emph{farther} in latent space than Scenario A, despite fewer mutations, because the geometry is trained to reflect \emph{antigenic/functional} divergence. The "pullback metric" formalizes this: we're not just counting mutations, we're learning which mutations \emph{matter} for phenotype.
+
+\textbf{Clinical parallel:} This is like distinguishing STEC O157:H7 from non-O157 STEC—serotype alone (genotype proxy) doesn't predict virulence; you need stx profiles, eae presence, and clinical context (phenotype).
+\end{mdframed}
+
+\subsection{Stage 2 — Multi-space Drift (PIT-normalized fusion)}
+For each time $t$ we compute raw statistics per signal type: $S_\Sigma$ (sequence/latent), $S_A$ (antigenic), $S_S$ (structural). Each is mapped through a historical null CDF $F_i$ (estimated on a leakage-free window) and Gaussianized via the probability‑integral transform (PIT):
+\begin{equation}
+Z_i(t) \;=\; \Phi^{-1}\!\big(F_i(S_i(t))\big),\quad i\in\{\Sigma,A,S\}.
+\end{equation}
+We fuse by a linear or logistic stacker with a rank‑fusion fallback:
+\begin{equation}
+D(t) \;=\; w_\Sigma Z_\Sigma(t) + w_A Z_A(t) + w_S Z_S(t),
+\end{equation}
+and treat the alert threshold $\theta$ as a policy parameter to be set by decision‑makers (no empirical operating points are reported here).
+
+\subsection{Stage 3 — Risk mapping, interpretability, and abstention}
+We define a scalar risk $R$ that aggregates distal evidence (e.g., geodesic distance to vaccine anchors), epitope overlap, structural fitness proxies, and convergence indicators, and link $R$ to a growth signal via a hierarchical monotone calibration map (Section~4.7). Interpretability (e.g., coarse epitope‑level attributions) follows dual‑use constraints (Section~7). Abstention is triggered under out‑of‑distribution (OOD) or high‑uncertainty regimes; abstention affects coverage in the error budget (Sections~4.8 and 6.2).
+
+\subsection{Theory I — Distance $\Rightarrow$ Escape (finite‑variance bounds)}
+Let $Y\in\{+,-\}$ denote neutralization labels, $\delta=\|f_\phi(x)-f_\phi(x')\|_2$, class means $\mu_\pm=\mathbb{E}[\delta\mid Y=\pm]$, and gap $\Delta=\mu_--\mu_+>0$.
+
+\begin{lemma}[InfoNCE margin $\Rightarrow$ separation]
+\label{lem:margin}
+With score $s(\delta)=-\delta^2/(2\tau_c^2)$ and $K$ negatives, the population InfoNCE objective yields an effective score margin $m_{\mathrm{eff}}\!\ge\!c_1(\tau_c)\,\log K - c_2(\mathcal{H})\,\sqrt{C/n} - c_3\,\eta$, where $C$ is a capacity/complexity measure of the function class and $\eta$ is the label‑noise rate from A3. If $s$ is $L_{\mathrm{eff}}$‑Lipschitz in $\delta$ on the bounded domain of interest, then
+\[
+\Delta \;\ge\; \frac{m_{\mathrm{eff}}}{L_{\mathrm{eff}}}\,.
+\]
+\emph{Corollary (simplified).} There exist constants $a,b>0$ (depending on $\tau_c$, $L_{\mathrm{eff}}$, and domain diameter) such that
+\[
+\Delta \;\ge\; a\,\log K \;-\; b\,\sqrt{C/n}\;-\;O(\eta).
+\]
+Full definitions and proof are provided in Appendix~A.
+\end{lemma}
+
+\begin{proposition}[Cantelli bound for escape probability]
+\label{prop:cantelli}
+Assume finite second moments for $\delta\mid Y=\pm$. Let $d^\star=(\mu_++\mu_-)/2$, variances $\sigma_\pm^2=\mathrm{Var}(\delta\mid Y=\pm)$, and class priors $\pi_\pm$. Then the misclassification tail
+\[
+\alpha \;\equiv\; \mathbb{P}\!\big(Y=+\mid \delta>d^\star\big)
+\]
+admits the explicit upper bound
+\[
+\alpha \;\le\;
+\frac{\displaystyle \pi_+\,\frac{\sigma_+^2}{\sigma_+^2+(\Delta/2)^2}}
+{\displaystyle \pi_-\,\frac{(\Delta/2)^2}{\sigma_-^2+(\Delta/2)^2}
+\;+\; \pi_+\,\frac{\sigma_+^2}{\sigma_+^2+(\Delta/2)^2}}
+\quad+\; r_n,
+\]
+where $r_n=O(\sqrt{C/n})$ captures estimation error. A sub‑Gaussian corollary yields exponential decay in $\Delta^2$, but the finite‑variance bound does not require sub‑Gaussian tails. (Derivation in Appendix~A.)
+\end{proposition}
+
+\begin{mdframed}[backgroundcolor=yellow!5]
+\textbf{What the Probability Bounds Mean in Practice}
+
+\textbf{Lemma 1 (InfoNCE → separation):} If we train on neutralization assays that correctly label "similar" vs "escape" pairs, the algorithm learns to separate them in latent space by distance $\Delta$. 
+
+\textbf{Translation:} Like using antisera to distinguish serotypes—if your assays are good (low noise $\eta$), you get clean separation.
+
+\textbf{Proposition 1 (Cantelli bound):} Given separation $\Delta$, we can upper-bound the probability of misclassifying an "escape" variant as "similar."
+
+\textbf{Translation:} If a new isolate is far from vaccine strains in learned space, we can quantify confidence that it truly escapes immunity—even with noisy, finite assay data. The bound holds under "finite variance" (heavy-tailed assay noise), not requiring Gaussian assumptions.
+
+\textbf{Clinical relevance:} This is like saying "if this STEC isolate's toxin profile differs substantially from reference strains, here's our statistical confidence it will cause severe disease"—but with explicit uncertainty quantification.
+\end{mdframed}
+
+\subsection{Theory II — Escape $\Rightarrow$ Growth (monotone link and coverage)}
+We posit a region‑specific monotone link
+\begin{equation}
+s_r \;=\; g_r(R) + \epsilon_r,\qquad
+g_r(R) \;=\; g_{\text{global}}(R) + b_r(R),
+\end{equation}
+with hierarchical pooling for data‑sparse regions. Time asymmetry means fitting $g_r$ on historical data and freezing it prospectively (no look‑ahead). Conformal methods provide \emph{coverage‑calibrated} prediction sets; e.g., under exchangeability,
+\[
+\mathbb{P}\!\big(p(t{+}T)\in[L,U]\big)\;\ge\;1-\alpha,
+\]
+but they do not in general calibrate point probabilities without additional structure.
+
+\subsection{Theory III — Compositional (conditional) dominance bound}
+Let $p(t)$ denote prevalence at time $t$, and let $P^*\in(0,1)$ be a policy‑relevant threshold (e.g., 10\%). Define
+\[
+\varepsilon_1 \;=\; \mathbb{P}\!\big(\delta \le d^\star \,\big|\, D(t)>\theta,\ \text{alert issued}\big),\quad
+\xi \;=\; \mathbb{P}\!\big(s < s^* \,\big|\, R\big).
+\]
+Under conditional independence of the error sources $(\varepsilon_1,\alpha,\xi)$ and abstention residual $\zeta$, we obtain the conditional lower bound
+\begin{equation}
+\mathbb{P}\!\big[p(t{+}T)\ge P^* \,\big|\, D(t)>\theta,\ \text{alert issued}\big]
+\;\ge\; (1-\varepsilon_1)(1-\alpha)(1-\xi).
+\end{equation}
+Without independence, a conservative union‑bound fallback gives
+\[
+\mathbb{P}\!\big[p(t{+}T)\ge P^* \,\big|\, \text{alert issued}\big]\;\ge\; 1-(\varepsilon_1+\alpha+\xi).
+\]
+An unconditional version that includes coverage multiplies the right‑hand side by $(1-A(\theta;\tau_{\text{OOD}},w_{\max}))$ (see Section~6.2).
+
+\subsection{Systems \& Complexity (asymptotic analysis)}
+We analyze per‑update complexity classes: approximate nearest‑neighbor (ANN) queries can achieve $O(\log n)$ amortized lookup under typical assumptions; CUSUM updates are $O(1)$; incremental covariance updates (e.g., Mahalanobis) are $O(d^2)$; iterative spectral updates (e.g., Fiedler vectors) scale with $|E|$. These are \emph{asymptotic} statements; no implementation benchmarks or latencies are reported here.
+
+\paragraph{Section‑wide scope note.}
+All results in Section~4 are theoretical statements under the stated assumptions; empirical validation and operating points are specified as future evaluation protocols in Section~5.
+
+
+%========================
+\section{Evaluation Protocols (No Results Reported)}
+%========================
+
+\subsection{Evaluation Principles \& Pre-Registration}
+\label{sec:protocols}
+This section specifies \emph{protocols} for future empirical assessments. It does \emph{not} report results.
+Before any evaluation, pre-register: (i) primary endpoints (lead-time, AUROC/AUPRC, Brier/ECE, decision-curve net benefit), (ii) thresholds $\theta$ search grid and abstention gates $(\tau_{\text{OOD}}, w_{\max})$, (iii) baselines and ablations, (iv) confounder covariates, (v) leakage controls and time windows, and (vi) equity/parity analyses.
+
+\paragraph{Data governance and leakage.}
+All time-indexed estimators are fit on strictly historical data (no look-ahead). Region-specific analyses use frozen calibration $g_r$ and fixed thresholds within a review window. All protocol steps record configuration hashes to enable audit.
+
+\subsection{Retrospective Time-Slice Replay (Protocol)}
+Choose cut dates $\{t_c\}$ prior to known emergences. For each $t_c$, fit all components using only data with timestamps $\le t_c$ (including $g_r$). Replay the next $H$ weeks as if streaming without parameter updates.
+
+\begin{algorithm}[H]
+\caption{Retrospective time-slice replay (protocol)}
+\label{alg:retro}
+\begin{algorithmic}[1]
+\Require Cut date $t_c$, horizon $H$, region set $\mathcal{R}$
+\State Fit $f_\phi$ and estimate null CDFs $F_i(\cdot)$ on data $\le t_c$
+\State Fit calibration $g_r$ for each $r\in\mathcal{R}$ per pooling rule (Section~4.7)
+\For{$t \in \{t_c{+}1,\dots,t_c{+}H\}$}
+  \State Ingest sequences at $t$; compute $S_\Sigma,S_A,S_S$; $Z_i=\Phi^{-1}(F_i(S_i))$; $D(t)=\sum w_i Z_i$
+  \If{OOD\_score$(t)>\tau_{\text{OOD}}$ or conformal width $> w_{\max}$} \State \textbf{Abstain}; log rationale; continue
+  \Else \State Compute $R(t)$, $\hat s_r(t)=g_r(R(t))$, and record protocol metrics (no decisions issued)
+  \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Prospective Streaming Emulation (Protocol)}
+Maintain a stateful pipeline; as sequences arrive at time $t$, compute $D(t)$, explanations, and—if not abstaining—report the protocol metrics using the calibration frozen at the last refresh $t_0\le t$. No live deployment decisions are issued as part of this protocol.
+
+\subsection{Metrics (Definitions Only)}
+\label{sec:metrics}
+Let $t_H=\inf\{t: D(t)>\theta\}$ be the system’s alert time and $t_{10\%}$ the first time a lineage attains 10\% regional prevalence (policy-relevant $P^*$ may be substituted).
+\paragraph{Lead-time.}
+$\mathrm{LT}_{10\%}=t_{10\%}-t_H$; $\mathrm{LT}_{\text{vsB}}=t_B-t_H$ for a specified baseline $B$.
+\paragraph{Discrimination.}
+AUROC/AUPRC for predicting $\mathbf{1}\{p(t{+}T)\ge P^*\}$ at alert time.
+\paragraph{Calibration.}
+Brier score and expected calibration error (ECE); reliability curves stratified by region/time.
+\paragraph{Decision-curve net benefit.}
+For threshold probability $p_t$,
+$\mathrm{NB}(p_t)=\frac{\mathrm{TP}}{N}-\frac{\mathrm{FP}}{N}\cdot\frac{p_t}{1-p_t}$.
+\paragraph{Abstention quality.}
+Coverage $1-A(\theta;\tau_{\text{OOD}},w_{\max})$; documentation of abstention rationales.
+
+\subsection{Pathogen-Specific Protocol Templates (No Results)}
+To facilitate reproducibility across domains, we provide \emph{templates} for instantiating the replay protocol; these specify inclusion/exclusion, windows, and reporting, without presenting results.
+
+\subsubsection{SARS-CoV-2 (Template)}
+\label{sec:covid}
+\textbf{Setup.} Time-slice freezes around pre-Delta, Delta$\to$Omicron, and post-Omicron sublineages; region-stratified replay; recombination screening prior to scoring.  
+\textbf{Reporting.} Lead-time distributions, calibration curves, abstention coverage, and error-budget components \emph{as defined} in Sections~4.6--4.8 and \ref{sec:metrics}. No numerical findings are included in this manuscript.
+
+\begin{mdframed}[backgroundcolor=purple!5]
+\textbf{Applicability to Bacterial Pathogens}
+
+While Section 5.4 focuses on viral examples (SARS-CoV-2, influenza), the framework applies to bacterial surveillance:
+
+\textbf{STEC monitoring:} Track emergence of novel stx variants, intimin subtypes, or antibiotic resistance cassettes. The "drift statistic" $D(t)$ would integrate:
+- Sequence signals (e.g., stx2 subtype divergence)
+- Antigenic signals (serotype switching, anti-intimin immunity)
+- Structural signals (toxin binding affinity predictions)
+
+\textbf{Multi-drug resistant enteric bacteria:} Monitor integron cassette evolution in \emph{Salmonella}, \emph{E. coli}, or \emph{Campylobacter}. Replace "neutralization assays" with MIC panels or resistance phenotypes.
+
+\textbf{Key difference from viral surveillance:} Bacterial genomes have more recombination (Section 5.11's mosaic-consistency gating becomes critical) and horizontal gene transfer. The framework's abstention mechanism would flag such events as out-of-distribution.
+\end{mdframed}
+\subsubsection{Influenza (H3N2) (Template)}
+\label{sec:flu}
+\textbf{Setup.} October--February monitoring with a February selection decision point; outcomes in September for verification.  
+\textbf{Reporting.} Same as above (lead-time vs decision point, calibration, abstention), without results.
+
+\subsubsection{HIV Resistance (Template)}
+\label{sec:hiv}
+\textbf{Setup.} Clinic-level longitudinal sequences, routine surveillance cadence; resistance phenotypes when available.  
+\textbf{Reporting.} Time-to-event framing and abstention behavior; no results reported.
+
+\subsection{Robustness, Baselines, and Confounders (Protocol)}
+\label{sec:baselines}
+\textbf{Baselines (hard nulls).}
+\begin{enumerate}[label=(\alph*), leftmargin=*]
+  \item Hamming distance to vaccine strain + epitope mutation counts + time features $\Rightarrow$ logistic.
+  \item Growth-only (phylodynamic lineage growth advantage).
+  \item Random alerts matched by volume and timing constraints.
+\end{enumerate}
+\textbf{Ablations.} Remove $\mathcal{L}_{\text{antigenic}}$, $\mathcal{L}_{\text{smooth}}$, or structural features; alternate distance metrics (cosine vs Euclidean).  
+\textbf{Confounder adjustment.} Pre-specify a logistic adjustment:
+\[
+\mathrm{logit}\,P(\text{dom}\mid \tilde D, Z)=\beta_0 + \beta_D \tilde D + \beta^\top Z,
+\]
+$Z=\{$sampling propensity, NPIs, founder proxies$\}$; use inverse-probability weighting and, when appropriate, instrumental variables. No comparative numbers are provided here.
+
+\subsection{Statistical Power, Label Noise, and $\alpha$ Verification (Protocol)}
+\label{sec:power}
+\textbf{Label budget.} Specify a priori a grid of assay-pair counts; evaluate detection power vs. sample size.  
+\textbf{Noise stress.} Randomly flip a pre-registered fraction $\eta$ of assay labels; recompute margin estimates and theoretical $\alpha$ bounds; record degradation curves.  
+\textbf{Bound check.} Define $\alpha_{\text{emp}}(d^\star)=\mathbb{P}(Y{=}+\mid \delta>d^\star)$ and compare to the Cantelli and sub-Gaussian \emph{bounds} defined in Section~4.6; no empirical values are included here.
+
+\subsection{Transfer Learning (Protocol)}
+\label{sec:transfer}
+\textbf{Sample-efficiency multiplier.}
+Estimate 
+\[
+\widehat{k}=\arg\min_{k>0}\sum_i\!\left[\varepsilon_{\text{pre}}(n_i)-\varepsilon_{\text{scratch}}(k n_i)\right]^2
+\]
+with bootstrap CIs; interpret $\widehat{k}\ge 2$ as a pre-registered success criterion.  
+\textbf{Geometry relation.} Correlate transfer with distortion profiles along epitope-aligned paths near vaccine anchors (Section~5.14 protocol); report only methodology here.
+
+\subsection{OOD Detection \& Abstention (Protocol)}
+\label{sec:ood}
+Combine energy, kNN density, and language-model perplexity into $S_{\text{OOD}}$; pick $\tau_{\text{OOD}}$ via held-out historical windows to control false-confidence. Abstain if $S_{\text{OOD}}>\tau_{\text{OOD}}$ or conformal width $>w_{\max}$. Report coverage and abstention rationales only.
+
+\subsection{Geographic Parity (Protocol)}
+\label{sec:geo}
+Evaluate parity in discrimination, calibration (ECE), lead-time, and abstention across regions. If disparities appear, increase pooling, adjust abstention, and specify targeted data collection; no quantitative gaps are reported here.
+
+\subsection{Recombination Robustness (Protocol)}
+\label{sec:recomb}
+Compute segment-wise latent distances and a mosaic-consistency score; gate alerts when inconsistency exceeds a pre-registered threshold; document the gating criteria and frequency.
+
+\subsection{Lead-Time vs Alert-Volume Frontier (Design Study)}
+\label{sec:pareto}
+Sweep $\theta$ to sketch the design frontier (expected lead-time vs alerts/week) under the cost matrix in Table~\ref{tab:cost}. This manuscript specifies the analysis but does not present numbers or curves.
+
+\subsection{Model Updates \& Maintenance (Protocol)}
+\label{sec:maint}
+Define retrain cadence, drift-in-drift monitoring (distributional shift of $Z_i$), canary A/B rollout, rollback criteria, and versioned calibration artifacts. Document triggers without reporting operational statistics.
+
+\subsection{Manifold Flattening Validation (Distortion Audits; Protocol)}
+\label{sec:flattening}
+Ablate $\mathcal{L}_{\text{smooth}}$ \emph{in a controlled replay setting} and quantify: (i) geodesic--Euclidean error vs path length, (ii) distortion along mutational paths, (iii) association between distortion and calibration error $\xi$. This subsection defines the audits only; no ablation results are included.
+
+\paragraph{Section-5 scope note.}
+Section~5 specifies protocols and reporting templates for future empirical work; by design, it presents \emph{no} numerical results, plots, or case studies.
+
+%========================
+\section{Discussion}
+%========================
+
+\subsection{Why Geometry Anticipates Epidemiology}
+\label{sec:why-geometry}
+\emph{Claim (conceptual).} Movement in the learned space can precede observed dominance because the construction stage shapes a geometry in which \emph{geodesic--Euclidean} distances reflect antigenic divergence over a bounded-distortion regime.
+
+\noindent\textbf{Rationale.} The construction objective and smoothness regularization (Section~4.3) aim to control geodesic--Euclidean distortion so that straight-line traversal inherits Riemannian meaning at surveillance scales. The margin‑to‑separation link (Lemma~\ref{lem:margin}) yields a latent distance gap $\Delta$ under InfoNCE, and the finite‑variance Cantelli bound (Proposition~\ref{prop:cantelli}) maps $\Delta$ to an escape‑risk bound. A time‑asymmetric calibration (Section~4.7) provides a monotone link from risk $R$ to growth $s$, and the compositional lower bound in Section~4.8 combines detection, linkage, and calibration errors. Section~5 specifies \emph{distortion audits} and related checks to test these premises prospectively; this manuscript reports no empirical outcomes.
+
+\subsection{Cost-Benefit Thresholding and the Error Budget}
+\label{sec:cost-benefit}
+Operational use requires a policy for issuing alerts. Let $\pi$ be the base rate of truly emergent events (reach $P^{*}$ within horizon $T$). Define the rate functions $\mathrm{TPR}(\theta)$ and $\mathrm{FPR}(\theta)$ \emph{conditional on non‑abstained predictions}, and let
+\[
+A(\theta;\tau_{\text{OOD}},w_{\max})
+\]
+be the overall abstention rate under drift threshold $\theta$, OOD gate $\tau_{\text{OOD}}$, and conformal‑width gate $w_{\max}$. The per‑sample components are
+\begin{align}
+\mathrm{tp}(\theta) &= \pi\,(1-A)\,\mathrm{TPR}(\theta), \\
+\mathrm{fp}(\theta) &= (1-\pi)\,(1-A)\,\mathrm{FPR}(\theta), \\
+\mathrm{fn}(\theta) &= \pi\,(1-A)\,\big(1-\mathrm{TPR}(\theta)\big),
+\end{align}
+and the per‑sample expected utility is
+\begin{equation}
+\mathrm{EU}(\theta) \;=\; U_{\mathrm{TP}}\cdot \mathrm{tp}(\theta) \;-\; C_{\mathrm{FP}}\cdot \mathrm{fp}(\theta) \;-\; C_{\mathrm{FN}}\cdot \mathrm{fn}(\theta) \;-\; C_{\mathrm{A}}\cdot A(\theta;\tau_{\text{OOD}},w_{\max}).
+\end{equation}
+Designers may set $\theta$ by maximizing $\mathrm{EU}(\theta)$ on retrospective slices and lock it prospectively within review windows (protocol in Section~5); this manuscript defines the framework but does not report estimated curves.
+
+\paragraph{Conditional confidence vs. coverage.}
+The end‑to‑end lower bound is most interpretable \emph{conditional on an alert being issued}:
+\begin{equation}
+\label{eq:condbound6}
+\Pr\!\big[p(t{+}T)\ge P^* \,\big|\, \text{alert issued}\big] \;\ge\; (1-\varepsilon_1)\,(1-\alpha)\,(1-\xi),
+\end{equation}
+where $\varepsilon_1$ is drift‑to‑distance error, $\alpha$ the distance‑to‑escape error (Proposition~\ref{prop:cantelli}), and $\xi$ calibration error (Section~4.7). Coverage is handled separately by $1-A(\theta;\tau_{\text{OOD}},w_{\max})$. An unconditional variant that includes coverage multiplies the right‑hand side of \eqref{eq:condbound6} by $1-A(\cdot)$.
+
+\paragraph{Independence and conservative fallback.}
+Equation~\eqref{eq:condbound6} holds under conditional independence of error sources (sufficient conditions in Appendix~A). Without independence, a conservative union bound gives
+\[
+\Pr\!\big[p(t{+}T)\ge P^* \,\big|\, \text{alert issued}\big] \;\ge\; 1-(\varepsilon_1+\alpha+\xi),
+\]
+which may be vacuous when the sum exceeds $1$; in analysis we clip this lower bound at $0$ (see Appendix~A).
+
+\begin{table}[H]
+\centering
+\caption{Example cost matrix for decision-curve analysis (template).}
+\label{tab:cost}
+\small
+\begin{tabular}{lcc}
+\toprule
+Outcome & Utility/Cost & Notes \\
+\midrule
+True positive alert & $+U_{\text{TP}}$ & Early intervention benefit \\
+False positive alert & $-C_{\text{FP}}$ & Resource/utilization costs \\
+False negative (miss) & $-C_{\text{FN}}$ & Health/economic impact \\
+Abstention (lab referral) & $-C_A$ & Assay/operational delay \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Practitioner Playbook: Tiers and Lifecycle (Policy Template)}
+\label{sec:playbook}
+This subsection provides a \emph{template} for mapping quantitative outputs to actions; it is not a deployment prescription and includes no observed outcomes.
+
+\textbf{Tiered actions.}
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+  \item \textbf{Tier 1 (Watch):} $P(\text{>10\% in }T)\in[0.20,0.40]$. Increase sentinel sequencing and wastewater sampling; queue neutralization assays.
+  \item \textbf{Tier 2 (Act):} $P(\text{>10\% in }T)\in(0.40,0.70]$ with strong epitope‑level attributions. Prepare surge testing, vaccine manufacturing, and risk communication.
+  \item \textbf{Tier 3 (Mobilize):} $P(\text{>10\% in }T)>0.70$ \emph{or} fast‑rising $D(t)$ with convergent evolution. Accelerate antigen selection, hospital surge planning, cross‑border coordination.
+\end{itemize}
+
+\textbf{Lifecycle (control rules).} Abstain if $S_{\text{OOD}}>\tau_{\text{OOD}}$ or conformal width $>w_{\max}$; route to lab. Retrain when coverage degrades, when geodesic--Euclidean distortion audits (Section~5.14) exceed pre‑registered control limits, or when the OOD/abstention rate spikes persistently.
+
+\subsection{Threat Model, Negative Controls, and Failure Modes}
+\label{sec:threats}
+\textbf{Missed dominant lineage (false negative).} Possible causes: rapid NPI changes/founder effects masking growth; recombination creating mosaics outside training support; over‑conservative abstention. Mitigations (protocolized): hierarchical calibration and sensitivity analysis (Section~5.6); segment‑wise checks and mosaic gating (Section~5.11); abstention tuned to lab capacity.
+
+\textbf{Spurious alert (false positive).} Causes: transient mutational bursts or sampling spikes. Mitigations: PIT normalization against rolling nulls, confounder adjustment, and rank‑fusion fallback when stacking is unstable (Section~5.6).
+
+\textbf{Fitness‑proxy limitations.} If antigenic distance is high but hidden fitness costs dominate, protection comes from: (1) fitness proxies within $R$; (2) time‑asymmetric calibration that down‑weights historically non‑dominant patterns; (3) a negative‑control catalog (Section~7.5) for recurrent “high‑$D$, no‑dominance” motifs; (4) abstention when proxy uncertainty is high.
+
+\textbf{Convergent evolution.} Convergence strengthens confidence in fitness advantage and is used both inside $R$ (Section~4.5) and as a Tier 3 trigger; joint audits check for unmodeled immune‑landscape shifts.
+
+\textbf{Recombination.} Mosaics can produce inconsistent geometry across genomic regions. Segment‑wise distances and a mosaic‑consistency score (Section~5.11) gate or abstain when inconsistency is high.
+
+
+
+\subsection{Limitations and Red Flags}
+\label{sec:limits}
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+\item \textbf{Assay noise and fat tails.} Neutralization assays are noisy and heavy‑tailed. The Cantelli bound trades exponential for polynomial decay; Section~5.7 defines how to compare empirical $\alpha$ to the finite‑variance and sub‑Gaussian bounds. No empirical values are reported here.
+\item \textbf{Calibration drift.} NPIs, prior immunity, and vaccination coverage shift the $R\!\to\!s$ mapping. We enforce strict time asymmetry, leakage control, and region‑wise pooling policies (Sections~4.7 and 5).
+\item \textbf{Geometry stability.} Biology can reconfigure local geometry (e.g., large antigenic jumps). Distortion audits (Section~5.14) specify tests for when retraining is required.
+\item \textbf{Compute trade‑offs.} Runtime computations are Euclidean in latent space; training includes Jacobian/Laplacian penalties. Section 4.9 provides asymptotic complexity; throughput budgets are systems work beyond this manuscript’s scope.
+\end{itemize}
+
+\subsection{Why \emph{Construction} Matters (Not Just Traversal)}
+\label{sec:construction-matters}
+A natural concern is that if runtime computations are Euclidean, a pullback metric may be unnecessary. Our position is structural: Euclidean distances acquire antigenic meaning only because the geometry is constructed to ensure correspondence in a bounded‑distortion regime. Section~5.14 specifies \emph{distortion audits} to test this hypothesis (e.g., geodesic--Euclidean error vs. path length, association with calibration error). This manuscript proposes those audits but reports no ablation results.
+
+
+%========================
+\section{Ethics \& Governance}
+\label{sec:ethics}
+%========================
+
+\subsection{Scope of Use and Ethical Principles}
+HERALD is a decision-support framework for public-health surveillance; it does not replace clinical judgment or regulatory authority. We adopt four principles: \emph{beneficence} (maximize early-warning benefit), \emph{non-maleficence} (minimize harm from false alerts and information hazards), \emph{justice} (equitable performance across regions and populations), and \emph{accountability} (transparent, auditable decisions with human oversight). All uses must comply with applicable laws and data-use agreements.
+
+\subsection{Dual-Use Risk and Information-Hazard Mitigations}
+\label{sec:dualuse}
+Predictive surveillance can create information hazards if it reveals actionable mutation “recipes” or prioritizes potentially dangerous variants. We therefore propose:
+\begin{enumerate}[leftmargin=*, itemsep=2pt, topsep=2pt]
+\item \textbf{Redaction of sensitive detail.} Report attributions at coarse granularity (epitope/region level); omit unpublished combinatorial mutation sets and stepwise “paths.”
+\item \textbf{Operational rule for unobserved combinations.} Redact attributions that involve mutation sets not present in the reference surveillance database at alert time or flagged as OOD; display only epitope-category summaries in such cases.
+\item \textbf{Aggregation and delay.} Public summaries aggregate across sequences/regions with optional short disclosure lags; per-sequence reports are restricted to authorized officials.
+\item \textbf{Abstention-first policy.} Where support is weak (OOD) or uncertainty is wide, abstain and recommend laboratory characterization rather than issuing quantitative risk.
+\item \textbf{No optimization over sequences.} Forbid sequence search/optimization for increased risk; counterfactuals are limited to \emph{observed} mutations and reported at aggregate levels.
+\item \textbf{Publication policy.} Do not release ranked mutation combinations absent prior observation in surveillance data; do not publicly release geolocated per-sample alerts.
+\end{enumerate}
+
+\begin{mdframed}[backgroundcolor=red!5]
+\textbf{Dual-Use Considerations for Clinical Microbiologists}
+
+The information-hazard mitigations in Section 7.2 parallel biosafety concerns in clinical labs:
+
+\textbf{Don't publish "recipes":} Just as we don't publish step-by-step protocols for culturing \emph{Francisella} or synthesizing botulinum toxin, HERALD avoids revealing combinatorial mutation paths that could guide gain-of-function experiments.
+
+\textbf{Coarse-grained reporting:} Report "epitope region X shows escape" not "mutation A123T + B456G confers immune evasion"—analogous to reporting "carbapenem-resistant \emph{Klebsiella}" without detailing exact bla gene configurations in public databases.
+
+\textbf{Abstention for novel combinations:} If the system detects a variant with mutation combinations never seen in surveillance (analogous to a novel toxin fusion gene), it abstains from public risk scoring and routes to BSL-3 characterization.
+
+\textbf{Laboratory parallel:} This is like Select Agent regulations—some information requires restricted access and oversight, not public dissemination.
+\end{mdframed}
+
+\subsection{Data Stewardship, Privacy, and Sovereignty}
+\label{sec:datagov}
+\textbf{Data minimization.} Inputs are limited to fields necessary for surveillance; personal identifiers are excluded. Location metadata are coarsened to predefined administrative levels before processing.
+
+\noindent\textbf{Sovereignty and benefit sharing.} Origin countries retain control over dissemination of alerts derived from their sequences. Data-sharing agreements (DSAs) specify permissible uses, redistribution constraints, retention windows, and attribution.
+
+\noindent\textbf{Privacy by design.} Access follows least-privilege role-based access control (RBAC). Logs and derived analytics are pseudonymized and encrypted in transit/at rest. Aggregated outputs are de-identified and coarsened (geographic, temporal) to mitigate re-identification risk; where genomic sequences may be inherently identifying, additional safeguards—secure enclaves and/or differential privacy—are applied per DSA. The phrase “$k$-anonymity or equivalent threshold” denotes a policy target enforced via these mechanisms.
+
+\begin{table}[H]
+\centering
+\caption{Data retention and access policy (template).}
+\label{tab:retention}
+\small
+\begin{tabularx}{\textwidth}{lXXX}
+\toprule
+\textbf{Artifact} & \textbf{Access} & \textbf{Purpose} & \textbf{Retention} \\
+\midrule
+Raw sequences \& metadata & Restricted (RBAC) & Inference, audit & 12 months (renewable by DSA) \\
+Derived embeddings & Restricted & Reproducibility, drift audits & 24 months \\
+Alert logs (\emph{AuditCard}) & Restricted & Oversight, incident response & 36 months \\
+Public summaries & Public & Transparency & Indefinite \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Decision Governance and Pre-Registered Policies}
+\label{sec:policies}
+We separate \emph{model estimation} from \emph{decision policy}. Thresholds on drift ($\theta$), OOD gates ($\tau_{\text{OOD}}$), and conformal-width limits ($w_{\max}$) are pre-registered per evaluation window and updated only at scheduled reviews. The cost matrix in Table~\ref{tab:cost} is set by the competent authority; operating thresholds are then selected by maximizing per-sample expected utility in Equation~\eqref{eq:EU}. Regional threshold pooling uses the shrinkage rule in Section~\ref{sec:cost-benefit} to avoid overfitting in data-sparse regions.
+
+\paragraph{Cross-border coordination under regional thresholds.}
+Because $\tilde{\theta}_r$ varies by region, a variant may trigger in one jurisdiction but not a neighbor. To avoid blind spots, any event with $D(t)$ exceeding the \emph{global} $\theta^\star$ (regardless of $\tilde{\theta}_r$) is mirrored to a cross-border watchlist and routed to designated contacts under multilateral DSAs for coordinated assessment.
+
+\subsection{Negative-Control Catalog (Operations)}
+\label{sec:nc-catalog}
+Maintain a \emph{Negative-Control Catalog} of high-$D$ variants that later failed to dominate (from protocolized analyses in Section~\ref{sec:baselines}), including pattern descriptors (e.g., epitope clusters, structural penalties, sampling artifacts) and their adjudications. Governance:
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+\item \textbf{Ownership and updates.} Curated by the ML Lead and Policy Lead; updated quarterly and after major incidents; reviewed by the ORB and IESB.
+\item \textbf{Usage.} Consulted during alert adjudication (Algorithm~\ref{alg:governance}) to flag recurrent false-positive motifs. It is not a blacklist; entries inform human judgment and may be overruled with justification.
+\item \textbf{Traceability.} Each entry includes provenance (time-slice, datasets), confounder assessment, and links to laboratory follow-up where available. Specification is in Supplementary Materials~S7.
+\end{itemize}
+
+\subsection{Abstention Monitoring and Fallback Surveillance}
+\label{sec:abstention-monitoring}
+Abstentions reduce overconfident extrapolation but can produce “silent” periods with few alerts. We therefore monitor the joint-policy abstention rate $A(\theta;\tau_{\text{OOD}},w_{\max})$:
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+\item \textbf{Trigger.} If $A(\theta;\tau_{\text{OOD}},w_{\max})$ exceeds a control threshold 
+\[
+T_A(t)=\max\!\big(0.40,\ \mu_A(t)+2\sigma_A(t)\big)
+\]
+for two consecutive weekly windows—where $\mu_A,\sigma_A$ are the rolling 8-week mean and standard deviation, respectively—default to intensified conventional surveillance (increase sentinel sequencing, targeted neutralization assays, wastewater monitoring) until uncertainty resolves. Thresholds are reviewed and may be adjusted by the ORB based on retrospective analysis.
+\item \textbf{Public reporting.} Weekly transparency reports include coverage $1-A(\theta;\tau_{\text{OOD}},w_{\max})$ to make abstention visible to stakeholders.
+\end{itemize}
+
+\subsection{Oversight, Accountability, and Auditability}
+\label{sec:oversight}
+Two-layer oversight (templates):
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+\item \textbf{Operational Review Board (ORB)}—approves alert issuance, threshold updates, and incident responses on a scheduled or ad hoc basis.
+\item \textbf{Independent Ethics \& Safety Board (IESB)}—periodic review of dual-use mitigations, equity metrics, and red-team findings; authority to pause deployment. \emph{Constitution}: members nominated by public-health authorities, WHO-collaborating centers, and affected regions; conflict-of-interest disclosures and term limits required. \emph{Funding}: independent multi-party consortium budget (not controlled by the operating entity) with public annual reports.
+\end{itemize}
+
+\noindent\textbf{Dual authorization (two-person integrity).}
+\emph{Tier 2/3 alerts require dual authorization:} the Duty Officer initiates and the ORB Chair (or designated deputy) countersigns prior to issuance. Enforce this by a cryptographic countersignature recorded in the AlertCard and audit log; the RACI matrix (Table~\ref{tab:raci}) reflects this requirement.
+
+\noindent\textbf{Audit artifacts (system-wide vs variant-specific).}
+Each alert produces a cryptographically signed \emph{AlertCard} containing: timestamp; model/version IDs; input digests; $D(t)$; \emph{variant-specific} risk $R$ with confidence intervals; \emph{system-wide} error budget from the latest validation window $((1-\varepsilon_1),(1-\alpha),(1-\xi))$ and coverage $1-A(\theta;\tau_{\text{OOD}},w_{\max})$; abstention rationale (if any); explanation artifacts (redacted per Section~\ref{sec:dualuse}); and the final human decision. Detailed specifications appear in Supplementary Materials~S4--S6 (Model Card, Calibration Dossier, Security/Privacy Datasheet).
+
+\begin{table}[H]
+\centering
+\caption{Governance roles and responsibilities (RACI template).}
+\label{tab:raci}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.5cm}XXXX}
+\toprule
+\textbf{Activity} & \textbf{Responsible} & \textbf{Accountable} & \textbf{Consulted} & \textbf{Informed} \\
+\midrule
+Data ingestion \& QC & Data Lead & ORB Chair & Legal, MOH & IESB \\
+Model training \& evaluation & ML Lead & ORB Chair & Biosafety & IESB \\
+Threshold policy update & Policy Lead & ORB Chair & ML Lead, MOH & IESB \\
+Tier 1 alert issuance & Duty Officer & ORB Chair & ML Lead & MOH \\
+\textbf{Two-person sign-off (Tier 2/3)} & Duty Officer + ORB Chair & ORB Chair & IESB (ad hoc) & MOH \\
+Negative-control catalog maintenance & ML Lead + Policy Lead & ORB Chair & IESB & Public (summary) \\
+Model drift monitoring & ML Lead & ORB Chair & IESB, Policy Lead & All \\
+Abstention override\footnotemark & ORB Chair & IESB Chair & ML Lead, Lab Lead & MOH \\
+Incident response \& rollback & Incident Commander & ORB Chair & IESB, Vendors & Public \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\footnotetext{%
+\textbf{Break-glass policy.} An abstention override is an exceptional procedure permitted only to correct a confirmed false-positive abstention (e.g., a lab-confirmed high-risk variant flagged OOD due to a trivial artifact). It requires unanimous consent from the ORB and IESB chairs and records a cryptographic override annotation in the AlertCard. Overrides do not change model thresholds or gates and are subject to post-incident review.
+}
+
+\subsection{Transparency, Risk Communication, and Release Policy}
+\label{sec:comm}
+Public communications prioritize clarity and harm minimization:
+\begin{enumerate}[leftmargin=*, itemsep=2pt, topsep=2pt]
+\item \textbf{Context.} State that HERALD is decision-support; decisions rest with public-health authorities.
+\item \textbf{Quantified uncertainty.} Report the end-to-end \emph{conditional} confidence bound in Equation~\eqref{eq:condbound} and current coverage $1-A(\theta;\tau_{\text{OOD}},w_{\max})$.
+\item \textbf{Explanations.} Provide coarse-grained attributions (epitope/region level) and convergence evidence; avoid novel combinatorial details (Section~\ref{sec:dualuse}).
+\item \textbf{Action relevance.} Map alerts to tiered actions (Section~\ref{sec:playbook}), linked to local guidance.
+\item \textbf{Versioning.} Include model/card versions, calibration date, and a contact for queries. Specifications in Supplementary Materials~S4--S6.
+\end{enumerate}
+
+\subsection{Equity and Parity Commitments}
+\label{sec:equity}
+Continuously monitor parity in discrimination, calibration (ECE), lead-time, and abstention across geographies and resource settings (Section~\ref{sec:geo}). When gaps are detected, (i) increase hierarchical pooling, (ii) raise abstention (erring on caution) until support improves, and (iii) shift resources (assays, sequencing) toward under-performing regions. DSAs ensure in-country stakeholders control dissemination of alerts derived from their data.
+
+\subsection{Incident Response, Rollback, and Model Update Governance}
+\label{sec:incident}
+Maintain a playbook with triggers and a rollback path to a safe baseline.
+
+\begin{algorithm}[H]
+\caption{Alert Governance Protocol (tiered with safety checks)}
+\label{alg:governance}
+\begin{algorithmic}[1]
+\Require Drift threshold $\theta$, OOD gate $\tau_{\text{OOD}}$, width limit $w_{\max}$
+\If{$S_{\text{OOD}}>\tau_{\text{OOD}}$ or width $>w_{\max}$} \State \textbf{Abstain}; route to lab; log AlertCard; \Return
+\EndIf
+\State Compute $D(t)$, risk $R$, explanations, convergence, and record system-wide error budget \& coverage
+\If{$D(t)\le\theta$} \State \textbf{No alert}; \Return \EndIf
+\State Apply confounder checklist (sampling spikes, NPIs); check recombination consistency (Section~\ref{sec:recomb}); consult Negative-Control Catalog (Section~\ref{sec:nc-catalog})
+\State Map to tier (Watch/Act/Mobilize) per Section~\ref{sec:playbook}
+\If{Tier $\in\{2,3\}$} \State ORB convenes; two-person integrity sign-off; issue alert; mirror to cross-border watchlist if $D(t)>\theta^\star$
+\Else \State Duty Officer issues Tier 1 alert
+\EndIf
+\State Post-issue monitoring: if calibration drift or distortion control limits exceeded (Section~\ref{sec:flattening}), schedule retrain; if high-cost false positives accumulate under stable costs, reassess $\theta$ via Equation~\eqref{eq:EU}
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Operational Overhead and Resourcing}
+\label{sec:overhead}
+Governance introduces overhead that must be budgeted. Cryptographic signing and immutable audit logging add latency; monitoring dashboards add compute. As a design target, overhead should remain in the single-digit percentage range at approximately $10^6$ sequences/day, supported by a small operations team (e.g., 3--6 FTEs at that scale). These are \emph{templates}, not measured outcomes; specific figures belong to systems work outside this manuscript’s scope (see protocols in Section~5).
+
+\subsection{Limitations, Compliance, and Community Engagement}
+\label{sec:limits-ethics}
+HERALD relies on observational data and cannot guarantee causal fitness advantage absent laboratory confirmation; outputs are \emph{advisory}. Compliance with biosafety, privacy, and cross-border data-transfer regulations is mandatory under DSAs. Encourage community feedback via a public issue tracker (for non-sensitive items) and routine stakeholder workshops, especially with low-resource sites.
+
+\subsection{Ethics Checklist (Operational Template)}
+Before issuing an alert:
+\begin{enumerate}[leftmargin=*, itemsep=2pt, topsep=2pt]
+\item \textbf{Support check:} $S_{\text{OOD}}\le\tau_{\text{OOD}}$, width $\le w_{\max}$.
+\item \textbf{Error budget:} report system-wide $(1-\varepsilon_1)$, $(1-\alpha)$, $(1-\xi)$ and coverage $1-A(\theta;\tau_{\text{OOD}},w_{\max})$.
+\item \textbf{Confounders addressed:} sampling/NPIs reviewed; recombination consistency verified; Negative-Control Catalog consulted.
+\item \textbf{Equity review:} parity metrics reported; if gaps, adjust pooling/abstention.
+\item \textbf{Dual-use screen:} coarse attribution only; redact unobserved combinations or OOD details.
+\item \textbf{Governance:} correct RACI sign-offs (including two-person integrity for Tier 2/3); AlertCard finalized; communication pack prepared.
+\end{enumerate}
+
+%========================
+\section{Conclusion}
+%========================
+This manuscript presents \textsc{HERALD} as a \emph{theoretical framework} for geometry-based viral surveillance. The central idea is \emph{construction over traversal}: learn a smooth pullback metric so that Euclidean computations in latent space approximate geodesic distances that reflect antigenic divergence within a bounded-distortion regime. Within this scope, the paper contributes: (i) a construction objective with Jacobian/Laplacian regularization that targets geodesic--Euclidean distortion control; (ii) a probability-integral transform (PIT) fusion of sequence, antigenic, and structural signals into a drift statistic $D(t)$; (iii) a risk mapping with abstention for out-of-distribution regimes; (iv) theory linking margin-to-separation (InfoNCE) to finite-variance escape bounds (Cantelli) and a \emph{conditional} end-to-end dominance lower bound; and (v) pre-registered evaluation protocols that make these statements falsifiable in future work.
+
+\paragraph{What is—and is not—claimed.}
+All results herein are \emph{formal statements under explicit assumptions} (finite variance, leakage control, bounded label noise, and signal informativeness). We do not report empirical performance, latency, or calibration metrics. Appendix~A collects proofs, constants, and algebraic variants of the probability bounds; Section~5 specifies evaluation protocols without numerical outcomes.
+
+\paragraph{Assumptions and their audits.}
+Key assumptions are made explicit (A1–A4) and paired with prospective checks: bounded-distortion is audited via geodesic--Euclidean error profiles; leakage is prevented by time-asymmetric estimation; label noise is stress-tested by pre-registered flips; and signal informativeness is assessed through baseline comparisons and negative controls. If distortion exceeds bounds or support is weak, the framework abstains and routes to laboratory follow-up (Sections~4.7, 4.8, and~5).
+
+\paragraph{Implications and next steps.}
+The theory provides a path from constructed antigenic geometry to decision-relevant predictions with explicit error budgets and safe abstention. The next phase is \emph{prospective validation} under the protocols of Section~5: time-slice replay, streaming emulation, parity audits, recombination gating, and error-budget reporting. Systems questions (throughput, latency, operational overhead) are outside this manuscript’s scope and are to be addressed in future engineering work guided by the governance templates in Section~7.
+
+\paragraph{Limitations.}
+Finite-variance bounds trade exponential for polynomial tails; dominance guarantees compose conditional errors and may weaken when independence fails (a conservative union bound is provided and may be vacuous in some regimes). Geometry can shift abruptly under biology; retraining policies and distortion audits specify when the approximation ceases to hold.
+
+\paragraph{Closing.}
+\textsc{HERALD} is offered as a rigorous blueprint: definitions, assumptions, and guarantees that can be put on the record now, and tested later. By emphasizing construction to endow Euclidean traversal with antigenic meaning—and by insisting on abstention when support is insufficient—the framework aims to make early-warning surveillance principled, interpretable, and auditable.
+
+%========================
+\section*{Acknowledgments}
+The author completed this work independently. No external funding, collaborations, or institutional resources beyond standard employment facilities were used. 
+The author thanks the open scientific community for maintaining publicly available literature, preprint archives, and open-source toolchains that made this theoretical development possible. 
+The views and conclusions expressed are solely those of the author and do not necessarily represent the views of any employer or affiliated organization.
+
+\section*{Author Contributions and Conflicts of Interest}
+All conceptual, mathematical, and written components of \textsc{HERALD} were developed solely by the author. 
+The author declares no competing financial interests or conflicts of interest.
+
+\appendix
+\section{Proofs and Technical Details}
+\label{app:proofs}
+
+\subsection{\quad Proof of Lemma~\ref{lem:margin} (InfoNCE margin $\Rightarrow$ separation)}
+\label{app:lemma}
+
+\paragraph{Population and empirical risks (notation).}
+Let $\mathcal{L}_{\mathrm{NCE}}^{\mathrm{pop}}(\phi)$ denote the population InfoNCE risk and
+$\widehat{\mathcal{L}}_{\mathrm{NCE}}(\phi)$ its empirical counterpart on $n$ i.i.d.\ tuples.
+We use $\gamma\in(0,1)$ for confidence; all ``with high probability'' statements mean probability at least $1-\gamma$.
+
+\paragraph{Setup.}
+For a positive pair $(x,x^+)$ and $K$ negatives $\{x_k^-\}_{k=1}^K$ (assumed i.i.d.; sampling without replacement yields analogous bounds up to $1/K$ corrections), define
+\[
+s_\phi(x,x') \;=\; -\frac{\|f_\phi(x)-f_\phi(x')\|_2^2}{2\,\tau_c^2},\qquad
+\delta(x,x') \;=\; \|f_\phi(x)-f_\phi(x')\|_2,
+\]
+and $\Delta_k \!=\! s_\phi(x,x_k^-) - s_\phi(x,x^+)$.
+Then
+\[
+\mathcal{L}_{\mathrm{NCE}}^{\mathrm{pop}}(\phi)
+\;=\;
+\mathbb{E}\!
+\left[
+\log\!\Big(1 + \sum_{k=1}^{K} e^{\Delta_k}\Big)
+\right].
+\]
+
+\paragraph{Definitions used in the bound.}
+\begin{itemize}[leftmargin=*, itemsep=2pt, topsep=2pt]
+\item \textbf{Effective score margin}:
+\[
+m_{\mathrm{eff}}(\phi)
+\;:=\;
+\mathbb{E}\Big[s_\phi(x,x^+) - \frac{1}{K}\sum_{k=1}^{K} s_\phi(x,x_k^-)\Big]
+\;=\; \mathbb{E}[s^+ - \bar{s}^-],\qquad \bar{s}^-=\tfrac{1}{K}\sum_{k=1}^{K} s_k^- .
+\]
+\item \textbf{Lipschitz constant on a bounded domain}:
+If $\delta\in[0,D]$ (bounded-distortion regime) and $s'(\delta)=-\delta/\tau_c^2$, then
+\[
+L_{\mathrm{eff}} \;:=\; \sup_{\delta\in[0,D]}|s'(\delta)| \;=\; D/\tau_c^2.
+\]
+\item \textbf{Capacity term and generalization:}
+Assume there exist $c>0$ and a complexity measure $C$ for the loss class such that, with probability $\ge 1-\gamma$,
+\[
+\mathcal{L}_{\mathrm{NCE}}^{\mathrm{pop}}(\phi)
+\;\le\;
+\widehat{\mathcal{L}}_{\mathrm{NCE}}(\phi)
+\;+\; c\,\sqrt{\frac{C+\log(1/\gamma)}{n}}.
+\]
+\item \textbf{Symmetric label noise (A3)}:
+Observed labels are corrupted at rate $\eta<\tfrac12$: the observed positive-pair law is $(1-\eta)P_+ + \eta P_-$ and the observed negative-pair law is $(1-\eta)P_- + \eta P_+$.
+\end{itemize}
+
+\paragraph{Step 1: InfoNCE risk $\Rightarrow$ score margin (AM$\ge$GM/log-sum-exp chain).}
+Since $1+\sum_k e^{\Delta_k} \ge \sum_k e^{\Delta_k}$ and
+$\log\sum_{k} e^{u_k} \ge \log K + \tfrac{1}{K}\sum_k u_k$ (AM$\ge$GM),
+\[
+\log\!\Big(1+\sum_{k=1}^{K} e^{\Delta_k}\Big)
+\;\ge\;
+\log\!\Big(\sum_{k=1}^{K} e^{\Delta_k}\Big)
+\;\ge\;
+\log K \;+\; \frac{1}{K}\sum_{k=1}^{K}\Delta_k.
+\]
+Taking expectations gives
+\begin{equation}
+\label{eq:softmargin}
+\mathcal{L}_{\mathrm{NCE}}^{\mathrm{pop}}(\phi) \;\ge\; \log K \;-\; m_{\mathrm{eff}}(\phi)
+\qquad\Rightarrow\qquad
+m_{\mathrm{eff}}(\phi) \;\ge\; \log K \;-\; \mathcal{L}_{\mathrm{NCE}}^{\mathrm{pop}}(\phi).
+\end{equation}
+\emph{(Tighter variant.)} One can also show $\mathcal{L}_{\mathrm{NCE}}^{\mathrm{pop}}(\phi)\ge \log(1+K e^{-m_{\mathrm{eff}}(\phi)})$, which implies the monotone relation $m_{\mathrm{eff}}\ge \log K - \log(e^{\mathcal{L}}-1)$; the linear form \eqref{eq:softmargin} suffices here.
+
+\paragraph{Step 2: Generalization (population vs. empirical).}
+With probability $\ge 1-\gamma$,
+\[
+\mathcal{L}_{\mathrm{NCE}}^{\mathrm{pop}}(\phi)
+\;\le\;
+\widehat{\mathcal{L}}_{\mathrm{NCE}}(\phi)
+\;+\;
+c\,\sqrt{\frac{C+\log(1/\gamma)}{n}}.
+\]
+Combining with \eqref{eq:softmargin} for an empirical minimizer $\hat\phi$ yields
+\begin{equation}
+\label{eq:meff-lower}
+m_{\mathrm{eff}}(\hat\phi)
+\;\ge\;
+\log K \;-\; \widehat{\mathcal{L}}_{\mathrm{NCE}}(\hat\phi)
+\;-\; c\,\sqrt{\frac{C+\log(1/\gamma)}{n}}.
+\end{equation}
+\emph{Small-loss clarification.} When both the empirical risk $\widehat{\mathcal{L}}_{\mathrm{NCE}}(\hat\phi)$ and the capacity term $c\sqrt{(C+\log(1/\gamma))/n}$ are $\ll 1$ (well-separated regime), the bound is non-vacuous and tightens linearly in $\log K$.
+
+\paragraph{Step 3: Score margin $\Rightarrow$ distance separation (Lipschitz step).}
+Since $s(\delta)=-\delta^2/(2\tau_c^2)$ is strictly decreasing with derivative $s'(\delta)=-\delta/\tau_c^2$, for any $u,v\in[0,D]$:
+\[
+s(u)-s(v) \;=\; \frac{v^2-u^2}{2\tau_c^2}
+\;=\; \frac{(v-u)(v+u)}{2\tau_c^2}
+\;\le\; \frac{D}{\tau_c^2}\,(v-u)
+\;=\; L_{\mathrm{eff}}\,(v-u).
+\]
+Apply with $u=\delta(x,x^+)$ and $v=\tfrac{1}{K}\sum_k \delta(x,x_k^-)$ and take expectations to get
+\begin{equation}
+\label{eq:pop-gap}
+\Delta\;:=\;\mathbb{E}[\delta\mid Y=-]-\mathbb{E}[\delta\mid Y=+]
+\;\ge\;
+\frac{m_{\mathrm{eff}}(\phi)}{L_{\mathrm{eff}}}.
+\end{equation}
+
+\paragraph{Step 4: Symmetric label noise $\eta$.}
+Under A3, the observed margin contracts by $(1-2\eta)$:
+$m_{\mathrm{eff}}^{\text{noisy}}=(1-2\eta)\,m_{\mathrm{eff}}^{(0)}$.
+Combining with \eqref{eq:pop-gap} gives
+\[
+\Delta^{(\eta)} \;\ge\; \frac{(1-2\eta)}{L_{\mathrm{eff}}}\,m_{\mathrm{eff}}^{(0)}.
+\]
+Substituting \eqref{eq:meff-lower} yields the finite-sample form with an optional $O(\eta)$ slack.
+
+\paragraph{Connection to Lemma~\ref{lem:margin}.}
+Equation~\eqref{eq:pop-gap} is the population statement $\Delta \ge m_{\mathrm{eff}}/L_{\mathrm{eff}}$ claimed in Lemma~\ref{lem:margin}. Step~2 supplies the $O(\sqrt{C/n})$ term via uniform convergence, and Step~4 provides the label-noise correction. Writing $a=1/L_{\mathrm{eff}}=\tau_c^2/D$ and bundling constants gives the corollary form used in Section~4.6:
+\[
+\Delta \;\ge\; a\,\log K \;-\; b\,\sqrt{C/n} \;-\; O(\eta).
+\]
+\hfill$\square$
+
+\paragraph{Remarks.}
+\emph{(i) Well-separated regime.} The bound becomes informative when $\widehat{\mathcal{L}}_{\mathrm{NCE}}(\hat\phi)$ and the capacity term are small; when $\widehat{\mathcal{L}}_{\mathrm{NCE}}\approx \log(K+1)$ (random scores), the bound is vacuous.\\
+\emph{(ii) Negatives.} The i.i.d.\ negative sampling assumption simplifies exposition; batch sampling without replacement (e.g., SimCLR/MoCo) yields similar bounds with $O(1/K)$ corrections.\\
+\emph{(iii) Explicit constants.} Appendix~A.2 provides explicit expressions and typical numerical ranges for $a(\tau_c,D)=\tau_c^2/D$ and $b(\cdot)$ that appear in the simplified corollary.
+
+
+\subsection{Explicit constants in the corollary}
+\label{app:constants}
+Recall from Appendix~A.1 that, on the operational domain $\delta\in[0,D]$,
+the score $s(\delta)=-\delta^2/(2\tau_c^2)$ is $L_{\mathrm{eff}}$-Lipschitz with
+\[
+L_{\mathrm{eff}} \;=\; \frac{D}{\tau_c^2}
+\quad\Rightarrow\quad
+a(\tau_c,D) \;=\; \frac{1}{L_{\mathrm{eff}}} \;=\; \frac{\tau_c^2}{D}.
+\]
+Let the uniform-convergence bound for the InfoNCE risk be
+\[
+\mathcal{L}_{\mathrm{NCE}}^{\mathrm{pop}}(\phi)
+\;\le\;
+\widehat{\mathcal{L}}_{\mathrm{NCE}}(\phi) \;+\; c\,\sqrt{\frac{C+\log(1/\gamma)}{n}},
+\]
+(with the confidence parameter absorbed into the constant), where $C$ is a capacity proxy for the score class. Combining Appendix~A.1 (Steps~1–3) yields the finite-sample separation
+\[
+\Delta \;\ge\; \frac{1}{L_{\mathrm{eff}}}\Big(\log K - \widehat{\mathcal{L}}_{\mathrm{NCE}}(\phi)\Big)
+\;-\; \underbrace{\frac{c}{L_{\mathrm{eff}}}}_{=:~b(\mathcal{F})}\sqrt{\frac{C+\log(1/\gamma)}{n}}
+\;-\; O\!\Big(\tfrac{\eta}{L_{\mathrm{eff}}}\Big).
+\]
+Thus,
+\[
+a(\tau_c,D) \;=\; \frac{\tau_c^2}{D},
+\qquad
+b(\mathcal{F}) \;=\; \frac{c\,\tau_c^2}{D}.
+\]
+
+\paragraph{Example scales (illustrative).}
+For $\tau_c\in[0.05,0.2]$, $D\in[1,5]$, and $K=64$ negatives,
+\[
+a\log K \;=\; \frac{\tau_c^2}{D}\,\log 64 \;\in\; \big[\,2\times 10^{-3},\,1.7\times 10^{-1}\,\big].
+\]
+These ranges are \emph{illustrative only}; no empirical calibration is implied in this manuscript.
+
+
+\subsection{Cantelli bound: odds-form (algebraically equivalent)}
+\label{app:odds}
+Let $\alpha=\mathbb{P}(Y=+\mid \delta>d^\star)$ be the misclassification tail,
+$d^\star=(\mu_++\mu_-)/2$, class priors $\pi_\pm$, and variances
+$\sigma_\pm^2=\mathrm{Var}(\delta\mid Y=\pm)$, with $\Delta=\mu_--\mu_+>0$.
+The \emph{population} (finite-variance) Cantelli argument (Proposition~\ref{prop:cantelli}) is equivalent to the following \emph{odds-form} bound:
+\[
+\frac{\alpha}{1-\alpha}
+\;\le\;
+\frac{\pi_+}{\pi_-}\cdot
+\frac{\sigma_+^2}{(\Delta/2)^2}\cdot
+\frac{\sigma_-^2+(\Delta/2)^2}{\sigma_+^2+(\Delta/2)^2}.
+\]
+In the \emph{finite-sample} setting, add the estimation term $r_n=O\!\big(\sqrt{C/n}\big)$ from uniform convergence:
+\[
+\frac{\alpha}{1-\alpha}
+\;\le\;
+\frac{\pi_+}{\pi_-}\cdot
+\frac{\sigma_+^2}{(\Delta/2)^2}\cdot
+\frac{\sigma_-^2+(\Delta/2)^2}{\sigma_+^2+(\Delta/2)^2}
+\;+\; r_n,
+\]
+which is algebraically equivalent to the nested-fraction form stated in Proposition~\ref{prop:cantelli} and is often numerically friendlier.
+
+\paragraph{When to use odds-form (optional guidance).}
+The odds formulation is numerically stable near the midrange ($\alpha\approx 0.5$), where $\alpha/(1-\alpha)\approx 1$; the direct probability form is sometimes easier for extreme tails ($\alpha\ll 0.1$ or $\alpha>0.9$).
+
+
+\subsection{Independence conditions, union bound, and vacuity}
+\label{app:independence}
+Let $\varepsilon_1$ be the drift-to-distance error (alert $\Rightarrow \delta>d^\star$),
+$\alpha$ the distance-to-escape error (Cantelli tail), and
+$\xi$ the calibration error in the $R\!\to\!s$ link.
+The conditional end-to-end lower bound in Section~4.8 multiplies $(1-\varepsilon_1)(1-\alpha)(1-\xi)$, which holds under approximate conditional independence.
+
+\paragraph{Sufficient conditions (approximate).}
+Approximate conditional independence among $(\varepsilon_1,\alpha,\xi)$ is more plausible when:
+\begin{enumerate}[leftmargin=*, itemsep=2pt, topsep=2pt]
+\item \textbf{Leakage control.} All time-indexed estimators use strictly historical data (time asymmetry) with frozen parameters for forward evaluation.
+\item \textbf{Disjoint estimation for Cantelli.} The Cantelli quantities $(\mu_\pm,\sigma_\pm^2)$ are estimated on a \emph{held-out validation set} of labeled pairs, distinct from (i) the training pairs used to learn $f_\phi$ and (ii) the time windows used for drift-statistic null CDFs and for calibration $g_r$.
+\item \textbf{Window separation.} The windows used to estimate the PIT nulls $F_i(\cdot)$ and those used to fit the calibration map $g_r$ are non-overlapping.
+\item \textbf{Common support via OOD gating.} Evaluation is restricted to variants within the bounded-distortion regime where all three components ($f_\phi$, null CDFs, calibration map) were validated (common support).
+\end{enumerate}
+These are \emph{sufficient} analytical conditions and may not hold in every operational setting.
+
+\paragraph{Abstention residual $\zeta$.}
+The full compositional bound includes a coverage term $(1-\zeta)$, where
+\[
+\zeta \;=\; \Pr(\text{should abstain} \mid \text{did not abstain})
+\]
+is the rate of failing to abstain when OOD or high-uncertainty conditions are present but undetected. In practice, $\zeta$ is controlled by conservative OOD gates $\tau_{\text{OOD}}$ and conformal-width limits $w_{\max}$ (see Section~4.5), and monitored via the abstention policy and triggers in Section~\ref{sec:abstention-monitoring}.
+
+\paragraph{Conservative fallback and vacuity.}
+Without independence,
+\[
+\Pr\!\big[p(t{+}T)\ge P^* \,\big|\, \text{alert issued}\big] \;\ge\; 1-(\varepsilon_1+\alpha+\xi)
+\]
+by the union bound. This lower bound is clipped to $0$ when $\varepsilon_1+\alpha+\xi>1$; in such regimes the bound is vacuous and alerts should be interpreted with caution or abstained pending additional evidence. As a conservative guardrail in prospective evaluations (Section~\ref{sec:protocols}), abstain when a bootstrap estimate on held-out streams suggests $\varepsilon_1+\alpha+\xi>0.7$, providing margin before vacuity.
+
+\end{document}

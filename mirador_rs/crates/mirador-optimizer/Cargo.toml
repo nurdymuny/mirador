@@ -1,0 +1,14 @@
+[package]
+name = "mirador-optimizer"
+version.workspace = true
+edition = "2021"
+
+[dependencies]
+mirador-core = { path = "../mirador-core" }
+mirador-pharmacophore = { path = "../mirador-pharmacophore" }
+mirador-admet = { path = "../mirador-admet" }
+serde.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+approx.workspace = true

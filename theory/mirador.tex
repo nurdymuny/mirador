@@ -1,0 +1,2653 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{authblk}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\newcommand{\Ical}{\mathcal{I}}
+\newcommand{\Dcal}{\mathcal{D}}
+\newcommand{\Rcal}{\mathcal{R}}
+\DeclareMathOperator{\Cert}{Cert}
+\usepackage{xcolor}
+
+% ---------- Macros ----------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\X}{\mathcal{X}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\Pcal}{\mathcal{P}}
+\newcommand{\Acal}{\mathcal{A}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\Prb}{\mathbb{P}}
+\newcommand{\Hit}{\operatorname{Hit}}
+\newcommand{\dg}{d_g}
+\newcommand{\deucl}{\delta}
+\newcommand{\Ycal}{\mathcal{Y}}
+\newcommand{\Ccal}{\mathcal{C}}
+\newcommand{\Hcal}{\mathcal{H}}
+
+\newcommand{\mirador}{\textsc{Mirador}}
+\newcommand{\herald}{\textsc{Herald}}
+\newcommand{\geodesic}{\textsc{Geodesic}}
+\newcommand{\tessera}{\textsc{Tessera}}
+\newcommand{\davis}{\textsc{Davis}}
+
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{assumption}{Assumption}
+
+% ---------- Title & Author ----------
+\title{MIRADOR: Manifold of Immune Receptors And Drift-Optimized Responses\\[4pt]
+Geometry-First Co-Embedding for Vaccine and Antibody Design}
+
+\author[1]{Bee Rosa Davis}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Many high-stakes problems in immunology involve \emph{two} coupled geometries: an antigenic
+landscape traced out by pathogen evolution, and a complementary landscape of immune receptors
+(antibodies, BCRs, TCRs) that must ``meet'' future antigens with sufficient binding energy.
+Prior work in the \davis{} framework models identity-preserving processes as paths on a learned
+Riemannian manifold with bounded geodesic--Euclidean distortion, abstention bands, and
+compositional error budgets for \emph{detection} and \emph{surveillance}.\footnote{See
+Davis manifolds for geometry-first detection and HERALD for viral surveillance. Citations are
+suppressed in this draft to keep notation uncluttered.}
+
+This paper introduces \mirador{}---the \emph{Manifold of Immune Receptors And
+Drift-Optimized Responses}---as the design-side counterpart to geometry-first surveillance.
+If \herald{} is a radar for antigenic drift and \geodesic{} is a filter for cancer signals, then
+\mirador{} is an engineer: given a forecasted family of antigenic paths, it searches a
+co-embedded receptor manifold for panels of antibodies or vaccine payloads that intercept
+those paths with provable coverage guarantees.
+
+Formally, we (i) define \emph{mirror manifolds}: coupled antigen and receptor manifolds
+linked by a complementary co-embedding in which distance approximates \emph{binding free
+energy}, not sequence similarity; (ii) construct contrastive, asymmetrically trained
+co-embeddings that distinguish useless from mismatched receptors and implement a
+lock-and-key geometry via maps $f_A$ and $f_R$ into a shared antigenic space; (iii) introduce
+\emph{inverted error budgets} that bound \emph{minimum efficacy} (coverage of drift paths)
+rather than maximum failure probability, including a vacuity floor where uncertainty forces
+success guarantees back to zero; (iv) cast computational vaccine design as a set cover
+problem on a Riemannian manifold, selecting receptor or payload panels that cover predicted
+path families with certificates of coverage; and (v) incorporate a dual-use ``firewall''
+that constrains \mirador{} to broad-spectrum panels, preventing the system from implicitly
+leaking optimal sequences for unobserved, potentially malicious antigens.
+
+Scope: This manuscript is conceptual. It provides definitions, assumptions, theorems, and
+proposed evaluation protocols but does not report empirical performance, neutralization
+results, or clinical outcomes. Within this scope, \mirador{} extends the \davis{}
+blueprint from passive surveillance to active immune engineering, replacing ``bounded risk
+of failure'' with ``certified lower bounds on success'' wherever the geometry is validated
+and abstaining elsewhere.
+\end{abstract}
+\clearpage
+\section{Introduction}
+
+Modern vaccine design still treats antigenic evolution and immune response as loosely coupled
+problems: we forecast how a virus will move in an antigenic landscape, and separately search for
+antibodies or vaccine payloads that appear promising. This separation is increasingly untenable.
+In systems where viral evolution is gradual and constrained, and where immune receptors adapt
+via affinity maturation, both processes live on structured manifolds and interact through geometry.
+
+Davis manifolds formalize this geometry-first view for detection problems.\footnote{See Davis
+et al.\ for definitions of path families $\Pcal(L)$, distortion profiles $\varepsilon(L)$, and compositional
+error budgets.} A Davis manifold is a Riemannian state space equipped with benign path families,
+bounded geodesic--Euclidean distortion along those paths, and configuration margins tied to
+abstention and error budgets.\ :contentReference[oaicite:0]{index=0}  HERALD instantiates this framework for viral
+surveillance: it constructs an antigenic pullback manifold on sequence space and uses path-wise
+drift statistics, Cantelli bounds, and a compositional error budget to bound dominance risk.\ :contentReference[oaicite:1]{index=1}
+In this sense, HERALD is a \emph{detector}: it forecasts where the pathogen is going and raises
+alerts when drift crosses antigenic margins.
+
+This paper takes the next step: from geometry-first detection to geometry-first \emph{design}.
+We introduce \textbf{MIRADOR} (\emph{Manifold of Immune Receptors And Drift-Optimized
+Responses}) as a mirror-system to HERALD. If HERALD is the radar that tracks the target,
+MIRADOR is the engineer that positions the interceptors. Instead of bounding \emph{risk of failure}
+for a surveillance statistic, MIRADOR aims to bound \emph{probability of success} for candidate
+vaccine panels, under explicit assumptions and with an inverted error budget that collapses to
+zero when geometric or modeling assumptions fail.
+
+At the core of MIRADOR is a \emph{mirror} construction: a pair of coupled manifolds describing
+antigenic drift and immune receptors, co-embedded into a shared ambient space so that distances
+reflect \emph{interaction potential} rather than raw sequence similarity. We refer to this as a system
+of \emph{mirror manifolds} only in a metaphorical sense---complementary antigen--receptor geometry
+in the Davis style, not string-theoretic mirror symmetry.
+
+\paragraph{Key idea.}
+MIRADOR couples three elements:
+(i) a complementary co-embedding of antigens and immune receptors in a shared latent space,
+(ii) a path-wise notion of \emph{interception} for forecast antigenic drift paths by finite receptor
+panels, and (iii) an \emph{inverted} Davis-style error budget that lower-bounds coverage of drift paths
+by vaccine panels, with a hard floor at zero when the geometry or linkage becomes vacuous.
+Formally, MIRADOR views vaccine design as a \emph{set-cover problem on a Riemannian
+manifold}: choose a small set of receptors whose binding neighborhoods cover as much as possible
+of a forecast antigenic path family, subject to geometric distortion and modeling uncertainty.
+
+\subsection{From geometry-first detection to geometry-first design}
+
+Davis manifolds and HERALD treat geometry as the substrate on which surveillance statistics
+are built.\   Construction (contrastive training plus smoothness regularization)
+provides a manifold $(\M, g)$ with path-class-specific distortion bounds $\varepsilon(L)$; traversal uses
+Euclidean surrogates for geodesics inside that bounded-distortion regime; finite-variance Cantelli
+bounds and compositional error budgets turn statistic-level separation into conditional risk
+guarantees.
+
+MIRADOR adopts the same construction–traversal–guarantee pipeline, but with a different
+objective. Instead of asking
+\[
+\text{``How likely is it that a drift path has crossed a configuration margin?''}
+\]
+we ask
+\[
+\text{``Given a forecast family of drift paths and a vaccine panel $V$, how likely is it that
+every such path is intercepted by $V$ within a binding radius?''}
+\]
+Here, interception is a path-wise geometric event (a drift trajectory passing within a binding
+radius of some panel element), and the object of interest is a \emph{coverage} functional $C(V)$
+over path families rather than a misclassification probability for a single observation.
+
+\subsection{Mirror manifolds and complementary co-embedding}
+
+We model antigens and immune receptors as distinct but coupled geometric objects.
+
+\paragraph{State spaces and encoders.}
+Let $\Acal$ denote the space of antigen configurations (e.g., viral spike sequences and structures),
+and $\Rcal$ the space of receptor configurations (e.g., antibody or B-cell receptor sequences with
+associated paratope features). We assume encoders
+\[
+f_A : \Acal \to \mathbb{R}^d, \qquad
+f_R : \Rcal \to \mathbb{R}^d,
+\]
+whose images are endowed with pullback Riemannian metrics $g_A, g_R$ via the Euclidean metric
+on $\mathbb{R}^d$. The resulting manifolds $(\M_A, g_A)$ and $(\M_R, g_R)$ inherit the Davis
+structure: path families $\Pcal_A(L), \Pcal_R(L)$ of ``benign'' identity-preserving trajectories,
+and path-class-specific distortion profiles $\varepsilon_A(L), \varepsilon_R(L)$ that bound geodesic–
+Euclidean distortion along those paths.:contentReference[oaicite:3]{index=3}
+
+Antigenic paths $\Gamma : [0,1] \to \M_A$ represent forecast drift trajectories with Riemannian
+arc length
+\[
+\ell_{g_A}(\Gamma)
+\;=\;
+\int_0^1 \bigl\|\dot{\Gamma}(t)\bigr\|_{g_A}\, dt,
+\]
+so paths are \emph{not} assumed to have unit speed; the horizon constraint $\ell_{g_A}(\Gamma)\le L$
+simply bounds intrinsic path length under $g_A$.
+
+We write
+\[
+u_A(a) := f_A(a) \in \mathbb{R}^d, \qquad
+u_R(r) := f_R(r) \in \mathbb{R}^d,
+\]
+and use the ambient Euclidean distance
+\[
+\delta\bigl(u_A(a), u_R(r)\bigr)
+:= \bigl\|u_A(a) - u_R(r)\bigr\|_2
+\]
+as a proxy, within a bounded-distortion regime, for geodesic separation between antigen and
+receptor manifolds.
+
+\paragraph{Complementary rather than similarity embeddings.}
+Naively co-embedding antigens and receptors and interpreting $\delta(u_A(a), u_R(r))$ as a
+binding score risks conflating complementarity with similarity and admits trivial solutions where
+all receptors collapse to a single latent centroid. MIRADOR therefore interprets $f_R$ as an
+\emph{approximate map to the cognate antigen region}: $u_R(r)$ is trained to approximate the
+location, in antigen space, of the ``platonic'' epitope that $r$ would ideally bind. Symmetrically,
+$f_A$ places antigens so that known cognate receptors lie near their own inferred targets.
+
+Concretely, the complementary structure is enforced via asymmetric contrastive training with
+three classes of negatives:
+(i) non-cognate antigens for a given receptor,
+(ii) antigens that bind \emph{other} receptors (mismatched negatives), and
+(iii) antigens that bind no receptor in the training panel (forcing specificity).
+For each receptor $r$, we push $u_R(r)$ toward its known binding partners in antigen space and
+away from all three negative types. This prevents trivial centroid collapse and encourages $u_R(r)$
+to predict where its cognate antigens live in the antigen manifold (details in
+Section~\ref{sec:mirror-construction}).
+
+\paragraph{From distance to binding and neutralization.}
+Within a calibrated regime, we posit a monotone surrogate map from distance to binding free
+energy,
+\[
+\Phi_{\text{bind}}\!\bigl(\delta(u_A(a), u_R(r))\bigr)
+\;\approx\;
+-\Delta G_{\text{bind}}(a,r),
+\]
+where $\Delta G_{\text{bind}}(a,r) = G_{\text{complex}} - G_{\text{free}}$ is the Gibbs free-energy change on
+binding, so more negative $\Delta G_{\text{bind}}$ means stronger binding. We take
+$\Phi_{\text{bind}}$ to be decreasing so that smaller distances correspond to more favorable (more
+negative) binding free energies.
+
+We then distinguish \emph{binding} from \emph{neutralization} via a separate map
+$\Phi_{\text{neut}}$ from predicted binding to neutralization probability (e.g., via epitope-level and
+Fc-effector features),
+\[
+p_{\text{neut}}(a,r)
+\;=\;
+\Phi_{\text{neut}}\!\Bigl(\Phi_{\text{bind}}\!\bigl(\delta(u_A(a), u_R(r))\bigr),\; \text{context}\Bigr),
+\]
+and emphasize that MIRADOR's formal guarantees apply to neutralization only insofar as
+$\Phi_{\text{neut}}$ is well-calibrated; residual mismatch is absorbed into a linkage error term
+$E_{\text{link}}$ in the error budget.
+
+A binding-distance threshold is defined by inverting $\Phi_{\text{bind}}$ at a pre-registered free-energy
+cutoff:
+\[
+\rho_{\text{bind}}
+\;:=\;
+\Phi_{\text{bind}}^{-1}\!\bigl(\Delta G_{\text{thresh}}\bigr),
+\]
+where, for example, $\Delta G_{\text{thresh}} = -10 \text{ kcal/mol}$ might correspond to a strong-binding
+regime under the chosen calibration.
+
+\subsection{Interception, coverage, and set cover on a manifold}
+
+We formalize vaccine panels as finite receptor sets and use path-wise interception as the basic
+coverage event.
+
+\paragraph{Forecast drift and interception.}
+Let $\Pi_A(L)$ denote a probability distribution over benign antigenic drift paths
+$\Gamma : [0,1]\to \M_A$ with $\ell_{g_A}(\Gamma)\le L$. We think of $\Pi_A(L)$ as a Davis-style
+forecast family:\ it is a law over antigenic trajectories that respect biological plausibility constraints
+(structural viability, fitness thresholds, etc.) to be formalized in Section~\ref{sec:path-families}.
+
+A finite \emph{receptor panel} is a set $V \subset \Rcal$. Its image
+$U_R(V) := \{u_R(r) : r \in V\}$ defines a family of binding neighborhoods in $\mathbb{R}^d$,
+each of radius $\rho_{\text{bind}}$. Given a path $\Gamma$ with time horizon $T_\Gamma$ (e.g., a fixed
+calendar horizon or implicit via arc-length parametrization), we say that $V$ \emph{intercepts}
+$\Gamma$ if at some time $t$ the drift path enters one of these neighborhoods:
+\[
+\Hit(V,\Gamma)
+:= \left\{\exists\, t \in [0, T_\Gamma],\ \exists\, r \in V :
+\delta\bigl(u_A(\Gamma(t)), u_R(r)\bigr) \le \rho_{\text{bind}}\right\}.
+\]
+
+\paragraph{True coverage vs.\ empirical coverage.}
+The \emph{true coverage} of a panel $V$ under the forecast family is the scalar
+\[
+C(V)
+\;:=\;
+\Pr_{\Gamma \sim \Pi_A(L)}\!\bigl(\Hit(V,\Gamma)\bigr),
+\]
+which is a deterministic function of $(V,\Pi_A(L))$ once both are fixed. In practice we can only
+access an empirical estimate $\widehat{C}(V)$ constructed from $N$ sampled paths
+$\{\Gamma_i\}_{i=1}^N \sim \Pi_A(L)$ or from a finite discretization of their state space. A MIRADOR
+\emph{coverage certificate} with target level $C_0$ and confidence $1-\delta$ asserts that, with
+probability at least $1-\delta$ over the sampling and residual model uncertainty,
+\[
+C(V) \;\ge\; C_0,
+\]
+where the gap between the nominal $C_0$ and the true $C(V)$ is controlled by an explicit lower
+bound $L_{\text{MIR}}(V)$ (Section~\ref{sec:inverted-error-budgets}).
+
+\paragraph{Set cover on a Riemannian manifold.}
+To connect algebraically with classical set cover, MIRADOR works with a finite approximation to
+the continuous drift family. We draw a finite set of representative antigenic states
+$\{a_i\}_{i=1}^N$ along drift paths sampled from $\Pi_A(L)$, with sampling density chosen to ensure
+that $|\widehat{C}(V) - C(V)| \le \varepsilon_{\text{samp}}$ with high probability (sampling schemes and
+bounds are detailed in Section~\ref{sec:applications}). For each receptor $r$, define the discrete
+coverage set
+\[
+S_r
+:= \left\{ i \in \{1,\dots,N\} :
+\delta\bigl(u_A(a_i), u_R(r)\bigr) \le \rho_{\text{bind}}\right\}.
+\]
+For a panel $V$, the union $\bigcup_{r\in V} S_r$ is the subset of sampled antigen states intercepted
+by $V$, and the empirical coverage is
+\[
+\widehat{C}(V)
+\;:=\;
+\frac{1}{N}\, \bigl|\bigcup_{r\in V} S_r\bigr|.
+\]
+
+This is exactly a (weighted) set cover problem on a finite ground set:
+given a budget $k$, choose a subset $V$ of receptors with $|V|\le k$ to maximize $\widehat{C}(V)$,
+or, dually, to achieve a target coverage $\widehat{C}(V)\ge \widehat{C}_0$ with minimal $|V|$.
+MIRADOR uses standard greedy algorithms and their classical approximation guarantees in this
+finite setting, then analyzes how those guarantees transfer back to the continuous coverage $C(V)$
+once geometric distortion and sampling error are folded into the error budget.
+
+\subsection{Inverted error budgets and coverage certificates}
+
+HERALD uses a \emph{forward} error budget: when geometric or linkage assumptions become
+vacuous, the system becomes conservative by treating uncertainty as risk (raising or widening
+alerts).\ :contentReference[oaicite:4]{index=4}  MIRADOR must behave differently. When geometry or linkage is vacuous,
+we cannot safely claim that a vaccine panel is good; we must instead declare that we cannot certify
+coverage.
+
+\paragraph{From statistic separation to coverage bounds.}
+As in Davis systems, MIRADOR constructs scalar statistics (here, functions of
+$\widehat{C}(V)$, binding scores, and linkage features) and uses finite-variance Cantelli bounds
+to map statistic-level separation into probability statements. In particular, we define a Cantelli
+term $B_{\text{Cantelli}}(V)$ for a coverage-related statistic, with the usual finite-variance form
+(e.g.,
+$B_{\text{Cantelli}} = 1 - \sigma^2/(\sigma^2 + \Delta^2)$ for variance $\sigma^2$ and separation $\Delta$),
+as in the Davis analysis.\ 
+
+\paragraph{Inverted Davis-style error budget.}
+We then assemble an inverted error budget that decomposes failures into:
+(i) geometry error $E_{\text{geom}}$ (distortion or path-family violations that break distance–binding
+linkage),
+(ii) linkage error $E_{\text{link}}$ (binding and neutralization modeling failures given good geometry),
+(iii) calibration error $\xi$ (mismatch between reported and true coverage probabilities), and
+(iv) abstention failure $\zeta$ (cases where the system should have refused to certify but did not),
+together with an independence slack $\delta_{\text{indep}}$ to account for correlations between these
+error sources, mirroring the Davis and HERALD budgets.\ 
+
+For a panel $V$ and target level $C_0$, a MIRADOR coverage certificate is then backed by a
+lower bound of the form
+\[
+\Pr\!\bigl(C(V) \ge C_0 \;\big|\; \Cert(V, C_0, 1-\delta)\bigr)
+\;\ge\;
+L_{\text{MIR}}(V),
+\]
+with
+\[
+L_{\text{MIR}}(V)
+:= \max\Bigl\{0,\;
+B_{\text{Cantelli}}(V)\,
+\bigl(1-E_{\text{geom}}\bigr)\bigl(1-E_{\text{link}}\bigr)\bigl(1-\xi\bigr)\bigl(1-\zeta\bigr)
+- \delta_{\text{indep}} - \delta\Bigr\}.
+\]
+Here the outer probability is taken over
+(i) estimation noise in $\widehat{C}(V)$ from finite path sampling, and
+(ii) residual epistemic uncertainty in the binding and neutralization models.
+The $\max\{0,\cdot\}$ truncation enforces the desired floor: when geometry or linkage error becomes
+large, or when the Cantelli term collapses, $L_{\text{MIR}}(V)$ goes to zero and no certificate is
+issued. MIRADOR thus offers \emph{certificates of coverage}, not warnings: when assumptions
+fail, the system refuses to certify rather than extrapolating optimistically.
+
+\subsection{Scope, limitations, and dual-use firewall}
+
+\paragraph{Scope and modeling approximations.}
+This manuscript is conceptual. It defines mirror manifolds, complementary co-embeddings,
+interception events, coverage functionals, and inverted error budgets; it states theorems and
+proposes empirical protocols, but reports no empirical vaccine-design performance. Several
+biological complexities are treated as modeling approximations whose errors are absorbed into
+$E_{\text{link}}$ rather than as guaranteed features of the geometry:
+(i) multi-epitope antigens and multi-paratope binding are handled via pooling or mixture models
+over epitope-level distances,
+(ii) conformational dynamics are represented by single conformers or small ensembles in latent
+space, and
+(iii) affinity maturation paths in receptor space are modeled via benign path families
+$\Pcal_R(L)$ rather than fully stochastic dynamics. All guarantees are conditional on the
+assumptions and audits specified later in the paper.
+
+\paragraph{Dual-use and forbidden queries.}
+A system that ties antigenic drift forecasts to receptor design is inherently dual-use: the same
+geometry that helps design broad-coverage vaccines could, in principle, be inverted to search for
+antigens that evade a given panel. MIRADOR is therefore designed with a dual-use firewall:
+
+\begin{itemize}
+  \item \emph{Input-tied optimization only.} Optimization is restricted to receptor panels
+  $V$ and to antigenic states and path families explicitly provided as inputs. MIRADOR does
+  not search over unconstrained antigen sequence space under abstract fitness objectives.
+
+  \item \emph{No generative forecasting of bioweapons.} MIRADOR does not synthesize or rank
+  hypothetical antigens that are not already specified by the user (e.g., as part of a forecast family
+  $\Pi_A(L)$) and does not output stepwise mutation paths or mutation ``recipes.''
+
+  \item \emph{No inverse or evasion queries.} The system refuses inverse queries of the form
+  ``given panel $V$, find antigens that evade it'' or ``optimize an antigen sequence to minimize
+  coverage by $V$.'' Even when a forward model exists that maps $(V,\Pi_A(L))$ to a coverage
+  estimate, MIRADOR does not expose interfaces that allow adversarial inversion to recover
+  high-risk evading sequences.
+
+  \item \emph{Coarse-grained reporting.} Public or shared outputs are restricted to panel-level
+  coverage summaries and coarse geometric attributions (e.g., coverage of drift families or regions),
+  not fine-grained sequence-level recipes or unobserved combinatorial mutation sets.
+\end{itemize}
+
+Within these constraints, MIRADOR is intended as a theoretical capstone for the Davis program:
+Davis manifolds supply the geometry and error budgets;\ :contentReference[oaicite:7]{index=7}  HERALD instantiates
+geometry-first detection for antigenic drift;\ :contentReference[oaicite:8]{index=8}  MIRADOR adds a complementary,
+mirror geometry for immune receptors and extends the Davis framework from bounding risk of
+failure to certifying probability of success for vaccine panels, subject to explicitly stated and
+auditable assumptions.
+
+\paragraph{Contributions.}
+Within this Davis-style perspective, the technical contributions of MIRADOR are:
+\begin{itemize}
+  \item \emph{Complementary mirror manifolds for antigen--receptor co-embedding.}
+  We define coupled Davis manifolds $(\M_A, g_A)$ and $(\M_R, g_R)$ with encoders
+  $f_A, f_R$ trained in an asymmetric contrastive fashion so that receptor embeddings predict
+  locations of cognate antigens, and we formalize benign path families $\Pcal_A(L), \Pcal_R(L)$
+  and distortion profiles $\varepsilon_A(L), \varepsilon_R(L)$ for this co-embedded setting.
+
+  \item \emph{Interception as path-wise coverage.}
+  We formalize interception events $\Hit(V,\Gamma)$ and coverage functionals $C(V)$ over
+  forecast drift families, and show how finite set-cover approximations on sampled path
+  skeletons connect classical greedy set cover guarantees back to continuous coverage
+  under bounded distortion and sampling error.
+
+  \item \emph{Inverted Davis-style error budgets and coverage certificates.}
+  We derive MIRADOR's inverted error budget and associated lower bounds
+  $L_{\text{MIR}}(V)$ for coverage certificates, combining finite-variance Cantelli terms with
+  Davis-style error components $(E_{\text{geom}}, E_{\text{link}}, \xi, \zeta, \delta_{\text{indep}})$ in a way
+  that collapses to zero when geometry or linkage is vacuous.
+
+  \item \emph{Safety and dual-use constraints for geometric design.}
+  We articulate input-tied optimization rules, forbidden inverse query classes, and coarse-grained
+  reporting policies that allow MIRADOR to be analyzed as a geometric design framework
+  without supplying mutation ``recipes'' or antigen-escape optimizers.
+\end{itemize}
+
+The remainder of the paper formalizes these elements: Section~\ref{sec:mirror-construction}
+defines mirror manifolds and complementary co-embedding; Section~\ref{sec:path-families} formalizes
+benign path families and distortion profiles in the co-embedded setting; Section~\ref{sec:inverted-error-budgets}
+derives the inverted error budget and coverage certificates; and
+Section~\ref{sec:applications} sketches how MIRADOR can be instantiated for geometric vaccine
+design problems while respecting the dual-use firewall.
+
+\subsection{Roadmap}
+
+The rest of the paper is organized as follows.
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Section 2 (Conceptual overview).} Introduces the mirror-manifold picture
+  more formally, including the distinction between target and interceptor manifolds, the
+  co-embedding maps $(f_A, f_R)$, and the notion of binding-energy geodesics.
+  \item \textbf{Section 3 (Mirror manifolds: co-embedding).} Defines the mirror manifold,
+  complementary maps, and the binding-energy metric. We show how to construct such
+  manifolds from contrastive binding data with asymmetric negatives and smoothness
+  regularization, yielding bounded-distortion regimes analogous to \davis{} manifolds.
+  \item \textbf{Section 4 (Construction: algorithms and training objectives).} Specifies
+  practical training objectives, including receptor/antigen sampling schemes, the treatment
+  of useless vs.\ mismatched receptors, and regularization strategies that control the
+  curvature and complementarity of the mirror geometry.
+  \item \textbf{Section 5 (Inverted error budgets and certificates of coverage).} Develops
+  the inverted Davis-style error budget, defines coverage certificates for receptor panels,
+  and derives finite-variance lower bounds on success that decompose geometry, linkage,
+  calibration, and abstention errors.
+  \item \textbf{Section 6 (Applications and toy scenarios).} Illustrates how \mirador{}
+  could be instantiated for computational vaccine design, including a toy ``universal flu''
+  scenario framed as a center-of-mass problem on a drift path family, and a set-cover
+  formulation for panel selection.
+  \item \textbf{Section 7 (Safety, dual-use, and governance).} Describes the dual-use
+  firewall in the design loop, including restrictions to broad-spectrum panels, coarse
+  reporting of attributions, and limits on optimization over unobserved antigens.
+  \item \textbf{Section 8 (Discussion and outlook).} Summarizes the role of \mirador{}
+  within the broader \davis{} ecosystem, highlights limitations, and sketches open problems
+  in joint antigen--receptor geometry, multi-modal co-embedding, and real-world validation.
+\end{itemize}
+
+Readers primarily interested in the high-level idea can focus on Sections 2 and 5;
+those interested in the geometry and error budgets may wish to read Sections 3 and 5
+in tandem; safety and governance aspects are collected in Section 7.
+
+\section{Conceptual Overview and Mirror Geometry}
+\label{sec:conceptual-overview}
+
+MIRADOR lives at the ``design'' end of the Davis framework. Where HERALD treats the antigenic manifold as a space to \emph{forecast} viral drift and raise early-warning alerts, MIRADOR couples that geometry to a \emph{receptor} manifold and asks a different question:
+
+\begin{quote}
+  Given a forecast family of benign antigenic drift paths, where must a panel of immune receptors live in a shared geometric space to intercept those paths with certifiable probability?
+\end{quote}
+
+This section gives a coordinate-level overview of that coupling. We first position MIRADOR within the broader Davis suite, then specialize the Davis construction to antigen and receptor manifolds, and finally formalize interception as path-wise coverage in a complementary co-embedding.
+
+\subsection{From forecasting to interception}
+
+At a high level, the Davis suite can be viewed as a progression:
+
+\begin{itemize}
+  \item \textbf{Davis (geometry-first detection).} Provides a general recipe for constructing Riemannian manifolds with path-class-specific distortion bounds, configuration margins, and compositional error budgets for temporal detection tasks.
+
+  \item \textbf{HERALD (radar).} Instantiates a Davis system on viral antigenic drift: a pullback manifold on sequence space, benign mutational paths, and a drift statistic whose separation admits finite-variance escape bounds and a compositional dominance error budget.
+
+  \item \textbf{GEODESIC (filter).} Applies similar ideas to multi-cancer early detection, using geometry to denoise and interpret complex biological signals such as liquid-biopsy readouts.
+
+  \item \textbf{TESSERA (network).} Extends the framework to microbial consortia and supply-chain style networks, modeling how perturbations propagate across coupled latent geometries.
+
+  \item \textbf{MIRADOR (engineer).} Takes the antigen geometry as given and adds a coupled receptor geometry, asking \emph{where} receptors must be placed so that forecasted antigen paths are intercepted with certifiable coverage.
+\end{itemize}
+
+In HERALD, the latent geometry is purely \emph{observational}: the manifold is a state space on which we forecast where pathogens might go. MIRADOR adds a second, coupled manifold of immune receptors and treats it as both \emph{descriptive} (embedding natural repertoires) and \emph{prescriptive} (defining the feasible space of designed receptor panels). The mathematical ``mirror'' between these manifolds is the complementary co-embedding that allows us to talk about interception.
+
+Operationally:
+
+\begin{itemize}
+  \item HERALD answers: \emph{Where is the antigen likely to drift?} (forecasting).
+  \item MIRADOR answers: \emph{Where must a receptor panel live so that forecasted drift paths come within a binding radius?} (interception).
+\end{itemize}
+
+The remainder of this section makes these objects precise in a Davis-style language.
+
+\subsection{Antigen manifold: Davis structure on viral drift}
+\label{sec:antigen-manifold}
+
+We begin by specializing the Davis construction to antigens.
+
+\paragraph{Observation space and encoder.}
+Let $\Acal$ denote the antigen space (e.g., viral spike sequences or sequence--structure pairs). An encoder
+\[
+  f_A : \Acal \to \mathbb{R}^d
+\]
+maps each antigen $a \in \Acal$ to an ambient representation $f_A(a) \in \mathbb{R}^d$. We define the antigen manifold as the image
+\[
+  \M_A := f_A(\Acal) \subset \mathbb{R}^d.
+\]
+On $\M_A$ we equip a Riemannian metric $g_A$ (for example, the pullback metric induced by $f_A$) with geodesic distance $d_{g_A}$. The ambient Euclidean distance is
+\[
+  \delta_A(z, z') := \bigl\| z - z' \bigr\|_2, \qquad z, z' \in \M_A.
+\]
+We assume $\M_A$ is endowed with Davis structure: along appropriate path families (below), geodesic and Euclidean distances remain within a bounded-distortion regime.
+
+We write
+\[
+  u_A(a) := f_A(a) \in \M_A
+\]
+for the antigen state of $a \in \Acal$, and occasionally $z_A$ for a generic point in $\M_A$ when the underlying antigen is not explicit.
+
+\paragraph{Configuration map and coarse labels.}
+MIRADOR inherits the configuration/margin machinery of Davis manifolds. Concretely, we assume:
+
+\begin{itemize}
+  \item A configuration map
+  \[
+    c_A : \M_A \to \mathbb{R}^{p_A}
+  \]
+  summarizing neutralization-relevant features (e.g., cluster coordinates, antigenic principal components, epitope scores).
+
+  \item A coarse label map
+  \[
+    h_A : \mathbb{R}^{p_A} \to \{\text{vax-prox},\text{escape},\text{amb}\},
+  \]
+  where $h_A \circ c_A$ partitions antigen states into vaccine-proximal, escape-like, and ambiguous regions.
+
+  \item Hard and soft configuration margins $0 < \kappa^{(A)}_{\mathrm{hard}} \le \kappa^{(A)}_{\mathrm{soft}}$ that define an ambiguity band between vaccine-like and escape-like regions: inside $\kappa^{(A)}_{\mathrm{hard}}$ we are confident in the coarse label; between $\kappa^{(A)}_{\mathrm{hard}}$ and $\kappa^{(A)}_{\mathrm{soft}}$ the theory recommends abstention.
+\end{itemize}
+
+Let $R^{(A)}_0, R^{(A)}_1 \subset \M_A$ be non-empty closed reference sets summarizing canonical vaccine-proximal and escape-like configurations, respectively. We define the geodesic distance to each set by
+\[
+  d_{g_A}(z, R^{(A)}_y) := \inf_{z' \in R^{(A)}_y} d_{g_A}(z, z'), \qquad y \in \{0,1\}.
+\]
+The margins $(\kappa^{(A)}_{\mathrm{hard}}, \kappa^{(A)}_{\mathrm{soft}})$ are interpreted relative to these reference sets.
+
+\paragraph{Benign antigen paths.}
+\begin{definition}[Benign antigen paths]
+\label{def:benign-antigen-paths}
+A (piecewise) smooth path on $\M_A$ is a map $\Gamma : [0,1] \to \M_A$. Its geodesic length is
+\[
+  \ell_{g_A}(\Gamma) := \int_0^1 \bigl\|\dot{\Gamma}(t)\bigr\|_{g_A} \, dt.
+\]
+For $L > 0$, a family of \emph{benign antigen paths} $\Pcal_A(L)$ is a collection of such paths with
+\[
+  \ell_{g_A}(\Gamma) \le L \quad \text{for all } \Gamma \in \Pcal_A(L),
+\]
+where ``benign'' denotes biologically plausible, identity-preserving trajectories respecting structural viability and fitness constraints (e.g., epitope-restricted mutation paths).
+\end{definition}
+
+In practice, $\Pcal_A(L)$ might consist of epitope-restricted mutation paths with at most $L$ substitutions in a specified epitope set, or more general sequence/structure trajectories constrained by biophysical filters. The path horizon $L$ controls how far HERALD-style forecasting and MIRADOR-style interception are asked to operate.
+
+\paragraph{Pathwise distortion profile and operational horizon.}
+For a path $\Gamma \in \Pcal_A(L)$ and times $0 \le s < t \le 1$ with $d_{g_A}\bigl(\Gamma(s),\Gamma(t)\bigr) > 0$, define the distortion ratio
+\[
+  \rho^{(A)}_\Gamma(s,t)
+  := \frac{\delta_A\bigl(\Gamma(s),\Gamma(t)\bigr)}{d_{g_A}\bigl(\Gamma(s),\Gamma(t)\bigr)}.
+\]
+The distortion radius at horizon $L$ is
+\[
+  \varepsilon_A(L)
+  := \sup_{\Gamma \in \Pcal_A(L)}
+     \;\sup_{\substack{0 \le s < t \le 1\\ d_{g_A}(\Gamma(s),\Gamma(t))>0}}
+     \bigl| \rho^{(A)}_\Gamma(s,t) - 1 \bigr|.
+\]
+A bounded-distortion regime is one in which $\varepsilon_A(L)$ is small over the path horizon of interest. Distortion is audited empirically via such ratios on validation paths rather than computed exactly.
+
+We assume the existence of an \emph{operational horizon} $L_A^\star > 0$ and tolerance $\varepsilon_0 > 0$ such that
+\[
+  \varepsilon_A(L_A^\star) < \varepsilon_0
+\]
+(e.g., $\varepsilon_0 = 0.1$), and distortions beyond $L_A^\star$ are treated as out-of-regime.
+
+\paragraph{Non-vacuity of antigen margins.}
+Let $R_A > 0$ characterize the geodesic scale of the antigen region of interest, for example any radius such that $R^{(A)}_0 \cup R^{(A)}_1$ is contained in a $d_{g_A}$-ball of radius $R_A$ and the system attempts to operate only within a $2R_A$ neighborhood of these references. A Davis-style non-vacuity condition for MIRADOR on the antigen side is
+\begin{equation}
+  \kappa^{(A)}_{\mathrm{soft}} - 2 R_A \,\varepsilon_A(L_A^\star) > 0,
+  \label{eq:antigen-nonvacuity}
+\end{equation}
+ensuring that bounded geodesic--Euclidean distortion along benign paths does not completely erode the soft margin separating vaccine-proximal from escape-like regions.
+
+\subsection{Receptor manifold: descriptive and prescriptive geometry}
+\label{sec:receptor-manifold}
+
+We now introduce an analogous Davis structure on receptors, with an important twist: the receptor manifold is both a description of natural repertoires and a design space for intervention.
+
+\paragraph{Observation space and encoder.}
+Let $\Rcal$ denote the receptor space (e.g., BCR or antibody sequences, possibly with structural annotations). An encoder
+\[
+  f_R : \Rcal \to \mathbb{R}^d
+\]
+maps each receptor $r \in \Rcal$ to an ambient representation $f_R(r) \in \mathbb{R}^d$. The receptor manifold is
+\[
+  \M_R := f_R(\Rcal) \subset \mathbb{R}^d,
+\]
+equipped with a Riemannian metric $g_R$ with geodesic distance $d_{g_R}$ and ambient distance
+\[
+  \delta_R(z, z') := \bigl\| z - z' \bigr\|_2, \qquad z, z' \in \M_R.
+\]
+As on the antigen side, Davis structure is assumed only on a path-restricted regime.
+
+We write
+\[
+  u_R(r) := f_R(r) \in \M_R
+\]
+for the receptor state of $r \in \Rcal$.
+
+\paragraph{Configuration map and coarse labels.}
+The receptor manifold carries its own configuration structure, reflecting which regions correspond to viable, manufacturable, and immunologically reasonable receptors.
+
+\begin{itemize}
+  \item A configuration map
+  \[
+    c_R : \M_R \to \mathbb{R}^{p_R}
+  \]
+  summarizes receptor-relevant features (e.g., developability scores, paratope descriptors, isotype or Fc-engineering choices).
+
+  \item A coarse label map
+  \[
+    h_R : \mathbb{R}^{p_R} \to \{\text{productive},\text{non-viable},\mathrm{amb}\},
+  \]
+  partitioning receptors into productive (developable, on-target), non-viable (e.g., unstable, polyreactive, or otherwise disallowed), and ambiguous regions.
+
+  \item Hard and soft margins $0 < \kappa^{(R)}_{\mathrm{hard}} \le \kappa^{(R)}_{\mathrm{soft}}$ defining a receptor-side ambiguity band analogous to the antigen case.
+\end{itemize}
+
+Let $R^{(R)}_{\mathrm{prod}}, R^{(R)}_{\mathrm{bad}} \subset \M_R$ be non-empty closed reference sets summarizing canonical productive and non-viable receptor configurations, respectively, and define distances $d_{g_R}(z, R^{(R)}_{\cdot})$ analogously.
+
+\paragraph{Benign receptor paths and design moves.}
+\begin{definition}[Benign receptor paths]
+\label{def:benign-receptor-paths}
+A (piecewise) smooth receptor path is a map $\Gamma_R : [0,1] \to \M_R$ with geodesic length
+\[
+  \ell_{g_R}(\Gamma_R) := \int_0^1 \bigl\|\dot{\Gamma}_R(t)\bigr\|_{g_R} \, dt.
+\]
+For $L > 0$, a family of \emph{benign receptor paths} $\Pcal_R(L)$ consists of such paths with $\ell_{g_R}(\Gamma_R) \le L$ that approximate representative affinity-maturation trajectories (smooth approximations to the expected path under stochastic somatic hypermutation and selection) or computational design steps (e.g., rational substitutions, restricted library sampling, or gradient-guided moves in sequence space) subject to biological plausibility and feasibility constraints.
+\end{definition}
+
+As on the antigen side, we define a receptor-side distortion radius $\varepsilon_R(L)$ by taking suprema of distortion ratios $\rho^{(R)}_{\Gamma_R}(s,t)$ along $\Gamma_R \in \Pcal_R(L)$, and an operational horizon $L_R^\star$ with $\varepsilon_R(L_R^\star) < \varepsilon_0$ for some tolerance.
+
+The path families $\Pcal_R(L)$ thus encode not only biological plausibility (e.g., maintaining structural stability, avoiding aggregation) but also practical design constraints (manufacturability, immunogenicity profiles, regulatory precedent), with horizon $L_R^\star$ defining the validated regime where such constraints remain active.
+
+A receptor-side non-vacuity condition analogous to~\eqref{eq:antigen-nonvacuity} ensures that configuration margins on $\M_R$ are not destroyed by bounded distortion:
+\[
+  \kappa^{(R)}_{\mathrm{soft}} - 2 R_R\,\varepsilon_R(L_R^\star) > 0,
+\]
+for some radius $R_R > 0$ characterizing the receptor region of interest.
+
+In contrast to HERALD, where the antigen manifold is purely \emph{observational}, the receptor manifold is both descriptive (embedding natural repertoires to understand existing responses) and prescriptive (defining the feasible space for designed receptors subject to manufacturability, immunogenicity, and safety constraints).
+
+\subsection{Complementary co-embedding and lock-and-key semantics}
+\label{sec:mirror-geometry}
+
+MIRADOR couples $\M_A$ and $\M_R$ through a shared ambient space and an explicitly \emph{complementary} interpretation of distances between antigens and receptors.
+
+\paragraph{Shared ambient space and shorthand notation.}
+We assume $f_A$ and $f_R$ map into the same ambient $\mathbb{R}^d$, so that for $a \in \Acal$ and $r \in \Rcal$ we can define an antigen--receptor distance
+\[
+  \delta\bigl(a, r\bigr) := \bigl\|u_A(a) - u_R(r)\bigr\|_2.
+\]
+When a path $\Gamma$ on $\M_A$ is implicit, we will write
+\[
+  \delta\bigl(\Gamma(t), r\bigr)
+\]
+as shorthand for $\delta\bigl(u_A(\Gamma(t)), u_R(r)\bigr)$ to reduce clutter.
+
+\paragraph{Complementary rather than similarity embeddings.}
+The key MIRADOR assumption is that the shared embedding is \emph{lock-and-key} rather than similarity-based. Informally, $u_A(a)$ represents the antigen in antigen space, while $u_R(r)$ represents the location of the \emph{platonic antigen} that receptor $r$ would ideally bind.
+
+Formally, for antigen--receptor pairs with measured or modeled binding data, we train $f_A$ and $f_R$ so that
+\[
+  \Phi_{\mathrm{bind}}\!\Bigl(\delta\bigl(a,r\bigr)\Bigr)
+  \approx -\Delta G_{\mathrm{bind}}(a,r),
+\]
+where $\Delta G_{\mathrm{bind}}(a,r) = G_{\mathrm{complex}} - G_{\mathrm{free}}$ is the Gibbs free energy change upon binding (negative for favorable binding), and $\Phi_{\mathrm{bind}}$ is a decreasing calibration function so that smaller $\delta$ corresponds to more favorable (more negative) $\Delta G_{\mathrm{bind}}$.\footnote{In practice $\Phi_{\mathrm{bind}}$ can be learned from assay or simulation data and may be modeled as a simple monotone link (e.g., spline or isotonic regression) rather than a fixed analytic form.}
+A binding-distance threshold is then defined as
+\[
+  \rho_{\mathrm{bind}} := \Phi_{\mathrm{bind}}^{-1}\bigl(\Delta G_{\mathrm{thresh}}\bigr),
+\]
+for some pre-registered free-energy cutoff $\Delta G_{\mathrm{thresh}}$ (e.g., $-10\,\mathrm{kcal/mol}$).
+
+Crucially, the complementary structure is enforced via \emph{asymmetric contrastive training}: for each receptor $r$, we push $u_R(r)$ toward its known high-affinity partners in antigen space and away from three kinds of negatives:
+\begin{enumerate}
+  \item non-cognate antigens (no appreciable binding to $r$);
+  \item antigens that bind other receptors but not $r$ (mismatched negatives);
+  \item antigens that bind nothing in the panel (forcing specificity).
+\end{enumerate}
+This negative structure prevents trivial solutions in which all receptors collapse onto a single antigen centroid and is elaborated in the construction section (Section~\ref{sec:mirror-construction}).
+
+\paragraph{Mirror manifolds (terminology).}
+The term ``mirror manifold'' in this work is purely metaphorical: it denotes the complementary, co-embedded pair $(\M_A,\M_R)$ together with the distance-based lock-and-key semantics above. It is not related to mirror symmetry in string theory or Calabi--Yau duals.
+
+\subsection{Interception as path-wise coverage}
+\label{sec:interception-coverage}
+
+With the antigen and receptor manifolds coupled via a complementary co-embedding, MIRADOR defines interception geometrically as path-wise coverage.
+
+\paragraph{Forecasted drift and path distribution.}
+Let $\Pi_A(L)$ denote a forecast distribution over benign antigen drift paths $\Gamma : [0,1] \to \M_A$ drawn from $\Pcal_A(L)$ with $L \le L_A^\star$. This distribution encodes HERALD-style beliefs about where a lineage may drift over a given horizon (e.g., a season or other time window), restricted to the Davis-valid regime.
+
+\paragraph{Hit event and coverage.}
+Given a candidate receptor panel $V \subset \Rcal$, MIRADOR defines the \emph{hit} event for a path $\Gamma$ as
+\[
+  \Hit(V,\Gamma)
+  := \Bigl\{\exists\,t \in [0,1],\ \exists\,r \in V :
+         \delta\bigl(\Gamma(t), r\bigr) \le \rho_{\mathrm{bind}} \Bigr\},
+\]
+i.e., the path passes within the binding radius of at least one receptor in $V$ at some time along its evolution.
+
+The (true) coverage of $V$ under the forecast distribution is then
+\[
+  C(V) := \Pr_{\Gamma \sim \Pi_A(L)}\bigl(\Hit(V,\Gamma)\bigr),
+\]
+a number in $[0,1]$ once $\Pi_A(L)$ and $V$ are fixed. In later sections we will distinguish $C(V)$ from empirical estimates $\widehat{C}(V)$ obtained by sampling a finite number of drift paths from $\Pi_A(L)$ and discretizing them into representative antigenic states.
+
+\paragraph{Geometric set cover viewpoint.}
+At a computational level, the path-wise definition above induces a finite set cover problem on a Riemannian manifold. Sampling $\Gamma^{(1)},\dots,\Gamma^{(N)} \sim \Pi_A(L)$ and discretizing each path into antigenic states $\{a_i\}_{i=1}^N$ with sufficient density to ensure $|\widehat{C}(V) - C(V)| \le \varepsilon_{\mathrm{samp}}$ with high probability, the design problem becomes:
+
+\begin{quote}
+  Choose a panel $V$ of receptors such that each sampled antigen $a_i$ lies within $\rho_{\mathrm{bind}}$ of at least one $r \in V$, while minimizing panel size or maximizing coverage subject to a size budget.
+\end{quote}
+
+This is a geometric set cover problem on $(\M_A,g_A)$: the ``sets'' are receptor-centered balls of radius $\rho_{\mathrm{bind}}$ under the complementary metric, and the ``elements'' are samples from forecast drift paths. MIRADOR leverages standard approximation algorithms for set cover on finite sets (e.g., greedy selection) and then analyzes how their performance lifts back to the underlying continuous drift family once geometric distortion, sampling error, and model uncertainty are folded into an inverted error budget in Section~\ref{sec:inverted-error-budgets}.
+
+\paragraph{Design goals and coverage certificates.}
+In summary, MIRADOR's design goal is to construct receptor panels $V$ that:
+\begin{enumerate}
+  \item \emph{achieve high coverage} $C(V)$ against forecasted drift families of interest; and
+  \item \emph{provide a coverage certificate}: a lower bound on $C(V)$ that accounts for geometric distortion, binding-model uncertainty, sampling error, and linkage error between binding and neutralization.
+\end{enumerate}
+The complementary manifolds $(\M_A,\M_R)$ and the interception event $\Hit(V,\Gamma)$ defined in this section provide the geometric substrate on which those certificates will be constructed in subsequent sections.
+
+
+\section{Mirror Construction: Training the Receptor Manifold and Co-Embedding}
+\label{sec:mirror-construction}
+
+Section~\ref{sec:mirror-geometry} defined the antigen and receptor manifolds
+$(\M_A,g_A)$, $(\M_R,g_R)$, the complementary co-embedding
+$(u_A,u_R)$ of Definition~\ref{def:complementary-coembedding}, and mirror
+path families of Definition~\ref{def:mirror-paths}. In this section we give a
+concrete construction of the receptor side of the mirror geometry:
+we specify training data, loss functions, negative sampling, smoothness
+regularization, and path-generation procedures that jointly produce
+
+\begin{enumerate}
+  \item a Davis-style receptor manifold $(\M_R,g_R,\Pcal_R(L_R^\star),\varepsilon_R(\cdot))$ with bounded distortion along benign receptor paths; and
+  \item a complementary co-embedding $(u_A,u_R)$ whose receptor coordinates
+  behave as “lock–and–key” centers of mass for cognate antigens on a binding
+  in-distribution region.
+\end{enumerate}
+
+We work throughout with the antigen manifold $(\M_A,g_A)$ already constructed
+in Section~\ref{sec:mirror-geometry}, and treat the antigen embedding
+$u_A : \Acal \to \M_A$ as fixed.
+
+\subsection{Binding data, cognate sets, and negative pools}
+
+Let $\Acal$ denote the antigen space and $\Rcal$ the receptor design space
+(e.g., antibody or receptor sequences that satisfy basic manufacturability and
+safety constraints). Let
+\[
+  \Dcal_{\mathrm{bind}} \subseteq \Acal \times \Rcal \times \{0,1\}
+\]
+be a binding dataset of labeled pairs $(a,r,y)$, where $y=1$ denotes
+“binds above a pre-registered affinity threshold” and $y=0$ denotes
+“does not bind above that threshold.”
+We write $(a,r)\in\Dcal_{\mathrm{bind}}^+$ when $y=1$ and
+$(a,r)\in\Dcal_{\mathrm{bind}}^-$ when $y=0$.
+
+For each receptor $r \in \Rcal$ we define its observed cognate and non-cognate
+antigen sets
+\begin{align*}
+  \Acal_r^+ &:= \{ a \in \Acal : (a,r,1) \in \Dcal_{\mathrm{bind}} \},\\
+  \Acal_r^{\mathrm{nc}} &:= \{ a \in \Acal : (a,r,0) \in \Dcal_{\mathrm{bind}} \}.
+\end{align*}
+
+We assume that a subset of receptors has at least one observed positive:
+
+\begin{equation}
+  \Rcal_{\mathrm{train}} := \bigl\{ r \in \Rcal : |\Acal_r^+| \ge 1 \bigr\},
+  \qquad
+  \Acal_r^+ \neq \emptyset \text{ for all } r \in \Rcal_{\mathrm{train}}.
+  \label{eq:Rtrain}
+\end{equation}
+
+Receptors outside $\Rcal_{\mathrm{train}}$ may still be embedded by $u_R$ using
+the base and smoothness losses only (Section~\ref{subsec:receptor-loss}),
+but they are excluded from the center-of-mass and contrastive terms and are
+not used for coverage certificates.\footnote{Receptors with
+$\Acal_r^+ = \emptyset$ can still be embedded by $u_R$ (via $L_{\mathrm{base}}$
+and $L_{\mathrm{smooth}}^{(R)}$), for example to ensure geometric regularity or
+to support other tasks, but they do not contribute to the lock–and–key
+objective or the InfoNCE loss, and panels used for MIRADOR coverage
+certificates are restricted to $V \subseteq \Ical^R$ as defined below.}
+
+We further define two global negative pools in antigen space:
+\begin{align*}
+  \Acal_r^{\mathrm{mm}}
+    &:= \Bigl( \bigcup_{r' \in \Rcal_{\mathrm{train}}\setminus\{r\}} \Acal_{r'}^+ \Bigr)
+        \setminus \Acal_r^+ 
+        &&\text{(mismatched positives: bind other receptors, not $r$)},\\
+  \Acal^{\mathrm{null}}
+    &:= \Bigl\{ a \in \Acal : \forall r' \in \Rcal_{\mathrm{train}},\ (a,r',1)\notin\Dcal_{\mathrm{bind}} \Bigr\}
+        &&\text{(null antigens: bind no training receptor)}.
+\end{align*}
+
+These three sets play distinct roles in the contrastive loss:
+
+\begin{itemize}
+  \item $\Acal_r^{\mathrm{nc}}$ (non-cognate for $r$): “same receptor, non-binding antigen.”
+  \item $\Acal_r^{\mathrm{mm}}$ (mismatched): “antigens that bind something else, not $r$.”
+  \item $\Acal^{\mathrm{null}}$ (null): “antigens that bind nothing in the panel.”
+\end{itemize}
+
+Given a receptor $r\in\Rcal_{\mathrm{train}}$ we define a negative-sampling
+mixture
+\begin{equation}
+  Q_{\mathrm{neg}}(\cdot \mid r)
+    := w_{\mathrm{nc}}\, U(\Acal_r^{\mathrm{nc}})
+     + w_{\mathrm{mm}}\, U(\Acal_r^{\mathrm{mm}})
+     + w_{\mathrm{null}}\, U(\Acal^{\mathrm{null}}),
+  \label{eq:Qneg}
+\end{equation}
+where $U(\cdot)$ denotes the uniform distribution over its argument and
+$w_{\mathrm{nc}},w_{\mathrm{mm}},w_{\mathrm{null}}\ge 0$ with
+$w_{\mathrm{nc}}+w_{\mathrm{mm}}+w_{\mathrm{null}}=1$. In practice we draw a
+mini-batch of negatives $\{a_k^-\}_{k=1}^K$ (e.g.\ $K \in [10,100]$) from
+$Q_{\mathrm{neg}}(\cdot\mid r)$, either uniformly over the three pools or with
+user-chosen weights $(w_{\mathrm{nc}},w_{\mathrm{mm}},w_{\mathrm{null}})$ to emphasize
+particular negative types.
+
+\subsection{Binding in-distribution region}
+\label{subsec:binding-indist}
+
+Let $\delta_A(a,a') := \|u_A(a)-u_A(a')\|_2$ denote the Euclidean distance in
+antigen space (Section~\ref{sec:mirror-geometry}), which approximates geodesic
+distance $d_{g_A}$ in the bounded-distortion regime.
+
+\begin{definition}[Binding in-distribution region]
+\label{def:binding-in-distribution}
+Fix a coverage radius $\eta_A>0$ in antigen space. For each receptor
+$r \in \Rcal_{\mathrm{train}}$, define the antigenic in-distribution neighborhood
+\[
+  \Ical_r^A
+    := \Bigl\{ a \in \Acal :
+         \exists (a',r') \in \Dcal_{\mathrm{bind}}
+         \ \text{with}\ 
+         \delta_A(a,a') \le \eta_A \Bigr\}.
+\]
+The global antigenic in-distribution region for binding is
+\[
+  \Ical^A := \bigcup_{r \in \Rcal_{\mathrm{train}}} \Ical_r^A.
+\]
+We take the receptor in-distribution region for binding to be
+\[
+  \Ical^R := \Rcal_{\mathrm{train}},
+\]
+so that only receptors with at least one observed cognate antigen are used for
+lock–and–key training and coverage certificates. The joint binding
+in-distribution region is
+\[
+  \Omega_{\mathrm{bind}} := \Ical^A \times \Ical^R.
+\]
+\end{definition}
+
+Informally, $\Ical^A$ collects antigenic states lying within a small radius
+$\eta_A$ of antigens observed in binding assays, and $\Ical^R$ collects
+receptors with sufficient coverage. All guarantees in this section are intended
+to hold on $\Omega_{\mathrm{bind}}$; receptors or antigens far from
+$\Omega_{\mathrm{bind}}$ are treated as out-of-distribution for binding and are
+handled by abstention or conservative heuristics.
+
+\subsection{Lock--key interpretation and center-of-mass loss}
+
+Recall from Section~\ref{sec:mirror-geometry} that $u_A(a) := f_A(a)\in\M_A$
+and $u_R(r) := f_R(r)\in\M_R$ denote the antigen and receptor embeddings,
+abusing notation by identifying these with their images in $\R^d$ via the
+coordinate maps. We write $\delta(a,r)$ as shorthand for
+$\delta(u_A(a),u_R(r))$.
+
+\paragraph{Cognate distributions.}
+For each receptor $r\in\Rcal$ we posit an underlying (typically unknown)
+cognate antigen distribution $A_r$ over $\Acal$, defined as the distribution of
+antigens that bind $r$ above a pre-registered affinity threshold
+$\Delta G_{\mathrm{thresh}}$:
+\[
+  A_r(a) \propto \Pr\bigl( \Delta G(a,r) \le \Delta G_{\mathrm{thresh}} \bigr)
+  \quad\text{for } a \in \Acal,
+\]
+where $\Delta G(a,r)$ is the physical binding free energy. In practice we only
+observe a finite set $\Acal_r^+$ of positives and approximate $A_r$ by its
+empirical version supported on $\Acal_r^+$.
+
+Let $w_r(a) \ge 0$ for $a\in\Acal_r^+$ be optional importance weights
+(e.g.\ reflecting assay quality or diversity), normalized so that
+$\sum_{a\in\Acal_r^+} w_r(a)=1$. The empirical center-of-mass of cognate
+antigens in embedding space is
+\begin{equation}
+  \hat{\mu}_r
+    := \sum_{a\in\Acal_r^+} w_r(a)\, u_A(a)
+    \in \M_A.
+  \label{eq:mu-hat}
+\end{equation}
+
+\begin{definition}[Lock--key interpretation]
+For each receptor $r\in\Rcal_{\mathrm{train}}$, the mirror geometry is intended
+to satisfy
+\[
+  u_R(r) \approx \E_{a \sim A_r}\bigl[u_A(a)\bigr],
+\]
+i.e.\ $u_R(r)$ approximates the center-of-mass of its cognate antigen
+distribution in embedding space. In practice this expectation is approximated
+by $\hat{\mu}_r$ from \eqref{eq:mu-hat} using observed cognate antigens
+$\Acal_r^+$.
+\end{definition}
+
+This interpretation motivates a center-of-mass loss
+\begin{equation}
+  L_{\mathrm{cm}}(r;\theta_R)
+    := \bigl\| u_R(r) - \hat{\mu}_r \bigr\|_2^2,
+  \qquad r \in \Rcal_{\mathrm{train}},
+  \label{eq:Lcm}
+\end{equation}
+which encourages $u_R(r)$ to sit near the average of its cognate antigen
+embeddings.
+
+\subsection{Asymmetric contrastive training with negative mixtures}
+\label{subsec:contrastive-R}
+
+We couple the center-of-mass objective with an asymmetric contrastive loss that
+uses the three negative pools in~\eqref{eq:Qneg} to prevent trivial collapse
+solutions.
+
+For a receptor--antigen pair $(r,a)$ we define a similarity score
+\begin{equation}
+  s_{\theta_R}(r,a)
+    := -\frac{\bigl\|u_R(r) - u_A(a)\bigr\|_2^2}{2\,\tau_{\mathrm{bind}}^2},
+  \label{eq:binding-score}
+\end{equation}
+where $\tau_{\mathrm{bind}}>0$ is a temperature parameter that controls the
+scale of the contrastive gradients. In practice $\tau_{\mathrm{bind}}$ can be
+tuned via cross-validation or set to a default (e.g.\ $\tau_{\mathrm{bind}}=0.1$)
+that balances gradient magnitude and numerical stability.
+
+For each positive pair $(r,a^+)$ with $a^+ \in \Acal_r^+$ we draw a mini-batch
+of negatives $\{a_k^-\}_{k=1}^K$ from $Q_{\mathrm{neg}}(\cdot\mid r)$ and
+define a receptor–antigen InfoNCE loss
+\begin{equation}
+  L_{\mathrm{NCE}}^{(R)}(\theta_R)
+  := \E_{(r,a^+) \sim \Dcal_{\mathrm{bind}}^+}
+     \Biggl[
+       -\log
+       \frac{\exp\bigl\{s_{\theta_R}(r,a^+)\bigr\}}
+            {\exp\bigl\{s_{\theta_R}(r,a^+)\bigr\}
+              + \sum_{k=1}^K
+                   \exp\bigl\{s_{\theta_R}(r,a_k^-)\bigr\}}
+     \Biggr].
+  \label{eq:InfoNCE-R}
+\end{equation}
+
+As in standard contrastive learning, small values of
+$L_{\mathrm{NCE}}^{(R)}(\theta_R)$ imply that, on the in-distribution region,
+positive (cognate) pairs receive higher similarity scores and smaller distances
+than negatives by a positive margin, which induces a distance gap in the
+co-embedding.
+
+To make this explicit we define the expected binding distance gap on the
+(binding) in-distribution region $\Omega_{\mathrm{bind}}$:
+
+\begin{equation}
+  \Delta_{\mathrm{bind}}
+    := \inf_{r \in \Ical^R}
+      \Bigl(
+        \E_{a \in \Acal_r^+} \bigl[ \delta(a,r) \bigr]
+        - \E_{a \sim Q_{\mathrm{neg}}(\cdot\mid r)}
+           \bigl[ \delta(a,r) \bigr]
+      \Bigr).
+  \label{eq:Delta-bind}
+\end{equation}
+
+We will assume in Theorem~\ref{thm:receptor-existence} that the trained
+co-embedding achieves a strictly positive gap $\Delta_{\mathrm{bind}}>0$ on
+$\Omega_{\mathrm{bind}}$.
+
+\subsection{Receptor smoothness and benign receptor paths}
+\label{subsec:receptor-paths}
+
+We equip the receptor embedding with a smoothness regularizer
+$L_{\mathrm{smooth}}^{(R)}(\theta_R)$ analogous to the Davis manifold
+construction. On the receptor input space (e.g.\ sequence space) we consider
+either a Jacobian energy
+\begin{equation}
+  L_{\mathrm{smooth}}^{(R)}(\theta_R)
+    := \E_{r \sim \mu_R}
+          \bigl\| \nabla_r u_R(r) \bigr\|_F^2
+  \quad\text{for some reference measure $\mu_R$},
+  \label{eq:smooth-jacobian}
+\end{equation}
+or a graph-Laplacian smoother
+\begin{equation}
+  L_{\mathrm{smooth}}^{(R)}(\theta_R)
+    := \mathrm{Tr}\bigl( F_R^\top L_R F_R \bigr),
+  \quad
+  F_R = [u_R(r_1),\dots,u_R(r_n)]^\top,
+  \label{eq:smooth-laplacian}
+\end{equation}
+where $L_R$ is a $k$NN Laplacian over receptors (or receptor sequences)
+and $\{r_i\}$ are sampled receptors.
+
+As in the Davis existence theorem, increasing the smoothness weight
+$\lambda_R$ shrinks curvature of the pullback metric $g_R$ induced by $u_R$
+on $\M_R$ and yields a receptor distortion profile
+$\varepsilon_R(L)$ along benign receptor paths
+$\Pcal_R(L)$ satisfying
+\[
+  \varepsilon_R(L) \lesssim C_R' K_R(\lambda_R) L,
+\]
+for $L \le L_R^\star$ and some curvature proxy $K_R(\lambda_R)$ that decreases
+with $\lambda_R$.
+
+\paragraph{Generating receptor paths for auditing.}
+In practice, receptor paths for distortion audits and for defining benign
+families $\Pcal_R(L)$ can be constructed from three complementary sources:
+
+\begin{enumerate}
+  \item \emph{Lineage-based paths.} When affinity-maturation lineages are
+    available (germline $\to$ intermediate $\to$ mature), we connect embedded
+    states $u_R(r^{(0)}), u_R(r^{(1)}),\dots$ by geodesic interpolants in
+    $\M_R$ and treat the resulting piecewise-geodesic curves as elements of
+    $\Pcal_R(L)$.
+  \item \emph{Computational design paths.} For sequence-level design, we form
+    paths by chaining small-step mutations that preserve predicted stability
+    and developability scores (e.g.\ no aggregation flags, acceptable
+    biophysical heuristics), and we embed these as curves in $\M_R$.
+  \item \emph{Random-walk paths.} We sample short Riemannian random walks
+    (e.g.\ Brownian bridges) on $\M_R$ starting and ending at productive
+    receptors, filtering out points that leave the productive configuration
+    region under the receptor configuration map $h_R$.
+\end{enumerate}
+
+Distortion along these paths is audited empirically by comparing geodesic and
+Euclidean lengths, as in the Davis framework; we retain only paths for which
+the empirical receptor distortion radius $\varepsilon_R(L_R^\star)$ remains
+below a pre-registered tolerance.
+
+\subsection{Composite receptor loss}
+\label{subsec:receptor-loss}
+
+Putting the pieces together, we train the receptor encoder with a composite
+loss
+\begin{equation}
+  L_R(\theta_R)
+    := \alpha_R L_{\mathrm{base}}(\theta_R)
+     + \beta_R L_{\mathrm{NCE}}^{(R)}(\theta_R)
+     + \gamma_R \E_{r \in \Rcal_{\mathrm{train}}}
+                 \bigl[ L_{\mathrm{cm}}(r;\theta_R) \bigr]
+     + \lambda_R L_{\mathrm{smooth}}^{(R)}(\theta_R),
+  \label{eq:receptor-loss}
+\end{equation}
+where:
+
+\begin{itemize}
+  \item $L_{\mathrm{base}}$ is an \emph{optional} task-specific loss (which may
+    be zero if no auxiliary supervision is available), e.g.\ predicting paratope
+    class, developability scores, or coarse receptor configuration labels;
+  \item $L_{\mathrm{NCE}}^{(R)}$ is the receptor–antigen InfoNCE loss
+    in~\eqref{eq:InfoNCE-R};
+  \item $L_{\mathrm{cm}}$ is the lock–and–key center-of-mass loss
+    in~\eqref{eq:Lcm};
+  \item $L_{\mathrm{smooth}}^{(R)}$ is a smoothness penalty of the form
+    \eqref{eq:smooth-jacobian} or \eqref{eq:smooth-laplacian}.
+\end{itemize}
+
+Weights $(\alpha_R,\beta_R,\gamma_R,\lambda_R)$ control the trade-offs between
+task supervision, binding separation, lock–and–key structure, and geometric
+regularity. We are particularly interested in regimes where $\beta_R$ and
+$\gamma_R$ are large enough to enforce a positive binding margin
+$\Delta_{\mathrm{bind}}>0$ on $\Omega_{\mathrm{bind}}$, and $\lambda_R$ is large
+enough to keep $\varepsilon_R(L_R^\star)$ small.
+
+\subsection{Center-of-mass behavior and collapse avoidance (informal)}
+\label{subsec:cm-informal}
+
+The next proposition summarizes the intended qualitative behavior of the
+composite loss~\eqref{eq:receptor-loss}. It is stated informally, as a
+guiding principle rather than a formal convergence theorem.
+
+\begin{proposition}[Center-of-mass and collapse avoidance (informal)]
+\label{prop:center-of-mass}
+Assume:
+
+\begin{enumerate}
+  \item[(i)] For each receptor $r \in \Rcal_{\mathrm{train}}$, the cognate set
+    $\Acal_r^+$ is drawn from a distribution $A_r$ with finite second moment
+    and non-degenerate support in $\M_A$.
+  \item[(ii)] The antigen embedding $u_A$ is approximately isometric on
+    $\Ical^A$ in the sense of Section~\ref{sec:mirror-geometry}, so that
+    Euclidean averages of $u_A(a)$ are meaningful summaries of $A_r$.
+  \item[(iii)] The negative pools in~\eqref{eq:Qneg} are sufficiently separated
+    from $\Acal_r^+$ so that, in the limit of infinite data, standard InfoNCE
+    analysis yields a positive binding margin $\Delta_{\mathrm{bind}}>0$ on
+    $\Omega_{\mathrm{bind}}$.
+  \item[(iv)] The smoothness weight $\lambda_R$ is chosen so that the receptor
+    distortion profile $\varepsilon_R(L)$ remains below a pre-registered
+    tolerance on $\Pcal_R(L_R^\star)$.
+\end{enumerate}
+
+Then, under regularity conditions (bounded curvature of $(\M_R,g_R)$, sufficient
+capacity, and suitable optimization), any well-optimized solution
+$\theta_R^\star$ to~\eqref{eq:receptor-loss} approximately satisfies:
+
+\begin{enumerate}
+  \item $u_R(r) \approx \hat{\mu}_r$ for each $r \in \Rcal_{\mathrm{train}}$,
+    i.e.\ the lock–and–key center-of-mass constraint is enforced;
+  \item $u_R$ does not collapse receptors to a single antigen embedding:
+    receptors with disjoint cognate sets $\Acal_r^+$ map to distinct regions of
+    $\M_R$, separated by a distance at least proportional to the binding margin
+    $\Delta_{\mathrm{bind}}$.
+\end{enumerate}
+
+In particular, the combination of the center-of-mass loss and the asymmetric
+negative structure in $L_{\mathrm{NCE}}^{(R)}$ prevents trivial solutions where
+all receptors map to a single antigen centroid.
+\end{proposition}
+
+A more formal statement could be derived by adapting standard InfoNCE
+margin-to-separation arguments and convergence analyses for center-of-mass
+objectives under quadratic losses; we leave this to future work and use
+Proposition~\ref{prop:center-of-mass} as an informal guide.
+
+\subsection{Existence of a receptor mirror manifold on the binding in-distribution region}
+\label{subsec:existence-R}
+
+We now state a receptor-side existence theorem that mirrors the Davis
+existence result: under suitable conditions, minimizing the composite loss
+$L_R$ yields a receptor manifold and complementary co-embedding that satisfy
+the mirror-geometry conditions of Definition~\ref{def:complementary-coembedding}
+and the mirror-path conditions of Definition~\ref{def:mirror-paths} on the
+(binding) in-distribution region.
+
+\begin{theorem}[Existence of receptor mirror geometry under composite training]
+\label{thm:receptor-existence}
+Fix antigen and receptor path horizons $L_A^\star>0$, $L_R^\star>0$ and radii
+$R_A,R_R>0$ describing the regions of interest around the antigen and receptor
+reference sets (as in Section~\ref{sec:mirror-geometry}). Assume:
+
+\begin{enumerate}
+  \item[\textnormal{(1)}] \textbf{Antigen-side Davis structure.}
+    The antigen manifold $(\M_A,g_A)$, path family $\Pcal_A(L_A^\star)$, and
+    distortion profile $\varepsilon_A(L)$ satisfy the Davis manifold conditions
+    of Definition~\ref{def:antigen-manifold} on a radius-$R_A$ region containing
+    all relevant antigen states, with
+    $\varepsilon_A(L_A^\star) < \varepsilon_A^{\max}$ and a non-vacuous antigen
+    margin in the sense that
+    \[
+      \kappa_{\mathrm{soft}}^{(A)} - 2R_A \varepsilon_A(L_A^\star) > 0.
+    \]
+
+  \item[\textnormal{(2)}] \textbf{Receptor smoothness and distortion.}
+    The receptor embedding $u_R$ is trained with $L_{\mathrm{smooth}}^{(R)}$
+    such that the receptor distortion profile satisfies
+    \[
+      \varepsilon_R(L) \le C_R'' K_R(\lambda_R) L
+      \quad\text{for } L \le L_R^\star
+    \]
+    along benign receptor paths $\Pcal_R(L)$ in a radius-$R_R$ region
+    containing $\Ical^R$, with $K_R(\lambda_R)$ decreasing in $\lambda_R$.
+    Moreover, the receptor non-vacuity condition holds:
+    \[
+      \kappa_{\mathrm{soft}}^{(R)} - 2 R_R \varepsilon_R(L_R^\star) > 0
+    \]
+    for some receptor-side configuration margins
+    $(\kappa_{\mathrm{hard}}^{(R)},\kappa_{\mathrm{soft}}^{(R)})$ defined as in
+    Section~\ref{sec:mirror-geometry}.
+
+  \item[\textnormal{(3)}] \textbf{Binding margin on the in-distribution region.}
+    The composite loss~\eqref{eq:receptor-loss} is optimized so that, on the
+    binding in-distribution region $\Omega_{\mathrm{bind}}$, the binding
+    distance gap~\eqref{eq:Delta-bind} satisfies
+    \[
+      \Delta_{\mathrm{bind}} > 0,
+    \]
+    i.e.\ for all $r \in \Ical^R$,
+    \begin{equation}
+      \E_{a \in \Acal_r^+}\bigl[ \delta(a,r) \bigr]
+        + \Delta_{\mathrm{bind}}
+      \;\le\;
+      \E_{a \sim Q_{\mathrm{neg}}(\cdot\mid r)}
+        \bigl[ \delta(a,r) \bigr].
+      \label{eq:positive-margin}
+    \end{equation}
+    In addition, the center-of-mass term is small relative to the intrinsic
+    variance of cognate antigen embeddings, in the sense that for all
+    $r \in \Ical^R$
+    \[
+      \bigl\| u_R(r) - \hat{\mu}_r \bigr\|_2^2
+        \ll \Var_{a \sim A_r}\bigl[ u_A(a) \bigr].
+    \]
+
+  \item[\textnormal{(4)}] \textbf{Path support and in-distribution coverage.}
+    Antigen drift and benign receptor paths are supported in the binding
+    in-distribution region in the following sense:
+    \begin{enumerate}
+      \item[(a)] For $\Gamma_A \sim \Pi_A(L_A^\star)$, we have
+        $\Gamma_A(t) \in u_A(\Ical^A)$ for all $t \in [0,1]$ with probability
+        at least $1 - \varepsilon_{\mathrm{path}}$, for some small
+        $\varepsilon_{\mathrm{path}} \in [0,1)$; and
+      \item[(b)] For every $\Gamma_R \in \Pcal_R(L_R^\star)$ we have
+        $\Gamma_R(t) \in u_R(\Ical^R)$ for all $t \in [0,1]$.
+    \end{enumerate}
+\end{enumerate}
+
+Then, for sufficiently large smoothness weight $\lambda_R$ and sufficiently
+large contrastive and center-of-mass weights $(\beta_R,\gamma_R)$, there exists
+a trained receptor encoder $u_R$ such that:
+
+\begin{enumerate}
+  \item[\textnormal{(i)}] The receptor manifold $(\M_R,g_R)$ together with
+    $\Pcal_R(L_R^\star)$ and $\varepsilon_R(\cdot)$ satisfies the Davis
+    manifold conditions of Definition~\ref{def:receptor-manifold} on the
+    radius-$R_R$ region containing $\Ical^R$, with non-vacuous receptor
+    margins $(\kappa_{\mathrm{hard}}^{(R)},\kappa_{\mathrm{soft}}^{(R)})$.
+
+  \item[\textnormal{(ii)}] On the binding in-distribution region
+    $\Omega_{\mathrm{bind}} = \Ical^A \times \Ical^R$, the co-embedding
+    $(u_A,u_R)$ satisfies the complementary co-embedding conditions of
+    Definition~\ref{def:complementary-coembedding} with lock–and–key semantics:
+    $u_R(r)$ lies near the center-of-mass of cognate antigens for each
+    $r \in \Ical^R$, and the binding margin~\eqref{eq:positive-margin}
+    separates cognate from non-cognate antigens.
+
+  \item[\textnormal{(iii)}] For any panel $V \subseteq \Ical^R$ the hit event
+    $\Hit(V,\Gamma_A)$ and coverage $C(V;L_A^\star)$ defined in
+    Section~\ref{sec:mirror-geometry} are well-posed on the support of
+    $\Pi_A(L_A^\star)$.
+
+  \item[\textnormal{(iv)}] These geometric and binding quantities can be
+    computed using Euclidean surrogates and the calibrated binding threshold
+    $\rho_{\mathrm{bind}} = \Phi_{\mathrm{bind}}^{-1}(\Delta G_{\mathrm{thresh}})$
+    in a regime where: (a) geodesic distances are well approximated by ambient
+    Euclidean distances along benign paths (controlled by
+    $\varepsilon_A(L_A^\star)$ and $\varepsilon_R(L_R^\star)$); and (b) the
+    binding model is empirically supported by data on $\Omega_{\mathrm{bind}}$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+Assumption~(1) provides an antigen-side Davis manifold with a non-vacuous
+margin, as in the general Davis existence theorem. Assumption~(2), together
+with the smoothness regularizer, yields a receptor distortion profile
+$\varepsilon_R(L)$ that is linear in $L$ with slope controlled by
+$K_R(\lambda_R)$, and allows $\lambda_R$ to be chosen so that the receptor
+non-vacuity condition holds at horizon $L_R^\star$.
+
+Assumption~(3) combines the InfoNCE term $L_{\mathrm{NCE}}^{(R)}$ and the
+center-of-mass term $L_{\mathrm{cm}}$ to enforce both a positive binding margin
+$\Delta_{\mathrm{bind}}$ and lock–and–key alignment on $\Omega_{\mathrm{bind}}$,
+mirroring Proposition~\ref{prop:center-of-mass}. This yields receptor-side
+configuration margins $(\kappa_{\mathrm{hard}}^{(R)},\kappa_{\mathrm{soft}}^{(R)})$
+and prevents collapse to a single antigen centroid.
+
+Assumption~(4) guarantees that the antigen drift paths of interest and benign
+receptor paths remain in the binding in-distribution region, so that both the
+antigen and receptor distortion bounds apply and the binding model is
+supported by data. Combining the antigen and receptor Davis structures with
+the binding margin and center-of-mass behavior verifies the items in the
+definition of a complementary co-embedding on $\Omega_{\mathrm{bind}}$, and
+ensures that hit events and coverage computations can be carried out using
+Euclidean surrogates within the regime of bounded distortion. A full proof
+would adapt the arguments of the Davis manifold existence theorem to the joint
+antigen–receptor setting; we omit the technical details here.
+\end{proof}
+
+\paragraph{Discussion.}
+Theorem~\ref{thm:receptor-existence} ties together the pieces of MIRADOR's
+mirror construction: InfoNCE with asymmetric negatives, a lock–and–key
+center-of-mass objective, and Davis-style smoothness regularization on the
+receptor side. Under the stated assumptions, these ingredients produce a
+receptor manifold and complementary co-embedding that:
+
+\begin{itemize}
+  \item preserve antigen-side Davis structure on the binding in-distribution
+    region;
+  \item endow receptor coordinates with a meaningful lock–and–key semantics;
+  \item maintain bounded geodesic–Euclidean distortion along both antigen and
+    receptor benign paths; and
+  \item support well-posed hit and coverage computations for panels
+    $V \subseteq \Ical^R$ in a regime where Euclidean computations are
+    geometrically interpretable and supported by data.
+\end{itemize}
+
+The next section leverages this construction to build coverage certificates and
+compositional error budgets for MIRADOR panels.
+
+\section{Applications: Vaccine and Antibody Design on MIRADOR}
+\label{sec:mirador-applications}
+
+We now illustrate how MIRADOR’s mirror geometry and coverage certificates can be used to
+formulate concrete design problems for vaccines and therapeutic antibodies. Throughout, we work
+with the antigen manifold $(\mathcal{M}_A,g_A)$, the receptor manifold $(\mathcal{M}_R,g_R)$, the
+complementary co-embedding $u_A,u_R$, the antigen path family
+$\mathcal{P}_A(L_A^\star)$ at operational horizon $L_A^\star$, and the coverage certificates
+$\underline{C}_{\mathrm{neut}}(V;L_A^\star)$ derived from the inverted error-budget framework.
+
+\subsection{Geometric formulation of vaccine design}
+\label{subsec:geo-vaccine-design}
+
+\paragraph{Vaccine footprints as receptor-like anchors.}
+Consider a candidate vaccine payload or immunogen $\nu$ (e.g., an mRNA-encoded spike or a
+cocktail of antigens). Conceptually, $\nu$ induces a polyclonal antibody repertoire
+$\mathcal{R}_\nu \subseteq \mathcal{R}$, which MIRADOR represents in mirror space via
+$u_R(\mathcal{R}_\nu) \subseteq \mathcal{M}_R$. For design, we summarize this repertoire by a
+finite \emph{vaccine footprint}
+\[
+  V_\nu := \{v_1,\dots,v_K\} \subseteq \mathcal{I}^R \subseteq \mathcal{M}_R,
+\]
+where $\mathcal{I}^R$ is the (binding) in-distribution region on the receptor side, and each
+$v_k$ is a receptor-like anchor that approximates a cluster of elicited neutralizing antibodies.
+A multivalent vaccine or schedule corresponds to a union of such footprints.
+
+\paragraph{Strong path-wise geometric coverage.}
+Let $\Gamma_A \in \mathcal{P}_A(L_A^\star)$ be an antigenic path, and let
+$\delta(a,r) := \delta\bigl(u_A(a),u_R(r)\bigr)$ denote the ambient mirror-space distance.
+For a finite footprint $V \subseteq \mathcal{I}^R$ define the worst-case mirror distance along
+$\Gamma_A$,
+\begin{equation}
+  d_{\max}(\Gamma_A,V)
+  := \sup_{t \in [0,1]} \;\min_{v \in V} \delta\bigl(\Gamma_A(t),v\bigr).
+\end{equation}
+
+\begin{definition}[Strong mirror-space coverage of a path]
+\label{def:strong-path-coverage}
+Fix a coverage radius $\rho_{\mathrm{cov}} \in (0,\rho_{\mathrm{bind}}]$, where $\rho_{\mathrm{bind}}$ is
+the binding radius associated with the affinity threshold
+$\Delta G_{\mathrm{thresh}}$.
+A footprint $V \subseteq \mathcal{I}^R$ \emph{strongly covers} an antigen path
+$\Gamma_A \in \mathcal{P}_A(L_A^\star)$ at radius $\rho_{\mathrm{cov}}$ if
+\begin{equation}
+  d_{\max}(\Gamma_A,V) \;\le\; \rho_{\mathrm{cov}}.
+\end{equation}
+Equivalently, every antigenic state along $\Gamma_A$ lies within mirror-space distance
+$\rho_{\mathrm{cov}}$ of at least one anchor $v \in V$.
+\end{definition}
+
+This is a purely geometric notion: it depends only on $(\mathcal{M}_A,\mathcal{M}_R)$, the
+co-embedding, and the path family. In the probabilistic setting, with a path distribution
+$\Pi_A(L_A^\star)$, we can define a strong-coverage functional
+\begin{equation}
+  C_{\mathrm{cov}}^{\mathrm{strong}}(V;\rho_{\mathrm{cov}})
+  := \Pr_{\Gamma_A \sim \Pi_A(L_A^\star)}
+     \bigl( d_{\max}(\Gamma_A,V) \le \rho_{\mathrm{cov}} \bigr).
+\end{equation}
+
+\paragraph{Worst-case uncovered geodesic distance.}
+In many settings it is also natural to measure the worst-case geodesic distance along a path to
+the nearest vaccine anchor. For $z \in \mathcal{M}_A$ and $V \subseteq \mathcal{M}_R$ define
+\[
+  d_{g_A}(z,V) := \inf_{v \in V} d_{g_A}\bigl(z,v\bigr),
+\]
+where we regard anchors $v$ as living in a common mirror space via the complementary
+co-embedding. A worst-case uncovered distance functional is
+\begin{equation}
+  U_{\mathrm{geo}}(V)
+  := \sup_{\Gamma_A \in \mathcal{P}_A(L_A^\star)}
+     \;\sup_{t \in [0,1]} d_{g_A}\bigl(\Gamma_A(t),V\bigr).
+\end{equation}
+Minimizing $U_{\mathrm{geo}}(V)$ seeks vaccine footprints that keep all plausible drift trajectories
+geodesically close to at least one induced antibody cluster.
+
+\paragraph{Cantelli-based success lower bounds.}
+The geometric notions above connect to neutralization via the binding calibration and inverted
+error budget. Given a vaccine footprint $V \subseteq \mathcal{I}^R$, the MIRADOR pipeline
+associates a \emph{neutralization coverage certificate}
+\begin{equation}
+  \underline{C}_{\mathrm{neut}}(V;L_A^\star)
+  := \bigl[\widehat{C}(V;L_A^\star) - \varepsilon_{\mathrm{samp}}\bigr]_+
+     - \bigl( \overline{E}_{\mathrm{geom}} + \overline{E}_{\mathrm{bind}}
+              + \overline{E}_{\mathrm{link}} \bigr),
+\end{equation}
+where $\widehat{C}$ is the empirical binding-coverage estimate over Monte Carlo antigen paths at
+horizon $L_A^\star$, $\varepsilon_{\mathrm{samp}}$ is a sampling tolerance (e.g., from a Hoeffding
+bound), and $(\overline{E}_{\mathrm{geom}},\overline{E}_{\mathrm{bind}},\overline{E}_{\mathrm{link}})$ are
+conservative upper bounds on the geometric, binding, and linkage error-budget terms. The
+certificate $\underline{C}_{\mathrm{neut}}(V;L_A^\star)$ is a Cantelli-based lower bound on the
+true neutralization coverage $C_{\mathrm{neut}}(V;L_A^\star)$.
+
+\paragraph{Vaccine design as a constrained coverage problem.}
+Let $\mathcal{V}$ denote a class of feasible vaccine footprints (e.g., all $K$-anchor footprints
+induced by realizable immunogens under manufacturing and regulatory constraints), and let
+$C_\star \in (0,1)$ be a target neutralization coverage. MIRADOR expresses vaccine design as
+\begin{equation}
+\label{eq:mirador-vaccine-design}
+  \text{find } V \in \mathcal{V}
+  \quad\text{such that}\quad
+  \underline{C}_{\mathrm{neut}}(V;L_A^\star) \;\ge\; C_\star,
+\end{equation}
+optionally with an additional geometric constraint $U_{\mathrm{geo}}(V) \le R_{\max}$ for a
+pre-registered geodesic radius $R_{\max}$. In practice, one can either:
+\begin{itemize}
+  \item \emph{minimize} $U_{\mathrm{geo}}(V)$ over $\mathcal{V}$ subject to
+        $\underline{C}_{\mathrm{neut}}(V;L_A^\star) \ge C_\star$, or
+  \item \emph{maximize} $\underline{C}_{\mathrm{neut}}(V;L_A^\star)$ subject to
+        $U_{\mathrm{geo}}(V) \le R_{\max}$ and panel-size or manufacturability constraints.
+\end{itemize}
+Equation~\eqref{eq:mirador-vaccine-design} turns the abstract coverage certificate into a concrete
+design requirement.
+
+\subsection{Greedy and relaxed optimization in mirror space}
+\label{subsec:greedy-relaxed}
+
+Solving~\eqref{eq:mirador-vaccine-design} exactly is combinatorial: even with a finite library of
+candidate immunogens, the number of possible footprints $V$ grows rapidly with $K$. MIRADOR
+therefore relies on approximate algorithms that operate directly in mirror space.
+
+\paragraph{Greedy mirror-space covering.}
+Suppose we have a discrete candidate set
+$\mathcal{U} \subseteq \mathcal{I}^R$ of receptor-like anchors induced by a library of immunogens
+(e.g., historical strains, prototype constructs, or outputs of a generative model). Define a set
+function
+\[
+  F(V) := \underline{C}_{\mathrm{neut}}(V;L_A^\star),
+  \qquad V \subseteq \mathcal{U},
+\]
+using a Monte Carlo estimate of $\widehat{C}(V;L_A^\star)$ and a fixed error budget. Because adding
+anchors cannot reduce coverage, $F$ is monotone, and in many regimes it behaves approximately
+submodular.
+
+A simple greedy algorithm initializes $V_0 = \varnothing$ and iteratively chooses
+\[
+  v_{m} \in \arg\max_{v \in \mathcal{U} \setminus V_{m-1}}
+               \bigl( F(V_{m-1} \cup \{v\}) - F(V_{m-1}) \bigr),
+\]
+until a panel-size budget is reached or the marginal gain falls below a tolerance. The output
+$V_M$ is then plugged into the coverage certificate to obtain a MIRADOR-ready vaccine design.
+
+\paragraph{Continuous relaxations and projection back to sequence space.}
+In settings where the design space is not easily enumerated, we can relax the problem by
+optimizing over anchors $z_1,\dots,z_K \in \mathcal{M}_R$ directly:
+\begin{equation}
+\label{eq:relaxed-objective}
+  J(z_1,\dots,z_K)
+  := \mathbb{E}_{\Gamma_A \sim \Pi_A(L_A^\star)}
+      \bigl[ \sigma\bigl(-d_{\max}(\Gamma_A,\{z_1,\dots,z_K\})\bigr) \bigr],
+\end{equation}
+where $\sigma$ is a smooth, monotonically increasing surrogate (e.g., logistic). Riemannian
+gradient ascent on the product manifold $\mathcal{M}_R^K$ yields a set of \emph{ideal} anchors
+$\{z_k^\star\}$ that maximize the surrogate coverage functional.
+
+To obtain realizable immunogens, we then apply a \emph{projection} operator
+$\Pi_{\mathrm{seq}} : \mathcal{M}_R \to \text{Seq}$ that maps each ideal anchor $z_k^\star$ to a
+sequence or construct whose receptor footprint $u_R(\mathcal{R}_{\nu_k})$ lies near $z_k^\star$
+while respecting biophysical and manufacturing constraints. This projection may be implemented
+via nearest-neighbor search in a large design database, via conditional generative models, or via
+local sequence optimization constrained to stay within a small neighborhood of $z_k^\star$.
+
+The resulting footprint
+\[
+  V_{\mathrm{relaxed}} := \Pi_{\mathrm{seq}}(z_1^\star) \cup \dots \cup \Pi_{\mathrm{seq}}(z_K^\star)
+\]
+is then evaluated with the full MIRADOR certificate
+$\underline{C}_{\mathrm{neut}}(V_{\mathrm{relaxed}};L_A^\star)$ and either accepted (if it meets
+$C_\star$) or refined via additional rounds of optimization.
+
+\subsection{Antibody discovery and optimization in mirror space}
+\label{subsec:antibody-design}
+
+MIRADOR also supports design on the receptor side: given a family of antigens (current and
+plausible future states), we can search for therapeutic antibodies or receptor panels that maximize
+certified coverage.
+
+\paragraph{Single-antibody optimization.}
+Let $\mathcal{A}_{\mathrm{focus}} \subseteq \mathcal{A}$ be a set of antigens of interest and
+$\Pi_A(L_A^\star)$ a path distribution supported on their future drift. For a single candidate
+receptor $r$ we can define a success functional
+\begin{equation}
+  J_{\mathrm{single}}(r)
+  := \underline{C}_{\mathrm{neut}}(\{r\};L_A^\star),
+\end{equation}
+where the certificate is computed with $V = \{r\}$ and includes both geometric and binding
+error-budget terms. MIRADOR seeks
+\[
+  r^\star \in \arg\max_{r \in \mathcal{R}_{\mathrm{design}}} J_{\mathrm{single}}(r),
+\]
+where $\mathcal{R}_{\mathrm{design}}$ encodes developability and liability constraints via the
+receptor configuration map and margins (e.g., productive, properly folded, non-autoreactive).
+
+In mirror space this becomes a continuous optimization problem over $z_R = u_R(r) \in \mathcal{M}_R$:
+one can approximate the gradient $\nabla_{z_R} J_{\mathrm{single}}$ by Monte Carlo over antigen
+paths and perform Riemannian gradient ascent, followed by projection back to sequence space via
+an antibody generative model or structure-aware sequence search.
+
+\paragraph{Panel design and benign receptor paths.}
+For therapeutic cocktails we consider panels $W = \{r_1,\dots,r_M\} \subseteq \mathcal{I}^R$ and
+optimize $J_{\mathrm{panel}}(W) := \underline{C}_{\mathrm{neut}}(W;L_A^\star)$ using the same
+greedy or relaxed strategies as for vaccine footprints. An additional degree of freedom is the
+affinity-maturation trajectory of each antibody: benign receptor paths
+$\mathcal{P}_R(L_R^\star)$ in $\mathcal{M}_R$ describe how a germline precursor can evolve under
+somatic hypermutation and selection.
+
+\paragraph{Mirror-aware affinity maturation.}
+Because MIRADOR provides a Riemannian geometry on the receptor side, it suggests
+\emph{mirror-aware} affinity-maturation protocols that follow high-affinity geodesics. Starting from
+a germline seed $r_{\mathrm{germ}}$ with embedding $z_{\mathrm{germ}} = u_R(r_{\mathrm{germ}})$,
+one can:
+\begin{enumerate}
+  \item define a surrogate objective $J_{\mathrm{mat}}(z_R)$ that rewards strong binding along
+        antigen paths (e.g., expected minimum distance to $\Gamma_A(t)$ over $\Pi_A$);
+  \item perform geodesic or gradient-based updates within $\mathcal{P}_R(L_R^\star)$,
+        \[
+          z_R^{(m+1)} = \exp_{z_R^{(m)}}\bigl( \eta \,\mathrm{grad}_{z_R} J_{\mathrm{mat}}(z_R^{(m)}) \bigr),
+        \]
+        with step size $\eta > 0$ and retraction via the Riemannian exponential; and
+  \item map intermediate points $z_R^{(m)}$ back to antibody sequences via structure- or
+        sequence-based generative models.
+\end{enumerate}
+This yields \emph{in vitro} or \emph{in silico} maturation trajectories that explicitly track
+high-affinity regions of mirror space rather than operating blindly in sequence space.
+
+\subsection{Joint design of vaccines and therapeutic cocktails}
+\label{subsec:joint-design}
+
+In many realistic programs vaccines and therapeutic antibodies are deployed together. MIRADOR’s
+mirror geometry naturally supports \emph{joint} design of vaccine footprints and therapeutic panels.
+
+Let $V_{\mathrm{vac}} \subseteq \mathcal{I}^R$ denote the footprint induced by a vaccine strategy
+(e.g., a multivalent mRNA payload plus schedule), and let
+$V_{\mathrm{tx}} \subseteq \mathcal{I}^R$ denote a therapeutic cocktail. For an antigen path
+$\Gamma_A$ define the neutralization hit events
+\[
+  \Hit_{\mathrm{vac}}(\Gamma_A) := \Hit_{\mathrm{neut}}(V_{\mathrm{vac}},\Gamma_A),
+  \qquad
+  \Hit_{\mathrm{tx}}(\Gamma_A)  := \Hit_{\mathrm{neut}}(V_{\mathrm{tx}},\Gamma_A).
+\]
+The joint success event is
+\[
+  \Hit_{\mathrm{joint}}(\Gamma_A)
+  := \Hit_{\mathrm{vac}}(\Gamma_A) \,\vee\, \Hit_{\mathrm{tx}}(\Gamma_A),
+\]
+so that at least one of the two defenses neutralizes the path. The corresponding joint coverage is
+\begin{equation}
+  C_{\mathrm{joint}}(V_{\mathrm{vac}},V_{\mathrm{tx}};L_A^\star)
+  := \Pr_{\Gamma_A \sim \Pi_A(L_A^\star)}
+       \bigl( \Hit_{\mathrm{joint}}(\Gamma_A) \bigr).
+\end{equation}
+Using inclusion–exclusion,
+\[
+  C_{\mathrm{joint}}
+  = C_{\mathrm{neut}}(V_{\mathrm{vac}};L_A^\star)
+    + C_{\mathrm{neut}}(V_{\mathrm{tx}};L_A^\star)
+    - \Pr\bigl( \Hit_{\mathrm{vac}} \wedge \Hit_{\mathrm{tx}} \bigr),
+\]
+and analogous expressions can be written for joint coverage certificates
+$\underline{C}_{\mathrm{joint}}(V_{\mathrm{vac}},V_{\mathrm{tx}};L_A^\star)$ with an additional
+independence-slack term capturing correlations between the two defenses.
+
+A joint design problem then seeks
+\begin{equation}
+\label{eq:joint-design}
+  (V_{\mathrm{vac}}^\star,V_{\mathrm{tx}}^\star)
+  \in \arg\max_{V_{\mathrm{vac}} \in \mathcal{V}_{\mathrm{vac}},
+               \, V_{\mathrm{tx}} \in \mathcal{V}_{\mathrm{tx}}}
+      \underline{C}_{\mathrm{joint}}(V_{\mathrm{vac}},V_{\mathrm{tx}};L_A^\star),
+\end{equation}
+subject to separate constraints on vaccine manufacturability, dosing, and therapeutic
+developability. Geometrically, this encourages vaccine footprints and therapeutic panels to cover
+complementary regions of mirror space, minimizing the probability that an antigenic path lies
+outside the coverage of both.
+
+\subsection{Toy scenarios (conceptual)}
+\label{subsec:toy-scenarios}
+
+The following thought experiments sketch how MIRADOR could be applied in concrete pathogen
+settings; they are conceptual only and do not report empirical results.
+
+\paragraph{SARS-CoV-2: hedging against HERALD-predicted drift.}
+Suppose HERALD has been instantiated on SARS-CoV-2 and provides a path distribution
+$\Pi_A^{\mathrm{S2}}(L_A^\star)$ that captures likely antigenic drift over the next $1$–$2$ years,
+with paths concentrated along RBD-escape and NTD-escape directions. MIRADOR receives this
+distribution and a library $\mathcal{U}_{\mathrm{S2}}$ of candidate spike immunogens (including
+existing and prototype mRNA constructs).
+
+Two design options might be:
+\begin{itemize}
+  \item \emph{Monovalent booster.} Choose a single immunogen $\nu_{\mathrm{mono}}$ whose footprint
+        $V_{\mathrm{mono}}$ is closest (in geodesic distance) to the current dominant variant.
+        This yields very high coverage for short horizons but may leave some HERALD-predicted drift
+        trajectories poorly covered, resulting in a modest
+        $\underline{C}_{\mathrm{neut}}(V_{\mathrm{mono}};L_A^\star)$.
+  \item \emph{Hedged multivalent payload.} Use greedy or relaxed mirror-space optimization to
+        select two or three immunogens $\nu_1,\nu_2,\nu_3$ with footprints
+        $V_{\mathrm{hedge}} = V_{\nu_1} \cup V_{\nu_2} \cup V_{\nu_3}$ that flank the main drift
+        directions in mirror space. This may slightly reduce near-term coverage but increase the
+        certified coverage $\underline{C}_{\mathrm{neut}}(V_{\mathrm{hedge}};L_A^\star)$ across the
+        entire HERALD ensemble.
+\end{itemize}
+MIRADOR makes this trade-off explicit: the design choice is not between “good” and “bad”
+vaccines, but between different shapes of coverage certificates over the path ensemble.
+
+\paragraph{Influenza: universal constructs versus strain-matched vaccines.}
+Consider an H3N2 manifold where historical antigenic drift traces long, roughly linear paths with
+occasional branch jumps. A “universal” construct (e.g., stem-focused HA) induces a footprint
+$V_{\mathrm{univ}}$ near the center of $\mathcal{M}_A$, while strain-matched vaccines induce
+footprints $V_{\mathrm{SM}}(t)$ that chase the currently dominant variant each season.
+
+In MIRADOR, one could:
+\begin{itemize}
+  \item estimate $\Pi_A^{\mathrm{flu}}(L_A^\star)$ from historical and model-based drift;
+  \item compute coverage certificates
+        $\underline{C}_{\mathrm{neut}}(V_{\mathrm{univ}};L_A^\star)$ and
+        $\underline{C}_{\mathrm{neut}}(V_{\mathrm{SM}};L_A^\star)$ under different update cadences; and
+  \item evaluate mixed strategies (e.g., combining a universal primer with periodic strain-matched
+        boosts) as joint designs of the form~\eqref{eq:joint-design}.
+\end{itemize}
+Even without precise numerical values, MIRADOR frames the question geometrically: universal
+constructs may achieve moderate but stable coverage certificates over a broad set of paths, whereas
+purely strain-matched strategies may achieve high short-term coverage but rapidly degrade as
+$\Pi_A^{\mathrm{flu}}$ explores new directions. The mirror geometry and coverage certificates make
+these trade-offs analyzable rather than purely qualitative.
+
+
+\section{Inverted error budgets and coverage certificates}
+\label{sec:inverted-error-budgets}
+
+MIRADOR's construction gives us a mirror geometry and a complementary co-embedding in which
+binding events are modeled by Euclidean distances between antigen and receptor embeddings
+(Definition~\ref{def:complementary-coembedding}). In this section we \emph{invert} the Davis
+error-budget viewpoint: instead of asking how often a detector is correct when it fires, we ask
+how often a receptor panel $V$ neutralizes forecasted antigenic drift paths, and we derive
+\emph{coverage certificates}---lower bounds on neutralization coverage that explicitly account for
+geometry, binding, linkage, and sampling error.
+
+Conceptually, we mirror the Davis error-budget decomposition for detection systems, but with
+escape/detection events replaced by path-wise interception of antigenic drift trajectories by
+designed receptor panels.\footnote{For the original detection-centric error-budget formulation,
+see the Davis manifold framework and HERALD's dominance bounds.}
+
+Throughout this section we fix a path horizon $L \le L_A^\star$ and a forecast distribution
+$\Pi_A(L)$ over benign antigen paths $\Gamma_A : [0,1] \to \mathcal{M}_A$ (Definition~\ref{def:mirror-paths}).
+As in Section~\ref{sec:mirror-geometry}, we write
+\[
+\delta\bigl(\Gamma_A(t),r\bigr)
+\quad\text{as shorthand for}\quad
+\delta\bigl(u_A(\Gamma_A(t)),u_R(r)\bigr),
+\]
+and use the positive part notation $[u]_+ := \max\{u,0\}$.
+
+\subsection{Three levels of coverage and hit events}
+
+We begin by distinguishing three levels of coverage: true neutralization coverage, model-level
+binding coverage, and empirical Monte Carlo coverage.
+
+\begin{definition}[Hit events and coverage levels]
+\label{def:coverage-levels}
+Fix a horizon $L \le L_A^\star$, a receptor panel $V \subseteq \mathcal{R}$, and an antigenic
+drift path $\Gamma_A : [0,1] \to \mathcal{M}_A$ drawn from $\Pi_A(L)$.
+
+\begin{enumerate}
+\item \emph{Binding hit event.} The binding hit event is
+\[
+\Hit_{\mathrm{bind}}(V,\Gamma_A)
+\;:=\;
+\Bigl\{
+\exists\,t \in [0,1],\ \exists\,r \in V :
+\delta\bigl(\Gamma_A(t),r\bigr) \le \rho_{\mathrm{bind}}
+\Bigr\},
+\]
+where $\rho_{\mathrm{bind}} = \Phi_{\mathrm{bind}}^{-1}(\Delta G_{\mathrm{thresh}})$ is the binding-distance
+threshold from Definition~\ref{def:complementary-coembedding}.
+
+\item \emph{Neutralization hit event.} The neutralization hit event
+$\Hit_{\mathrm{neut}}(V,\Gamma_A)$ is the ground-truth event that along the path $\Gamma_A$ there
+exists a time $t$ at which at least one $r \in V$ neutralizes the corresponding antigenic state
+at or above a pre-specified potency threshold (e.g., IC$_{50}$ or fold-drop criterion). This event
+is defined in the underlying biological process or simulator, not by the embedding.
+
+\item \emph{True neutralization coverage.} The \emph{true} coverage of $V$ at horizon $L$ is
+\[
+C_{\mathrm{neut}}(V;L)
+\;:=\;
+\Pr_{\Gamma_A \sim \Pi_A(L)}
+\Bigl(\Hit_{\mathrm{neut}}(V,\Gamma_A)\Bigr).
+\]
+
+\item \emph{Model binding coverage.} The \emph{model-level} binding coverage of $V$ at horizon
+$L$ is
+\[
+C_{\mathrm{bind}}(V;L)
+\;:=\;
+\Pr_{\Gamma_A \sim \Pi_A(L)}
+\Bigl(\Hit_{\mathrm{bind}}(V,\Gamma_A)\Bigr).
+\]
+When the horizon is clear from context we write $C(V;L)$ or simply $C(V)$ for
+$C_{\mathrm{bind}}(V;L)$.
+\end{enumerate}
+\end{definition}
+
+The rest of the section studies how to lower-bound $C_{\mathrm{neut}}(V;L)$ in terms of
+$C_{\mathrm{bind}}(V;L)$ and an empirical estimator of the latter, with an explicit coverage
+error budget.
+
+\subsection{Empirical coverage and sampling tolerance}
+
+In practice, $C_{\mathrm{bind}}(V;L)$ is estimated by Monte Carlo over a finite sample of
+forecasted drift paths.
+
+\begin{definition}[Empirical binding coverage and sampling tolerance]
+\label{def:empirical-coverage}
+Let $\Gamma_A^{(1)},\dots,\Gamma_A^{(B)}$ be i.i.d.\ draws from $\Pi_A(L)$, and define the
+empirical binding coverage of $V$ at horizon $L$ as
+\[
+\widehat{C}(V;L)
+\;:=\;
+\frac{1}{B} \sum_{b=1}^B
+\mathbf{1}\!\Bigl\{
+\Hit_{\mathrm{bind}}\bigl(V,\Gamma_A^{(b)}\bigr)
+\Bigr\}.
+\]
+
+For a target sampling confidence level $\delta_{\mathrm{samp}} \in (0,1)$, we define the
+\emph{sampling tolerance}
+\begin{equation}
+\label{eq:sampling-tolerance}
+\varepsilon_{\mathrm{samp}}
+\;:=\;
+\sqrt{\frac{1}{2B}\,
+\log\!\Bigl(\frac{2}{\delta_{\mathrm{samp}}}\Bigr)}.
+\end{equation}
+By Hoeffding's inequality, with probability at least $1-\delta_{\mathrm{samp}}$ we have
+\[
+\bigl|\widehat{C}(V;L) - C_{\mathrm{bind}}(V;L)\bigr|
+\;\le\;
+\varepsilon_{\mathrm{samp}}.
+\]
+\end{definition}
+
+Thus $\widehat{C}(V;L)$ is an unbiased estimator of $C_{\mathrm{bind}}(V;L)$ with a finite-sample
+confidence band controlled by $\varepsilon_{\mathrm{samp}}$ and $B$.
+
+\subsection{Coverage error budget and independence slack}
+
+We now decompose the discrepancy between $C_{\mathrm{neut}}(V;L)$ and $C_{\mathrm{bind}}(V;L)$ into
+three interpretable model components, and introduce an independence slack that captures
+interactions between them.
+
+For a random path $\Gamma_A \sim \Pi_A(L)$, consider the following ``good'' events:
+
+\begin{itemize}
+\item $G_{\mathrm{geom}}$: the antigen path remains in the validated geometric regime on
+$\mathcal{M}_A$ and within the binding in-distribution region, so that bounded-distortion and
+margin assumptions hold along $\Gamma_A$;
+
+\item $G_{\mathrm{bind}}$: conditional on $G_{\mathrm{geom}}$, the binding surrogate
+$d(\Gamma_A(t),r) \mapsto \Delta G(a(t),r)$ correctly classifies binding vs.~non-binding
+relative to $\Delta G_{\mathrm{thresh}}$ for all $t$ and $r \in V$ of interest;
+
+\item $G_{\mathrm{link}}$: conditional on $G_{\mathrm{geom}} \cap G_{\mathrm{bind}}$, the linkage between
+binding and neutralization holds: if the binding event fires for some $(t,r)$, then so does the
+neutralization event at that point, and vice versa, up to rare linkage failures.
+\end{itemize}
+
+Write $G_{\mathrm{cov}} := G_{\mathrm{geom}} \cap G_{\mathrm{bind}} \cap G_{\mathrm{link}}$ and define the
+marginal coverage error probabilities
+\[
+E_{\mathrm{geom}} := \Pr\bigl(G_{\mathrm{geom}}^{\mathrm{c}}\bigr),\qquad
+E_{\mathrm{bind}} := \Pr\bigl(G_{\mathrm{bind}}^{\mathrm{c}}\bigr),\qquad
+E_{\mathrm{link}} := \Pr\bigl(G_{\mathrm{link}}^{\mathrm{c}}\bigr).
+\]
+
+\begin{definition}[Coverage independence slack]
+\label{def:coverage-independence}
+The \emph{coverage independence slack} $\delta_{\mathrm{indep}}^{\mathrm{cov}} \in [0,1]$ is
+\[
+\delta_{\mathrm{indep}}^{\mathrm{cov}}
+\;:=\;
+\Bigl[
+(1 - E_{\mathrm{geom}})(1 - E_{\mathrm{bind}})(1 - E_{\mathrm{link}})
+- \Pr\bigl(G_{\mathrm{cov}}\bigr)
+\Bigr]_+,
+\]
+where $[u]_+ := \max\{u,0\}$ denotes the positive part.
+\end{definition}
+
+If $G_{\mathrm{geom}}, G_{\mathrm{bind}}, G_{\mathrm{link}}$ are independent, then
+$\Pr(G_{\mathrm{cov}}) = \prod (1-E_{\bullet})$ and
+$\delta_{\mathrm{indep}}^{\mathrm{cov}} = 0$. When these events tend to fail together, the actual
+good-event probability $\Pr(G_{\mathrm{cov}})$ may be smaller than the product, and
+$\delta_{\mathrm{indep}}^{\mathrm{cov}}$ measures this shortfall.
+
+\subsection{Compositional coverage bounds}
+
+We can now state a compositional bound that lower-bounds true neutralization coverage in terms
+of empirical binding coverage and the coverage error budget.
+
+\begin{theorem}[Compositional coverage bound]
+\label{thm:coverage-bound}
+Fix a horizon $L \le L_A^\star$ and a panel $V \subseteq \mathcal{R}$. Let
+$C_{\mathrm{neut}}(V;L)$ and $C_{\mathrm{bind}}(V;L)$ be as in
+Definition~\ref{def:coverage-levels}, and let $\widehat{C}(V;L)$ and
+$\varepsilon_{\mathrm{samp}}$ be as in Definition~\ref{def:empirical-coverage}.
+
+Assume:
+\begin{enumerate}
+\item (\emph{Geometric validity}) The Davis mirror-geometry assumptions hold on the
+forecast distribution $\Pi_A(L)$ with failure probability at most $E_{\mathrm{geom}}$; that is,
+$\Pr(G_{\mathrm{geom}}^{\mathrm{c}}) \le E_{\mathrm{geom}}$.
+
+\item (\emph{Binding-model validity}) Conditional on $G_{\mathrm{geom}}$, the binding surrogate
+correctly classifies binding above/below $\Delta G_{\mathrm{thresh}}$ with failure probability at most
+$E_{\mathrm{bind}}$.
+
+\item (\emph{Binding--neutralization linkage}) Conditional on
+$G_{\mathrm{geom}} \cap G_{\mathrm{bind}}$, the neutralization hit event agrees with the binding hit
+event with failure probability at most $E_{\mathrm{link}}$.
+
+\item (\emph{Sampling}) The empirical coverage is computed from $B$ i.i.d.\ draws from
+$\Pi_A(L)$, and $\varepsilon_{\mathrm{samp}}$ is chosen according to
+\eqref{eq:sampling-tolerance}, so that with probability at least $1-\delta_{\mathrm{samp}}$,
+\[
+\bigl|\widehat{C}(V;L) - C_{\mathrm{bind}}(V;L)\bigr| \le \varepsilon_{\mathrm{samp}}.
+\]
+\end{enumerate}
+
+Then, with probability at least $1-\delta_{\mathrm{samp}}$ over the Monte Carlo sampling,
+\begin{equation}
+\label{eq:coverage-additive}
+C_{\mathrm{neut}}(V;L)
+\;\ge\;
+\bigl[\widehat{C}(V;L) - \varepsilon_{\mathrm{samp}}\bigr]_+
+\;-\;
+\bigl(E_{\mathrm{geom}} + E_{\mathrm{bind}} + E_{\mathrm{link}}\bigr),
+\end{equation}
+and, moreover,
+\begin{equation}
+\label{eq:coverage-multiplicative}
+C_{\mathrm{neut}}(V;L)
+\;\ge\;
+\bigl[\widehat{C}(V;L) - \varepsilon_{\mathrm{samp}}\bigr]_+
+\Bigl(
+(1 - E_{\mathrm{geom}})(1 - E_{\mathrm{bind}})(1 - E_{\mathrm{link}})
+- \delta_{\mathrm{indep}}^{\mathrm{cov}}
+\Bigr),
+\end{equation}
+where $\delta_{\mathrm{indep}}^{\mathrm{cov}}$ is the coverage independence slack from
+Definition~\ref{def:coverage-independence}. In regimes where the right-hand side of
+\eqref{eq:coverage-multiplicative} is negative, it is clipped at zero.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+On the coverage-good event $G_{\mathrm{cov}}$, the binding and neutralization hit events coincide
+along each path, so $C_{\mathrm{neut}}(V;L)$ and $C_{\mathrm{bind}}(V;L)$ differ only on
+$G_{\mathrm{cov}}^{\mathrm{c}}$. A union bound over the three failure modes yields
+\[
+C_{\mathrm{neut}}(V;L)
+\;\ge\;
+C_{\mathrm{bind}}(V;L) - \bigl(E_{\mathrm{geom}} + E_{\mathrm{bind}} + E_{\mathrm{link}}\bigr).
+\]
+Substituting the sampling inequality
+$C_{\mathrm{bind}}(V;L) \ge \widehat{C}(V;L) - \varepsilon_{\mathrm{samp}}$ and truncating at zero
+gives~\eqref{eq:coverage-additive}.
+
+For the multiplicative form, note that
+$\Pr(G_{\mathrm{cov}}) \ge (1 - E_{\mathrm{geom}})(1 - E_{\mathrm{bind}})(1 - E_{\mathrm{link}})
+- \delta_{\mathrm{indep}}^{\mathrm{cov}}$ by
+Definition~\ref{def:coverage-independence}. Conditioning on $G_{\mathrm{cov}}$ and using that
+$\Hit_{\mathrm{neut}} = \Hit_{\mathrm{bind}}$ on this event, we obtain
+\[
+C_{\mathrm{neut}}(V;L)
+\;\ge\;
+\Pr(G_{\mathrm{cov}})
+\,
+C_{\mathrm{bind}}(V;L),
+\]
+which combined with the sampling bound yields~\eqref{eq:coverage-multiplicative} after clipping
+negative values. A full proof simply spells out these steps and tracks constants; the arguments
+are elementary.
+\end{proof}
+
+Conceptually, \eqref{eq:coverage-additive} is a conservative, assumptions-light lower bound, while
+\eqref{eq:coverage-multiplicative} exploits approximate independence between coverage error
+sources when justified by validation.
+
+\subsection{Coverage certificates and inverted budgets}
+
+Theorems of the form~\eqref{eq:coverage-additive}--\eqref{eq:coverage-multiplicative} naturally
+lead to \emph{coverage certificates}: objects that certify that a given panel achieves at least a
+target neutralization coverage under the stated assumptions.
+
+\begin{definition}[Coverage certificate]
+\label{def:coverage-certificate}
+Fix a target coverage level $C_\star \in (0,1)$, a horizon $L \le L_A^\star$, and confidence
+parameters $(\delta_{\mathrm{samp}},\delta_{\mathrm{model}})$. A
+$(1-\delta_{\mathrm{samp}}-\delta_{\mathrm{model}})$-\emph{coverage certificate} for a panel
+$V \subseteq \mathcal{R}$ at horizon $L$ consists of:
+\begin{itemize}
+\item an empirical coverage estimate $\widehat{C}(V;L)$ computed from $B$ Monte Carlo paths;
+\item a sampling tolerance $\varepsilon_{\mathrm{samp}}$ as in \eqref{eq:sampling-tolerance};
+\item upper bounds $\overline{E}_{\mathrm{geom}}, \overline{E}_{\mathrm{bind}},
+\overline{E}_{\mathrm{link}}$ on the coverage error components and
+$\overline{\delta}_{\mathrm{indep}}^{\mathrm{cov}}$ on the independence slack, each validated on
+held-out data with probability at least $1-\delta_{\mathrm{model}}$; and
+\item a verification that, after plugging these quantities into either
+\eqref{eq:coverage-additive} or \eqref{eq:coverage-multiplicative}, the resulting lower bound on
+$C_{\mathrm{neut}}(V;L)$ is at least $C_\star$.
+\end{itemize}
+We say that $V$ is \emph{$C_\star$-certified at horizon $L$} when such a certificate exists.
+\end{definition}
+
+From the additive bound~\eqref{eq:coverage-additive} we can read off a simple inverted form: any
+panel $V$ whose empirical coverage exceeds a threshold
+\begin{equation}
+\label{eq:required-empirical-coverage}
+\widehat{C}_{\min}(C_\star)
+\;:=\;
+C_\star
++ \varepsilon_{\mathrm{samp}}
++ \overline{E}_{\mathrm{geom}}
++ \overline{E}_{\mathrm{bind}}
++ \overline{E}_{\mathrm{link}}
+\end{equation}
+necessarily satisfies $C_{\mathrm{neut}}(V;L) \ge C_\star$ under the corresponding error bounds.
+In this sense, the coverage error budget is \emph{inverted}: instead of propagating modeling
+errors forward to obtain a lower bound, we use the budget to specify how large
+$\widehat{C}(V;L)$ must be for a design to be certifiable.
+
+\begin{proposition}[Inverted coverage budget]
+\label{prop:inverted-budget}
+Let $C_\star \in (0,1)$ and suppose that for a panel $V$ and horizon $L$ we have empirical
+coverage $\widehat{C}(V;L)$, sampling tolerance $\varepsilon_{\mathrm{samp}}$, and upper bounds
+$\overline{E}_{\mathrm{geom}}, \overline{E}_{\mathrm{bind}}, \overline{E}_{\mathrm{link}}$ satisfying
+\[
+\widehat{C}(V;L)
+\;\ge\;
+\widehat{C}_{\min}(C_\star)
+\]
+with $\widehat{C}_{\min}(C_\star)$ as in \eqref{eq:required-empirical-coverage}. Then, under the
+assumptions of Theorem~\ref{thm:coverage-bound}, $C_{\mathrm{neut}}(V;L) \ge C_\star$ with
+probability at least $1-\delta_{\mathrm{samp}}-\delta_{\mathrm{model}}$. Conversely, if
+$\widehat{C}(V;L) < \widehat{C}_{\min}(C_\star)$, the additive bound~\eqref{eq:coverage-additive}
+cannot certify $C_{\mathrm{neut}}(V;L) \ge C_\star$.
+\end{proposition}
+
+In the multiplicative setting~\eqref{eq:coverage-multiplicative}, an analogous inverted expression
+involves dividing by
+$(1 - \overline{E}_{\mathrm{geom}})(1 - \overline{E}_{\mathrm{bind}})(1 - \overline{E}_{\mathrm{link}})
+- \overline{\delta}_{\mathrm{indep}}^{\mathrm{cov}}$, provided this factor is positive and not too
+small. In regimes where this factor is close to zero, the multiplicative bound becomes numerically
+fragile and the additive form is preferable.
+
+\subsection{Practical use, vacuity, and slice-aware certificates}
+
+In practice, coverage certificates are most informative when they are:
+\begin{enumerate}
+\item \emph{slice-aware}: defined not only for a global path distribution $\Pi_A(L)$, but also
+for epidemiologically meaningful slices (e.g., drift paths starting from a particular vaccine
+anchor, restricted to a lineage, or constrained to an epitope subset);
+
+\item \emph{explicitly non-vacuous}: accompanied by a check that the right-hand side of
+\eqref{eq:coverage-additive} or \eqref{eq:coverage-multiplicative} is appreciably above zero
+for the slice in question; and
+
+\item \emph{paired with abstention}: when the bound is near zero or negative, MIRADOR should
+treat it as vacuous and either abstain from issuing a certificate for that slice or tighten the
+scope (e.g., shorter horizons, smaller path families).
+\end{enumerate}
+
+Operationally, MIRADOR's design goals are to construct panels $V$ that:
+\begin{enumerate}
+\item \emph{achieve high coverage} $C(V;L)$ against drift families of interest; and
+\item \emph{provide a coverage certificate}: a lower bound on $C_{\mathrm{neut}}(V;L)$ that folds
+in geometric distortion, binding-model uncertainty, linkage error between binding and
+neutralization, and sampling error.
+\end{enumerate}
+The inverted error-budget view makes these goals precise: the budget specifies ``how much slack''
+must be added to a desired coverage level $C_\star$ to obtain the required empirical coverage
+$\widehat{C}_{\min}(C_\star)$, and MIRADOR's optimization problem is to design panels that clear
+this bar for as many relevant slices and horizons as possible.
+
+\section{Ethics, Dual-Use, and Generative Firewalls}
+\label{sec:ethics-dual-use}
+
+MIRADOR differs from HERALD in a critical respect: whereas HERALD performs retrospective
+surveillance and detection, MIRADOR prospectively \emph{designs} immunological objects (vaccine
+footprints, antibody panels, receptor sets). This shift from passive observation to active design
+introduces dual-use risks that require explicit architectural and governance safeguards. This
+section articulates MIRADOR's threat model, specifies banned optimization modes, and documents
+the information-hazard mitigations that must be enforced in any deployment.
+
+\subsection{Dual-use threat model for MIRADOR}
+\label{subsec:threat-model}
+
+The central dual-use risk is \emph{inverse inference}: if MIRADOR publicly releases an
+``optimal'' receptor or panel $V^\star$ that maximally covers a forecasted drift space, an
+adversary may invert the complementary co-embedding to infer which future antigenic states
+$a^\star \in \mathcal{M}_A$ are \emph{least} covered by $V^\star$, effectively obtaining a
+blueprint for immune-evading or synthetically optimized pathogens.
+
+\paragraph{Threat scenarios.}
+\begin{enumerate}
+  \item \textbf{Receptor-to-antigen inversion.}
+  Given a highly optimized receptor $r^\star$ or panel $V^\star$, an adversary with access to
+  the mirror geometry $(\mathcal{M}_A, \mathcal{M}_R, u_A, u_R)$ solves
+  \[
+    a_{\mathrm{evade}} \in \arg\min_{a \in \mathcal{M}_A} \;\min_{v \in V^\star}
+                       \delta\bigl(u_A(a), u_R(v)\bigr),
+  \]
+  yielding an antigen that maximally evades $V^\star$. If $V^\star$ is globally optimal against
+  natural drift, $a_{\mathrm{evade}}$ may represent a worst-case synthetic threat.
+
+  \item \textbf{Path-family amplification.}
+  MIRADOR's path distribution $\Pi_A(L_A^\star)$ is derived from surveillance and mechanistic
+  models. If this distribution or the underlying benign path family $\mathcal{P}_A(L_A^\star)$
+  is published in full detail, adversaries may use it to identify ``natural-looking'' drift
+  trajectories with maximal immune-escape potential, then attempt to engineer those trajectories
+  \emph{in vivo} or via serial passage.
+
+  \item \textbf{Binding-model exploitation.}
+  The calibration map $\Phi_{\mathrm{bind}}$ links mirror-space distances to binding energies.
+  Combined with generative models, this could enable direct optimization of antigenic sequences
+  to achieve specific binding profiles against known therapeutic antibodies, accelerating
+  resistance engineering.
+\end{enumerate}
+
+\paragraph{Key distinction from HERALD.}
+HERALD detects existing or emergent variants and alerts when dominance risk exceeds a threshold;
+it does not optimize over unobserved sequence space. MIRADOR, by contrast, searches over
+receptor space to maximize coverage, which implicitly encodes information about which antigenic
+states are ``hardest to cover.'' This asymmetry is the source of dual-use risk.
+
+\subsection{Information-hazard mitigations aligned with HERALD}
+\label{subsec:mitigations}
+
+MIRADOR adopts the same coarse-grained reporting and access-control principles established for
+HERALD, adapted to the design setting.
+
+\paragraph{Coarse-grained outputs.}
+\begin{itemize}
+  \item \textbf{Panel-level certificates, not singleton solutions.}
+  MIRADOR reports coverage certificates
+  $\underline{C}_{\mathrm{neut}}(V;L_A^\star)$ for \emph{panels} $V$ of size $K \ge 3$, not for
+  individual ``magic bullet'' receptors. This hedges over drift uncertainty and obscures which
+  single receptor would be optimal for a specific future variant.
+
+  \item \textbf{Epitope-region summaries, not mutation recipes.}
+  Path families and drift forecasts are summarized by broad antigenic regions (e.g., ``RBD
+  class 1/2/3 escape,'' ``NTD-focused drift'') rather than combinatorial mutation lists. This
+  preserves the scientific value of drift modeling while withholding synthesis-ready sequences.
+
+  \item \textbf{No explicit optimal-antigen disclosure.}
+  When MIRADOR identifies a high-coverage panel $V^\star$, the system \emph{does not} publish
+  the antigen or path $a_{\mathrm{worst}}$ that is least covered by $V^\star$. Any residual
+  gap analysis is reported in aggregate (e.g., ``coverage drops below $60\%$ on paths longer
+  than $L_{\max}$'') without sequence-level detail.
+\end{itemize}
+
+\paragraph{Restricted access to full geometry.}
+The complete antigen--receptor co-embedding $(u_A, u_R)$, including encoder weights and the
+binding calibration $\Phi_{\mathrm{bind}}$, is treated as a controlled asset:
+\begin{itemize}
+  \item \emph{Inference-only APIs} provide coverage certificates for user-supplied panels
+        without exposing the embedding functions.
+  \item \emph{Audited research access} to the full geometry is restricted to vetted groups
+        under data-use agreements that prohibit optimization over hypothetical antigens.
+  \item \emph{Governance oversight} analogous to HERALD's biosecurity review applies to any
+        release of trained models or path-family datasets.
+\end{itemize}
+
+\subsection{Banned optimization modes}
+\label{subsec:banned-modes}
+
+To enforce the principle that MIRADOR assists defense against \emph{known or plausibly
+forecasted} threats but does not enable \emph{de novo} threat engineering, the following
+optimization modes are explicitly prohibited in any deployment:
+
+\begin{enumerate}
+  \item \textbf{Unconstrained worst-case antigen search.}
+  The system must never accept queries of the form:
+  \[
+    \text{``Given panel } V, \text{ find the antigen } a_{\mathrm{evade}}
+    \text{ that maximally evades } V \text{ under the mirror geometry.''}
+  \]
+  Such queries directly output immune-evading sequences and are \emph{categorically banned}.
+
+  \item \textbf{Receptor optimization for unobserved variants without input constraints.}
+  MIRADOR may optimize receptors $r \in \mathcal{M}_R$ to cover a \emph{specified} set of
+  antigens $\mathcal{A}_{\mathrm{focus}}$ provided by the user. It must not accept
+  unconstrained prompts like:
+  \[
+    \text{``Design the optimal antibody for future SARS-CoV-2 variants''}
+  \]
+  without an explicit path distribution $\Pi_A(L_A^\star)$ derived from surveillance data.
+  The requirement is \emph{input-tied optimization}: users supply antigens or path families;
+  MIRADOR evaluates or optimizes receptors conditional on those inputs, but does not
+  autonomously generate hypothetical future threats.
+
+  \item \textbf{Generative extrapolation far outside benign path families.}
+  Generative models may explore within pre-audited benign path families
+  $\mathcal{P}_A(L_A^\star)$, but must not extrapolate into regimes that combine:
+  \begin{itemize}
+    \item large antigenic distances from any observed variant,
+    \item high predicted infectivity or virulence (if such metadata exist), and
+    \item low predicted coverage by existing or candidate panels.
+  \end{itemize}
+  In practice, this is enforced via \emph{path-family gates}: any proposed antigen path must
+  pass distortion and feasibility checks before being used in coverage optimization.
+
+  \item \textbf{Inverse MIRADOR: receptor-to-antigen generative queries.}
+  Tools that condition generative models on a desired receptor-binding profile and output
+  corresponding antigenic sequences are \emph{forbidden}. This includes:
+  \begin{itemize}
+    \item ``Generate an antigen that binds receptor $r$ with affinity $K_D \approx X$.''
+    \item ``Find the nearest antigen in sequence space to a given $z_A \in \mathcal{M}_A$.''
+  \end{itemize}
+  Such capabilities are dual-use by design and must not be exposed in any public or
+  semi-public interface.
+\end{enumerate}
+
+\subsection{Dual-use firewall in the design loop}
+\label{subsec:design-firewall}
+
+Beyond banning specific queries, MIRADOR enforces a \emph{dual-use firewall} at the
+architectural level, ensuring that the optimization loop itself cannot be co-opted for threat
+generation.
+
+\paragraph{Input-tied optimization only.}
+All receptor-panel searches proceed \emph{conditional} on antigens or path distributions
+provided as input:
+\begin{equation}
+  V^\star \in \arg\max_{V \in \mathcal{V}}
+              \underline{C}_{\mathrm{neut}}\bigl(V; \Pi_A(L_A^\star)\bigr),
+\end{equation}
+where $\Pi_A(L_A^\star)$ is either:
+\begin{itemize}
+  \item derived from HERALD or another surveillance system with documented provenance, or
+  \item explicitly specified by the user from a curated library of historical or validated
+        drift scenarios.
+\end{itemize}
+MIRADOR does \emph{not} autonomously hypothesize $\Pi_A(L_A^\star)$ in the absence of data.
+
+\paragraph{Panel-level hedging enforced by design.}
+The objective function and constraints in~\eqref{eq:mirador-vaccine-design} and
+\eqref{eq:design-problem} penalize singleton solutions:
+\begin{itemize}
+  \item Minimum panel size $K_{\min} \ge 3$ is enforced.
+  \item Diversity constraints (e.g., minimum pairwise mirror-space distance among panel
+        members, or epitope-class requirements) prevent collapse to a single ``super-binder.''
+  \item Coverage certificates are computed at the \emph{panel} level; individual receptor
+        performance is reported only in aggregate.
+\end{itemize}
+This architectural choice ensures that MIRADOR outputs are inherently hedged and do not reveal
+a unique vulnerability axis in antigen space.
+
+\paragraph{Restricted generative sampling.}
+When generative models are used for receptor design (Section~\ref{subsec:antibody-design}) or
+for augmenting antigen path families, the following safeguards apply:
+\begin{enumerate}
+  \item \textbf{In-distribution enforcement.}
+  Generated sequences must satisfy $a \in \mathcal{I}^A$ or $r \in \mathcal{I}^R$ where
+  $\mathcal{I}^A$ and $\mathcal{I}^R$ are pre-audited in-distribution regions. Sequences
+  outside these regions trigger OOD gates and are rejected.
+
+  \item \textbf{Benign-path constraint.}
+  Generated antigen paths must lie in $\mathcal{P}_A(L_A^\star)$ and satisfy distortion bounds
+  $\varepsilon_A(L_A^\star) < \varepsilon_A^{\max}$. Paths that exceed validated distortion are
+  flagged and excluded from coverage computations.
+
+  \item \textbf{No unrestricted ``dream'' sequences.}
+  Generative models are not permitted to optimize antigen sequences \emph{de novo} against
+  arbitrary objectives (e.g., ``maximize immune escape and transmissibility''). All generation
+  is conditioned on realistic drift constraints or user-provided anchor variants.
+\end{enumerate}
+
+\paragraph{No inverse-query interface.}
+The system architecture prohibits any API endpoint or user interface that accepts a receptor
+(or panel) as input and returns an antigen (or path) that evades it. Operationally:
+\begin{itemize}
+  \item Forward queries (``evaluate panel $V$ against path family $\Pi_A$'') are permitted.
+  \item Inverse queries (``given panel $V$, find worst-case antigen'') are \emph{hard-blocked}
+        at the interface level and flagged for security review if attempted.
+\end{itemize}
+
+\subsection{Governance and the MIRADOR dossier}
+\label{subsec:governance-dossier}
+
+Every MIRADOR deployment must maintain a \emph{MIRADOR dossier} that documents not only the
+geometry and coverage certificates (Section~\ref{sec:discussion}) but also the dual-use
+mitigations and oversight structures. At minimum, the dossier includes:
+
+\begin{enumerate}
+  \item \textbf{Dual-use risk assessment.}
+  A documented evaluation of how the specific path families, antigen library, and receptor
+  design space used in the deployment could inform adversarial misuse, together with the
+  mitigations applied (coarse-grained reporting, access control, banned modes).
+
+  \item \textbf{Access control and audit logs.}
+  A record of who has access to the full mirror geometry $(u_A, u_R, \Phi_{\mathrm{bind}})$,
+  under what data-use agreements, and with what oversight. Audit logs track all queries to the
+  system, especially any attempts at inverse optimization or out-of-distribution generation.
+
+  \item \textbf{Governance review.}
+  Analogous to HERALD's biosecurity oversight, MIRADOR requires review by an institutional
+  biosafety committee or equivalent body before:
+  \begin{itemize}
+    \item releasing trained models or path-family datasets,
+    \item publishing detailed coverage certificates that include sequence-level antigen
+          information, or
+    \item deploying generative capabilities in new pathogen domains.
+  \end{itemize}
+
+  \item \textbf{Incident response and misuse monitoring.}
+  Procedures for detecting and responding to misuse (e.g., attempts to reverse-engineer
+  worst-case antigens from published panels, unauthorized use of the embedding for threat
+  modeling). This includes monitoring for papers or preprints that cite MIRADOR in a dual-use
+  context and engaging with authors or journals as appropriate.
+
+  \item \textbf{Update and re-review cadence.}
+  As surveillance data evolve and new path families are incorporated, the dossier is updated
+  and the dual-use risk assessment is re-run. Major updates trigger governance re-review.
+\end{enumerate}
+
+The goal is not to prevent MIRADOR's use in legitimate vaccine and therapeutic design, but to
+ensure that every deployment operates under explicit dual-use constraints and with documented
+accountability.
+
+\subsection{Limitations and open directions}
+\label{subsec:ethics-limitations}
+
+Several challenges remain open or only partially addressed by the current framework.
+
+\paragraph{Limits of complementary embeddings.}
+The complementary co-embedding assumes a relatively simple binding model (pairwise
+antigen--receptor distances). In reality:
+\begin{itemize}
+  \item \emph{Multi-epitope binding} (avidity, cooperativity, epitope masking) is not fully
+        captured by pairwise distances in $\mathcal{M}_A \times \mathcal{M}_R$.
+  \item \emph{Polyspecific antibodies} that bind multiple unrelated antigens can confound the
+        lock-and-key geometry, especially if the training data include cross-reactive binders
+        without adequate annotation.
+\end{itemize}
+When the embedding breaks down, coverage certificates may be vacuous, but they may also
+inadvertently encode spurious vulnerabilities. Better models and slice-aware reporting can
+mitigate this, but the risk remains.
+
+\paragraph{Heavy-tailed assay noise and efficacy uncertainty.}
+Binding and neutralization assays have fat-tailed error distributions, especially for weak or
+intermediate binders. The error budget $E_{\mathrm{bind}}$ and $E_{\mathrm{link}}$ average over
+this noise, but extreme outliers (e.g., a highly potent binder that fails to neutralize due to
+rare conformational escape) may not be well-characterized. This can lead to overconfident
+certificates or, conversely, to panels that appear suboptimal when they are actually robust.
+
+\paragraph{Learning path families vs. hand-coding them.}
+Current MIRADOR deployments assume that $\mathcal{P}_A(L_A^\star)$ and
+$\mathcal{P}_R(L_R^\star)$ are specified by domain experts or inherited from surveillance
+systems. Learning path families directly from data---subject to interpretability and dual-use
+constraints---is an active research direction. Unsupervised or weakly supervised path learning
+could improve forecast quality but also risks discovering ``natural-looking'' high-risk
+trajectories that should remain undisclosed.
+
+\paragraph{Interactions with human decision-making.}
+Coverage certificates are probabilistic lower bounds, not guarantees. In practice, decision-makers
+may:
+\begin{itemize}
+  \item over-interpret certificates as hard assurances, leading to inadequate preparedness when
+        paths fall outside the validated regime;
+  \item under-utilize certificates due to mistrust of model-based reasoning, defaulting to
+        reactive strain-matching; or
+  \item use certificates in adversarial ways (e.g., optimizing for regulatory approval rather
+        than public-health impact).
+\end{itemize}
+Understanding and shaping these human-AI interactions is critical for MIRADOR's responsible
+deployment and remains a largely open sociotechnical problem.
+
+\paragraph{Evolving dual-use landscape.}
+As generative biology capabilities advance, the threat model for MIRADOR will shift. What is a
+banned optimization mode today may become a standard tool tomorrow, requiring ongoing re-evaluation
+of firewalls and access policies. MIRADOR's governance framework must be adaptive, with regular
+threat-model updates and community input from biosecurity, public health, and AI safety domains.
+
+\subsection{Summary of ethical commitments}
+
+MIRADOR's ethical stance is:
+\begin{enumerate}
+  \item \textbf{Design for defense, not offense.}
+  All optimizations are input-tied and conditional on user-supplied antigens or surveillance-derived
+  path families. The system does not autonomously generate or optimize hypothetical threats.
+
+  \item \textbf{Panel-level outputs, not singleton solutions.}
+  Coverage certificates and receptor designs are always reported for \emph{panels} with enforced
+  diversity, obscuring singular vulnerability axes.
+
+  \item \textbf{Coarse-grained public reporting.}
+  Detailed sequence-level or path-level information is restricted; public outputs summarize
+  coverage at the epitope-region or lineage level.
+
+  \item \textbf{Hard-blocked inverse queries.}
+  Receptor-to-antigen inversion and worst-case evading-antigen searches are architecturally
+  prohibited and flagged for review if attempted.
+
+  \item \textbf{Governance and accountability.}
+  Every deployment maintains a MIRADOR dossier with dual-use risk assessment, access control,
+  oversight review, and incident-response procedures.
+
+  \item \textbf{Adaptive re-evaluation.}
+  As capabilities and threats evolve, the framework's firewalls and policies are periodically
+  re-assessed with input from biosecurity and public-health communities.
+\end{enumerate}
+
+These commitments cannot eliminate dual-use risk entirely, but they establish a baseline of
+responsible practice and a culture of reflexive scrutiny. MIRADOR is a tool for proactive public
+health; its design and governance aim to ensure it remains so.
+
+\section{Discussion and Outlook}
+\label{sec:discussion}
+
+This section summarizes how the mirror geometry connects to receptor-panel design, how coverage
+certificates should be interpreted in practice, and where the framework is fragile or incomplete.
+
+\subsection{Why mirror geometry matters for design}
+
+The construction in Sections~2--5 is deliberately geometric. For design, three ingredients are
+central:
+
+\begin{enumerate}
+  \item \emph{Antigen side.}
+  The antigen manifold $(\mathcal{M}_A, g_A)$, with benign path family
+  $\mathcal{P}_A(L_A^\star)$ and distortion profile $\varepsilon_A(L_A^\star)$, encodes what the
+  virus can plausibly do over the operational horizon $L_A^\star$. The forecast path law
+  $\Pi_A(L_A^\star)$ specifies \emph{how} it is likely to move within that manifold.
+
+  \item \emph{Receptor side.}
+  The receptor manifold $(\mathcal{M}_R, g_R)$, with path family $\mathcal{P}_R(L_R^\star)$ and
+  distortion profile $\varepsilon_R(L_R^\star)$, encodes what receptor states are biologically
+  achievable and immunologically acceptable over a horizon $L_R^\star$ (e.g., affinity
+  maturation or design moves). The in-distribution region $\mathcal{I}^R \subseteq \mathcal{M}_R$
+  delimits receptors supported by data and used in coverage certificates.
+
+  \item \emph{Lock--key geometry.}
+  The complementary co-embedding (Definition~\ref{def:complementary-coembedding}) ties the two
+  manifolds together: for $a \in \mathcal{M}_A$ and $r \in \mathcal{M}_R$, the ambient distance
+  $\delta(a,r)$ is a calibrated surrogate for binding energy and, via $E_{\text{link}}$, for
+  neutralization. Pathwise hit events and coverage (Definitions~\ref{def:mirror-paths} and
+  \ref{def:hit-event}) then become geometric statements about when antigen paths in
+  $\mathcal{P}_A(L_A^\star)$ come within a binding radius of receptors in a panel $V \subseteq
+  \mathcal{M}_R$.
+\end{enumerate}
+
+HERALD and similar Davis-style surveillance systems estimate \emph{where} the virus can go and how
+it is drifting. Within the same geometric language, MIRADOR answers a different question:
+\emph{which receptor panels come with meaningful, slice-aware coverage guarantees against those
+drift trajectories, on a pre-registered horizon and in a specified in-distribution region?}
+
+\subsection{Panel design as a constrained coverage problem}
+
+Let $\mathcal{V}$ denote a design space of feasible receptor panels (e.g., all subsets of a candidate
+library satisfying manufacturability and diversity constraints). Let
+$V \subseteq \mathcal{I}^R$ be a candidate panel whose members lie in the binding in-distribution
+region of the receptor manifold. For a fixed antigen path horizon $L_A^\star$, define
+\[
+  C_{\mathrm{neut}}(V;L_A^\star)
+  := \Pr_{\Gamma_A \sim \Pi_A(L_A^\star)}\!\bigl(
+       \Hit_{\mathrm{neut}}(V,\Gamma_A)
+     \bigr),
+\]
+the (unknown) neutralization coverage of $V$ at horizon $L_A^\star$ under the path law
+$\Pi_A(L_A^\star)$.
+
+Section~5 introduced a \emph{coverage certificate}
+\[
+  \underline{C}_{\mathrm{neut}}(V;L_A^\star)
+  :=
+  \bigl[\widehat{C}(V;L_A^\star) - \varepsilon_{\mathrm{samp}}\bigr]_+
+  - \bigl(\overline{E}_{\mathrm{geom}} + \overline{E}_{\mathrm{bind}} + \overline{E}_{\mathrm{link}}\bigr),
+\]
+where $[u]_+ := \max\{u,0\}$, $\widehat{C}(V;L_A^\star)$ is an empirical coverage estimate based on
+Monte Carlo paths, $\varepsilon_{\mathrm{samp}}$ is a sampling tolerance chosen from a concentration
+inequality, and $\overline{E}_{\mathrm{geom}},\overline{E}_{\mathrm{bind}},\overline{E}_{\mathrm{link}}$ are
+pre-registered upper bounds on the geometric, binding, and linkage error components. Under the
+assumptions of Theorem~5.1, this certificate is a high-probability \emph{one-sided} lower bound:
+\[
+  C_{\mathrm{neut}}(V;L_A^\star)
+  \;\ge\;
+  \underline{C}_{\mathrm{neut}}(V;L_A^\star)
+  \quad\text{with high probability.}
+\]
+
+Given a policy-relevant target $C_\star \in (0,1)$ (e.g., ``at least $70\%$ neutralization coverage
+against forecast drift paths''), the design problem can be written as
+\begin{equation}
+\label{eq:design-problem}
+  \text{find } V \in \mathcal{V}
+  \quad\text{such that}\quad
+  \underline{C}_{\mathrm{neut}}(V;L_A^\star) \;\ge\; C_\star.
+\end{equation}
+In words: choose a panel whose certified coverage, after subtracting sampling and model-error
+budgets, still exceeds the target.
+
+This framing deliberately separates three roles:
+\begin{enumerate}
+  \item $C_{\mathrm{neut}}(V;L_A^\star)$ is the unobservable ground-truth coverage under the path
+  law.
+  \item $\widehat{C}(V;L_A^\star)$ is a Monte Carlo estimate, with sampling uncertainty controlled
+  by $\varepsilon_{\mathrm{samp}}$.
+  \item $\underline{C}_{\mathrm{neut}}(V;L_A^\star)$ is the conservative, pre-registered quantity
+  used in design and governance.
+\end{enumerate}
+The certificate is intentionally conservative and may be vacuous when error budgets or independence
+slack are large; the framework treats such vacuity as a reason to abstain from strong claims, not as
+a parameter to be tuned away.
+
+\subsection{A practical workflow for MIRADOR-style design}
+
+A MIRADOR-style deployment can be organized as the following high-level workflow.
+
+\begin{enumerate}
+  \item \textbf{Fix scope and candidate pool.}
+  Specify the application (e.g., prophylactic antibody panel, vaccine-adjacent receptor library),
+  the time horizon $L_A^\star$ of interest, and the design space $\mathcal{V}$ (e.g., all panels of
+  size $m$ drawn from a curated receptor set).
+
+  \item \textbf{Construct or inherit mirror geometry.}
+  Train or fine-tune encoders to obtain $(\mathcal{M}_A,g_A)$ and $(\mathcal{M}_R,g_R)$ together
+  with the complementary co-embedding (Definition~\ref{def:complementary-coembedding}). Audit
+  pathwise distortion and configuration margins to verify non-vacuity on candidate horizons
+  $L_A^\star, L_R^\star$.
+
+  \item \textbf{Identify the binding in-distribution region.}
+  Use training coverage, held-out binding data, and geometry-based quality checks to define a
+  binding in-distribution region
+  $\mathcal{I}^A \times \mathcal{I}^R \subseteq \mathcal{M}_A \times \mathcal{M}_R$. Define quality
+  and out-of-distribution (OOD) gates that enforce:
+  \[
+    (a,r) \text{ used for coverage certificates}
+    \;\Longrightarrow\;
+    (a,r) \in \mathcal{I}^A \times \mathcal{I}^R.
+  \]
+
+  \item \textbf{Choose path families and operational horizons.}
+  Specify benign path families
+  $\mathcal{P}_A(L_A^\star) \subseteq C^1\bigl([0,1],\mathcal{M}_A\bigr)$ and
+  $\mathcal{P}_R(L_R^\star) \subseteq C^1\bigl([0,1],\mathcal{M}_R\bigr)$ that reflect realistic
+  antigenic drift and receptor evolution. Perform distortion audits to ensure that
+  $\varepsilon_A(L_A^\star)$ and $\varepsilon_R(L_R^\star)$ are small enough that the non-vacuity
+  conditions remain satisfied.
+
+  \item \textbf{Estimate the antigen path law.}
+  Using HERALD or another Davis-style surveillance system, estimate the path distribution
+  $\Pi_A(L_A^\star)$ restricted to $\mathcal{I}^A$ and the forecast slice of interest (e.g., lineage,
+  geography, or time window). Document how $\Pi_A(L_A^\star)$ was fit and how forecast
+  uncertainty is handled.
+
+  \item \textbf{Search over panels and compute coverage certificates.}
+  For $V \in \mathcal{V}$, draw Monte Carlo paths $\Gamma_A^{(b)} \sim \Pi_A(L_A^\star)$, compute
+  the empirical hit fraction $\widehat{C}(V;L_A^\star)$, and evaluate the certificate
+  $\underline{C}_{\mathrm{neut}}(V;L_A^\star)$. This can be done either via heuristic search (e.g.,
+  greedy or evolutionary algorithms) or over a restricted design grid. Slice-aware certificates
+  (e.g., per-lineage or per-region) should be computed in parallel.
+
+  \item \textbf{Select and document.}
+  Choose one or more panels $V^\star$ that satisfy~\eqref{eq:design-problem} on the intended
+  slices. For each panel, record the geometric assumptions, in-distribution region,
+  $\Pi_A(L_A^\star)$, error-budget estimates, and coverage certificates that justify the choice.
+\end{enumerate}
+
+The workflow intentionally separates \emph{what} is being guaranteed (pathwise coverage against
+$\Pi_A(L_A^\star)$ on $\mathcal{I}^A \times \mathcal{I}^R$) from \emph{how} those guarantees are
+estimated (Monte Carlo paths, distortion audits, error-budget estimation).
+
+\subsection{Integration with HERALD and other surveillance systems}
+
+The mirror geometry is most useful when coupled to a surveillance system that continuously updates
+$\Pi_A(L_A^\star)$ and monitors when the antigen process leaves its validated regime.
+
+HERALD provides exactly this: a Davis-style antigen manifold, a drift statistic, and a compositional
+error budget for dominance-risk alerts. In a joint deployment, one can envisage the following
+closed loop:
+\begin{enumerate}
+  \item HERALD runs continuously and maintains a forecast path law $\Pi_A(L_A^\star)$ over
+  $(\mathcal{M}_A,g_A)$, together with slice-aware error budgets for geometry, linkage, and
+  calibration.
+
+  \item MIRADOR uses $\Pi_A(L_A^\star)$ and its uncertainty envelope as input, together with a
+  receptor manifold $(\mathcal{M}_R,g_R)$ and in-distribution region $\mathcal{I}^R$, to design
+  panels with certified coverage on the current forecast.
+
+  \item As new data arrive, HERALD detects when empirical drift paths move outside
+  $\mathcal{I}^A \subseteq \mathcal{M}_A$ or when its own error budget becomes vacuous. In those
+  regimes, pathwise coverage certificates for MIRADOR panels must be treated as out-of-scope:
+  either the geometric assumptions must be revalidated or coverage claims must be narrowed.
+\end{enumerate}
+
+Conceptually, HERALD answers ``where might the virus go, on what timescale, and with what
+uncertainty?'' while MIRADOR answers ``given that forecast, which receptor panels can plausibly
+intercept those paths with non-vacuous, slice-aware coverage certificates?'' The two systems share
+the same geometric language (Davis manifolds, path families, error budgets), which makes joint
+reasoning and auditing possible.
+
+\subsection{Limitations and failure modes specific to MIRADOR}
+
+In addition to the general limitations of Davis systems, MIRADOR introduces several design-specific
+failure modes.
+
+\paragraph{Dependence on the antigen path law.}
+Coverage certificates are conditional on $\Pi_A(L_A^\star)$ and on remaining in
+$\mathcal{I}^A$. If the true antigen process places substantial mass on paths outside the estimated
+law or outside $\mathcal{I}^A$ (e.g., due to recombination, strong immune imprinting, or unexpected
+host shifts), the true coverage $C_{\mathrm{neut}}(V;L_A^\star)$ may fall below the certificate.
+Robustness to misspecified path laws remains an open problem.
+
+\paragraph{Search over a restricted design space.}
+The design space $\mathcal{V}$ is constrained by manufacturability, diversity, and biological
+plausibility. A certificate for $V^\star \in \mathcal{V}$ says nothing about panels outside
+$\mathcal{V}$, and non-existence of a good panel within $\mathcal{V}$ does not imply that no good
+panel exists in principle.
+
+\paragraph{Binding and neutralization gaps.}
+The linkage term $E_{\mathrm{link}}$ explicitly acknowledges that binding in the co-embedding need
+not imply neutralization. When the biology of effector function, Fc engineering, or compartmental
+effects is poorly captured, $E_{\mathrm{link}}$ will be large and certificates may become vacuous
+even when geometric coverage looks good.
+
+\paragraph{Joint error budgets and independence slack.}
+Error components for geometry, binding, linkage, and sampling may be strongly correlated on certain
+slices (e.g., particular lineages or capture conditions). In such regimes the independence slack
+$\delta_{\mathrm{indep}}^{\mathrm{cov}}$ may dominate, forcing reliance on conservative union bounds and
+leading to vacuous certificates. The framework treats this correctly as a signal that stronger claims
+should not be made from model outputs alone.
+
+\subsection{Research directions}
+
+Several directions emerge naturally from the coverage-certificate perspective.
+
+\begin{itemize}
+  \item \textbf{Robust coverage under path-law uncertainty.}
+  Instead of conditioning on a single $\Pi_A(L_A^\star)$, one could seek certificates that hold
+  uniformly over a family of path laws constrained by surveillance data, or that explicitly fold
+  path-law uncertainty into the error budget.
+
+  \item \textbf{Learning or adapting path families.}
+  In the present work, $\mathcal{P}_A(L_A^\star)$ and $\mathcal{P}_R(L_R^\star)$ are designed
+  objects. Learning path families subject to curvature and plausibility constraints---or adapting
+  them as data accumulate---could reduce misspecification while retaining interpretability.
+
+  \item \textbf{Multi-epitope and multi-compartment coverage.}
+  Real-world protection often depends on coordinated coverage across epitopes, compartments, or
+  modalities. Extending coverage certificates to multi-layer panels (e.g., systemic + mucosal, or
+  antibody + T-cell) is mathematically straightforward but practically challenging.
+
+  \item \textbf{Search procedures with guarantees.}
+  Design algorithms that explore $\mathcal{V}$ while preserving monotonicity of coverage
+  certificates, or that provide \emph{search} guarantees (e.g., approximate optimality with respect
+  to~\eqref{eq:design-problem}), would strengthen the connection between the theory and concrete
+  panel proposals.
+
+  \item \textbf{Benchmarks and community standards.}
+  Having multiple groups compute coverage certificates for shared geometry + path-law benchmarks
+  would sharpen understanding of when MIRADOR-style designs are robust and when they are fragile.
+\end{itemize}
+
+\subsection{Governance and the MIRADOR dossier}
+
+Coverage certificates are only as trustworthy as the documentation around them. For any deployed
+MIRADOR-style system, we recommend maintaining a \emph{MIRADOR dossier} that includes, at
+minimum:
+
+\begin{enumerate}
+  \item \textbf{Construction details for $(\mathcal{M}_A, g_A)$ and $(\mathcal{M}_R, g_R)$.}
+  Encoder architectures, training objectives, regularization schemes, and distortion audits that
+  justify the bounded-distortion regime on $\mathcal{P}_A(L_A^\star)$ and $\mathcal{P}_R(L_R^\star)$.
+
+  \item \textbf{In-distribution regions and horizons.}
+  Formal definitions of $\mathcal{I}^A$ and $\mathcal{I}^R$, the criteria used to enforce
+  in-distribution constraints at training and deployment time, and the chosen horizons
+  $L_A^\star, L_R^\star$ with supporting distortion and non-vacuity evidence.
+
+  \item \textbf{Binding model and calibration.}
+  The data and procedures used to fit the binding and neutralization mappings (including
+  $\Phi_{\mathrm{bind}}$ and $\Delta G_{\mathrm{thresh}}$), together with validation diagnostics and slice-wise
+  performance.
+
+  \item \textbf{Antigen forecast and sampling.}
+  A description of how $\Pi_A(L_A^\star)$ is estimated (e.g., via HERALD), including uncertainty
+  quantification, slice definitions, and any assumptions about stationarity or mixing.
+
+  \item \textbf{Coverage certificates and design decisions.}
+  For each proposed panel $V$, the numerical value of
+  $\underline{C}_{\mathrm{neut}}(V;L_A^\star)$ and its components
+  $\widehat{C},\varepsilon_{\mathrm{samp}},\overline{E}_{\mathrm{geom}},\overline{E}_{\mathrm{bind}},\overline{E}_{\mathrm{link}},
+  \delta_{\mathrm{indep}}^{\mathrm{cov}}$, reported globally and on key slices. Design choices
+  (such as panel size, diversity constraints, and excluded candidates) should be tied explicitly
+  to these numbers.
+
+  \item \textbf{Monitoring and update policy.}
+  Rules for when to recompute certificates (e.g., after substantial changes in $\Pi_A$ or in
+  error-budget estimates), criteria for declaring certificates vacuous on certain slices, and the
+  fallback procedures (laboratory assays, human review) that apply in those regimes.
+
+  \item \textbf{Limitations and disclaimers.}
+  A clear statement of assumptions, known blind spots (e.g., recombination, novel antigenic
+  mechanisms), and the intended decision context, so that end users do not over-interpret what a
+  MIRADOR certificate guarantees.
+\end{enumerate}
+
+The goal is not to treat MIRADOR outputs as oracles, but to make explicit \emph{which} geometric and
+statistical assumptions underwrite each coverage claim, and to provide the artifacts needed for
+external review. In that sense, coverage certificates are not just numbers but contracts: they bind
+the system to a specific Davis-style regime of validity, with clearly delineated conditions under
+which abstention, revision, or re-design is required.
+
+
+\end{document}

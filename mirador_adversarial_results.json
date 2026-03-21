@@ -1,0 +1,464 @@
+{
+  "total": 76,
+  "passed": 76,
+  "failed": 0,
+  "pass_rate": 100.0,
+  "tests": [
+    {
+      "name": "A-1: eGFR=0 \u2192 K_exc uses Math.max guard (no division by zero)",
+      "passed": true,
+      "details": "K_exc = 810.000000, expected 810.000000\n(90/1)\u00b2 \u00d7 0.10 = 8100 \u00d7 0.10 = 810.0",
+      "group": "A"
+    },
+    {
+      "name": "A-2: eGFR=0 \u2192 C_ceft is finite (Kt clamped by max(Kt,0.01))",
+      "passed": true,
+      "details": "Kt = 810.3656, C_ceft = 0.014808  (very low but finite \u2014 dialysis patient)",
+      "group": "A"
+    },
+    {
+      "name": "A-3: eGFR=0 \u2192 CL=0 \u2192 ke=0 \u2192 Ctrough equals Cmax (no renal elimination)",
+      "passed": true,
+      "details": "CL=0.000000 L/hr, ke=0.000000 /hr\nCmax=12.8411 \u03bcg/mL, Ctrough=12.8411 \u03bcg/mL  (equal: drug doesn't clear)",
+      "group": "A"
+    },
+    {
+      "name": "A-4: eGFR=0 \u2192 tHalf clamped by max(ke,0.01) \u2192 tHalf = 0.693/0.01 = 69.3 h",
+      "passed": true,
+      "details": "tHalf = 69.300000 h (expected 69.3 h = renal failure ceiling)",
+      "group": "A"
+    },
+    {
+      "name": "A-5: Albumin=0 \u2192 K_dist = 0 (no protein-binding friction)",
+      "passed": true,
+      "details": "K_dist = 0.00e+00  (formula: (0.20 \u00d7 0/4.0)\u00b2 = 0)",
+      "group": "A"
+    },
+    {
+      "name": "A-6: Albumin=0 \u2192 Vd expands to 28 \u00d7 1.3 = 36.4 L (low protein binding)",
+      "passed": true,
+      "details": "Vd = 36.400000 L, expected 36.4 L",
+      "group": "A"
+    },
+    {
+      "name": "A-7: All inputs=0 \u2192 no NaN, no Inf anywhere in output",
+      "passed": true,
+      "details": "C_ceft=0.0148, C_vanco=0.0016, Vd=36.4000, ke=0.0000  (all finite)",
+      "group": "A"
+    },
+    {
+      "name": "A-8: All inputs=0 \u2192 all curvature components \u2265 0 (non-negativity)",
+      "passed": true,
+      "details": "K_dist=0.0000, K_met=0.0500, K_exc=810.0000, K_tox=0.1500, Kt=810.2000",
+      "group": "A"
+    },
+    {
+      "name": "B-vancoTrough=15.0 exactly: K_tox_base penalty = 0.0",
+      "passed": true,
+      "details": "vancoTrough=15.0, K_tox_base=0.050000  (base 0.05 + penalty 0.000000, expected 0.0)",
+      "group": "B"
+    },
+    {
+      "name": "B-vancoTrough=15+\u03b5: K_tox_base penalty = 0.15",
+      "passed": true,
+      "details": "vancoTrough=15.000000001, K_tox_base=0.200000  (base 0.05 + penalty 0.150000, expected 0.15)",
+      "group": "B"
+    },
+    {
+      "name": "B-vancoTrough=14.99: K_tox_base penalty = 0.0",
+      "passed": true,
+      "details": "vancoTrough=14.99, K_tox_base=0.050000  (base 0.05 + penalty 0.000000, expected 0.0)",
+      "group": "B"
+    },
+    {
+      "name": "B-vancoTrough=15.01: K_tox_base penalty = 0.15",
+      "passed": true,
+      "details": "vancoTrough=15.01, K_tox_base=0.200000  (base 0.05 + penalty 0.150000, expected 0.15)",
+      "group": "B"
+    },
+    {
+      "name": "B-priorMero=90 exactly: K_collateral = 0.0",
+      "passed": true,
+      "details": "priorMero=90, K_collateral=0.000000  (expected 0.0)",
+      "group": "B"
+    },
+    {
+      "name": "B-priorMero=89: K_collateral = 0.1",
+      "passed": true,
+      "details": "priorMero=89, K_collateral=0.100000  (expected 0.1)",
+      "group": "B"
+    },
+    {
+      "name": "B-priorMero=91: K_collateral = 0.0",
+      "passed": true,
+      "details": "priorMero=91, K_collateral=0.000000  (expected 0.0)",
+      "group": "B"
+    },
+    {
+      "name": "B-priorMero=90-\u03b5: K_collateral = 0.1",
+      "passed": true,
+      "details": "priorMero=89.999999999, K_collateral=0.100000  (expected 0.1)",
+      "group": "B"
+    },
+    {
+      "name": "B-eGFR=50 exactly: dose = 600.0 mg",
+      "passed": true,
+      "details": "eGFR=50, dose=600.0 mg  (expected 600.0 mg)",
+      "group": "B"
+    },
+    {
+      "name": "B-eGFR=49: dose = 400.0 mg",
+      "passed": true,
+      "details": "eGFR=49, dose=400.0 mg  (expected 400.0 mg)",
+      "group": "B"
+    },
+    {
+      "name": "B-eGFR=50.01: dose = 600.0 mg",
+      "passed": true,
+      "details": "eGFR=50.01, dose=600.0 mg  (expected 600.0 mg)",
+      "group": "B"
+    },
+    {
+      "name": "B-eGFR=49.99: dose = 400.0 mg",
+      "passed": true,
+      "details": "eGFR=49.99, dose=400.0 mg  (expected 400.0 mg)",
+      "group": "B"
+    },
+    {
+      "name": "C-1: K_exc strictly decreasing as eGFR increases 1\u2192200",
+      "passed": true,
+      "details": "eGFR:  [1, 5, 10, 20, 30, 45, 60, 90, 120, 150, 200]\nK_exc: ['810.0000', '32.4000', '8.1000', '2.0250', '0.9000', '0.4000', '0.2250', '0.1000', '0.0563', '0.0360', '0.0203']",
+      "group": "C"
+    },
+    {
+      "name": "C-2: tHalf strictly decreasing as eGFR increases (faster elimination)",
+      "passed": true,
+      "details": "eGFR:  [1, 5, 10, 20, 30, 45, 60, 90, 120, 150, 200]\ntHalf: ['69.30', '43.17', '21.59', '10.79', '7.20', '4.80', '3.60', '2.40', '1.80', '1.44', '1.08'] h",
+      "group": "C"
+    },
+    {
+      "name": "C-3: C_vanco is INDEPENDENT of albumin (K_vanco formula doesn't use albumin)",
+      "passed": true,
+      "details": "C_vanco across albumin [1.0, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]:\n  ['1.860465', '1.860465', '1.860465', '1.860465', '1.860465', '1.860465', '1.860465', '1.860465']\n  Range = 0.00e+00",
+      "group": "C"
+    },
+    {
+      "name": "C-4: C_vanco is INDEPENDENT of vancoTrough (watch: K_tox_base affects Kt only)",
+      "passed": true,
+      "details": "C_vanco across trough [0, 5, 10, 15, 16, 20, 25, 30]:\n  ['1.860465', '1.860465', '1.860465', '1.860465', '1.860465', '1.860465', '1.860465', '1.860465']\nNOTE: dropping trough \u226415 improves C_ceft (reduces Kt) but NOT C_vanco",
+      "group": "C"
+    },
+    {
+      "name": "C-5: C_ceft DOES improve as vancoTrough drops from 20 \u2192 12 (less K_tox_base)",
+      "passed": true,
+      "details": "C_ceft (trough=20, toxic): 15.6735\nC_ceft (trough=12, safe):  19.4924\nImprovement: 24.4%",
+      "group": "C"
+    },
+    {
+      "name": "C-6: Kt \u2265 0 across 500 physiological combinations (no negative curvature)",
+      "passed": true,
+      "details": "Kt < 0 violations: 0 / 500  (expected 0 \u2014 curvature is always a friction, never a boost)",
+      "group": "C"
+    },
+    {
+      "name": "C-7: K_dist monotonically increases with albumin (protein binding friction)",
+      "passed": true,
+      "details": "Albumin [0,1,2,3,4,5] g/dL \u2192 K_dist:\n  ['0.000000', '0.002500', '0.010000', '0.022500', '0.040000', '0.062500']",
+      "group": "C"
+    },
+    {
+      "name": "D-1: Ctrough < Cmax for all eGFR > 0 (some elimination must occur)",
+      "passed": true,
+      "details": "Tested eGFR \u2208 {1,10,30,45,60,90,120}, failing: none",
+      "group": "D"
+    },
+    {
+      "name": "D-2: Ctrough = Cmax when eGFR=0 (ke=0, CL=0, zero elimination)",
+      "passed": true,
+      "details": "ke=0.00e+00, Cmax=12.8411, Ctrough=12.8411",
+      "group": "D"
+    },
+    {
+      "name": "D-3: tHalf \u00d7 max(ke,0.01) = 0.693 (eGFR=10)",
+      "passed": true,
+      "details": "ke=0.032103/hr, tHalf=21.5870h, product=0.693000000000",
+      "group": "D"
+    },
+    {
+      "name": "D-3: tHalf \u00d7 max(ke,0.01) = 0.693 (eGFR=45)",
+      "passed": true,
+      "details": "ke=0.144462/hr, tHalf=4.7971h, product=0.693000000000",
+      "group": "D"
+    },
+    {
+      "name": "D-3: tHalf \u00d7 max(ke,0.01) = 0.693 (eGFR=90)",
+      "passed": true,
+      "details": "ke=0.288925/hr, tHalf=2.3986h, product=0.693000000000",
+      "group": "D"
+    },
+    {
+      "name": "D-4: Ctrough/Cmax = exp(-ke\u00d712) exactly (eGFR=30)",
+      "passed": true,
+      "details": "ke=0.096308, exp(-ke\u00d712)=0.31483763, Ctrough/Cmax=0.31483763",
+      "group": "D"
+    },
+    {
+      "name": "D-4: Ctrough/Cmax = exp(-ke\u00d712) exactly (eGFR=45)",
+      "passed": true,
+      "details": "ke=0.144462, exp(-ke\u00d712)=0.17665663, Ctrough/Cmax=0.17665663",
+      "group": "D"
+    },
+    {
+      "name": "D-4: Ctrough/Cmax = exp(-ke\u00d712) exactly (eGFR=90)",
+      "passed": true,
+      "details": "ke=0.288925, exp(-ke\u00d712)=0.03120757, Ctrough/Cmax=0.03120757",
+      "group": "D"
+    },
+    {
+      "name": "D-4: Ctrough/Cmax = exp(-ke\u00d712) exactly (eGFR=120)",
+      "passed": true,
+      "details": "ke=0.385233, exp(-ke\u00d712)=0.00982532, Ctrough/Cmax=0.00982532",
+      "group": "D"
+    },
+    {
+      "name": "D-5: Vd > 0 for albumin=0.5 g/dL",
+      "passed": true,
+      "details": "Vd = 35.3500 L",
+      "group": "D"
+    },
+    {
+      "name": "D-5: Vd > 0 for albumin=1.0 g/dL",
+      "passed": true,
+      "details": "Vd = 34.3000 L",
+      "group": "D"
+    },
+    {
+      "name": "D-5: Vd > 0 for albumin=2.0 g/dL",
+      "passed": true,
+      "details": "Vd = 32.2000 L",
+      "group": "D"
+    },
+    {
+      "name": "D-5: Vd > 0 for albumin=3.5 g/dL",
+      "passed": true,
+      "details": "Vd = 29.0500 L",
+      "group": "D"
+    },
+    {
+      "name": "D-5: Vd > 0 for albumin=4.0 g/dL",
+      "passed": true,
+      "details": "Vd = 28.0000 L",
+      "group": "D"
+    },
+    {
+      "name": "D-5: Vd > 0 for albumin=5.0 g/dL",
+      "passed": true,
+      "details": "Vd = 25.9000 L",
+      "group": "D"
+    },
+    {
+      "name": "D-5: Vd > 0 for albumin=6.0 g/dL",
+      "passed": true,
+      "details": "Vd = 23.8000 L",
+      "group": "D"
+    },
+    {
+      "name": "D-6: Vd = 28 L when albumin = 4 g/dL (normal reference point)",
+      "passed": true,
+      "details": "Vd(albumin=4) = 28.0000000000 L  (expected 28.0 L)",
+      "group": "D"
+    },
+    {
+      "name": "D-7: dose = 600 mg at eGFR=50.0 (threshold is strictly < 50)",
+      "passed": true,
+      "details": "dose(eGFR=50.0) = 600.0 mg  (expected 600)\ndose(eGFR=49.999) = 400.0 mg  (expected 400)",
+      "group": "D"
+    },
+    {
+      "name": "E-1: Default patient: C_ceft > C_vanco (ceftaroline advantage)",
+      "passed": true,
+      "details": "C_ceft  = 15.6735\nC_vanco = 1.8605\nRatio   = 8.42\u00d7",
+      "group": "E"
+    },
+    {
+      "name": "E-2: C_ceft/C_vanco \u2248 8\u201310\u00d7 for default patient (explainer claims ~9\u00d7)",
+      "passed": true,
+      "details": "Ratio = 8.4245  (target: 8\u201310.5)",
+      "group": "E"
+    },
+    {
+      "name": "E-3: Default patient C_vanco < 5 (TREATMENT FAILING threshold)",
+      "passed": true,
+      "details": "C_vanco = 1.8605  (threshold: C < 5 = failing)",
+      "group": "E"
+    },
+    {
+      "name": "E-4: Default patient C_ceft > 10 (EFFECTIVE treatment range)",
+      "passed": true,
+      "details": "C_ceft = 15.6735  (threshold: C > 10 = effective)",
+      "group": "E"
+    },
+    {
+      "name": "E-5: C_vanco.toFixed(1) for default patient = '1.9' (matches header title)",
+      "passed": true,
+      "details": "C_vanco = 1.860465  \u2192 toFixed(1) = '1.9'",
+      "group": "E"
+    },
+    {
+      "name": "E-6: C_ceft > C_vanco for all physiological input combinations (288 cases)",
+      "passed": true,
+      "details": "Minimum observed ratio: 7.5210\u00d7\nAll 288 cases: C_ceft > C_vanco \u2713",
+      "group": "E"
+    },
+    {
+      "name": "E-7: Kt = K_abs + K_dist + K_met + K_exc + K_tox (additivity holds exactly)",
+      "passed": true,
+      "details": "Sum = 0.765625000000\nKt  = 0.765625000000\n|diff| = 0.00e+00",
+      "group": "E"
+    },
+    {
+      "name": "E-8: K_vanco manual reconstruction matches compute_curvature output",
+      "passed": true,
+      "details": "K_vanco (formula) = 2.15000000\nK_vanco (output)  = 2.15000000",
+      "group": "E"
+    },
+    {
+      "name": "F-1: Gate opening probability = exp(-5/kT) at 37\u00b0C \u2248 0.03%",
+      "passed": true,
+      "details": "kT = 0.61597 kcal/mol\np = exp(-5.0/0.61597) = 0.000298 = 0.0298%\n(UI states '0.03%' \u2014 computed 0.0298% \u2713)",
+      "group": "F"
+    },
+    {
+      "name": "F-2: Gate prob to 2 sig figs is in the 0.02%\u20130.04% range (UI says 0.03%)",
+      "passed": true,
+      "details": "p = 0.0298%  \u2192 displayed as '0.03%'",
+      "group": "F"
+    },
+    {
+      "name": "F-3: Eigenvalue ordering \u03bb\u2081 > \u03bb\u2082 > \u03bb\u2083 > \u03bb\u2084 (E150K is primary escape)",
+      "passed": true,
+      "details": "\u03bb = [1.59, 1.56, 1.36, 0.76]\n\u03bb\u2081=1.59 (E150K gate) > \u03bb\u2082=1.56 (N146K) > \u03bb\u2083=1.36 (Y446N) > \u03bb\u2084=0.76 (E239K)",
+      "group": "F"
+    },
+    {
+      "name": "F-4: All eigenvalues are positive (physically: all escape routes have positive cost)",
+      "passed": true,
+      "details": "All \u03bb > 0: True",
+      "group": "F"
+    },
+    {
+      "name": "F-5: E150K fitness cost (1.2 kcal/mol) < 5 kT \u2192 survivable under pressure",
+      "passed": true,
+      "details": "\u0394\u0394G(E150K) = 1.2 kcal/mol\n5 kT = 3.080 kcal/mol\nRatio: 0.39\u00d7 below threshold \u2713",
+      "group": "F"
+    },
+    {
+      "name": "F-6: Default patient Ctrough > 0.5 \u03bcg/mL (ceftaroline MRSA MIC coverage)",
+      "passed": true,
+      "details": "Ctrough = 2.2685 \u03bcg/mL  (MIC threshold = 0.5 \u03bcg/mL)\nCoverage margin: 4.54\u00d7 above MIC",
+      "group": "F"
+    },
+    {
+      "name": "F-7: Near-ESRD patient (eGFR=5) still achieves Ctrough > 0.5 \u03bcg/mL",
+      "passed": true,
+      "details": "eGFR=5: ke=0.016051/hr (nearly zero \u2192 minimal elimination)\nCtrough=10.5913 \u03bcg/mL  (drug accumulates \u2192 above MIC \u2713)\nNOTE: dose=400 mg (eGFR<50), Vd=31.15 L",
+      "group": "F"
+    },
+    {
+      "name": "F-8: Prior meropenem \u226490d adds K_collateral=0.10 to Kt only (not K_vanco)",
+      "passed": true,
+      "details": "K_collateral (mero=14d):  0.10  \u2192 Kt = 0.765625\nK_collateral (mero=200d): 0.00  \u2192 Kt = 0.665625\nK_vanco unchanged: 0.00e+00",
+      "group": "F"
+    },
+    {
+      "name": "G-1: eGFR=10000 \u2192 K_exc \u2248 0 (near-zero excretion curvature)",
+      "passed": true,
+      "details": "K_exc = 8.10e-06  (expected 8.10e-06)\nC_ceft = 103.7765  (near-maximum for this albumin/trough)",
+      "group": "G"
+    },
+    {
+      "name": "G-2: Negative eGFR is clamped to 1 by Math.max guard (same as eGFR=0)",
+      "passed": true,
+      "details": "K_exc(eGFR=-5) = 810.00000000\nK_exc(eGFR=0)  = 810.00000000  (identical \u2014 guard works)",
+      "group": "G"
+    },
+    {
+      "name": "G-3: Negative albumin \u2192 K_dist still \u2265 0 (squaring eliminates sign)",
+      "passed": true,
+      "details": "K_dist(albumin=-1) = (0.20 \u00d7 (-1/4))\u00b2 = 0.002500  (positive \u2713)\nVd(albumin=-1) = 38.5000 L  (inflated \u2014 negative albumin unphysical)",
+      "group": "G"
+    },
+    {
+      "name": "G-4: vancoTrough=1000 \u2192 K_tox_base still caps at 0.20 (ternary, no linear scaling)",
+      "passed": true,
+      "details": "K_tox_base(trough=1000) = 0.200000  (cap = 0.05 + 0.15 = 0.20)",
+      "group": "G"
+    },
+    {
+      "name": "G-5: priorMero=-100 \u2192 K_collateral=0.10 (negative days still < 90)",
+      "passed": true,
+      "details": "K_collateral(priorMero=-100) = 0.1000\n(Negative days is nonsensical input but formula doesn't guard against it)",
+      "group": "G"
+    },
+    {
+      "name": "G-6: albumin=12 g/dL \u2192 Vd = 11.2 L (positive; Cmax uses max(Vd,1))",
+      "passed": true,
+      "details": "Vd = 28\u00d7(1+(1-12/4)\u00d70.3) = 28\u00d7(1+(1-3)\u00d70.3) = 28\u00d70.4 = 11.2000 L",
+      "group": "G"
+    },
+    {
+      "name": "G-7: albumin=20 (extreme) \u2192 Vd turns negative but Cmax still finite (max(Vd,1) guard)",
+      "passed": true,
+      "details": "Vd = -5.6000 L  (negative \u2014 unphysical albumin, no guard on Vd directly)\nCmax = 400.0000 \u03bcg/mL  (finite via max(Vd,1)=1)\nFINDING: No guard on Vd itself; only Cmax/ke use max(Vd,1)",
+      "group": "G"
+    },
+    {
+      "name": "G-8: NaN eGFR input \u2192 NaN propagates through K_exc/K_vanco/C/PK (expected)",
+      "passed": true,
+      "details": "NaN/Inf in outputs: ['K_exc', 'Kt', 'K_vanco', 'C_ceft', 'C_vanco', 'CL', 'ke', 'tHalf', 'Ctrough']\n(NaN propagation is expected \u2014 no NaN guard in JS either; UI relies on HTML input validation)",
+      "group": "G"
+    },
+    {
+      "name": "H-1: K_vanco is a function of eGFR alone (not albumin/trough/mero)",
+      "passed": true,
+      "details": "Unique K_vanco per eGFR across 18 input combinations each: all unique \u2713",
+      "group": "H"
+    },
+    {
+      "name": "H-2: K_dist is a function of albumin alone (not eGFR/trough/mero)",
+      "passed": true,
+      "details": "Unique K_dist per albumin across 12 input combinations each: all unique \u2713",
+      "group": "H"
+    },
+    {
+      "name": "H-3: K_exc is a function of eGFR alone (not albumin/trough/mero)",
+      "passed": true,
+      "details": "Unique K_exc per eGFR across 12 input combinations each: all unique \u2713",
+      "group": "H"
+    },
+    {
+      "name": "H-4: K_tox_base depends only on vancoTrough (binary: \u226415 \u2192 0.05, >15 \u2192 0.20)",
+      "passed": true,
+      "details": "Values tested: [5, 10, 15, 16, 20] \u2192 result unique per trough: \u2713",
+      "group": "H"
+    },
+    {
+      "name": "H-5: K_collateral depends only on priorMero (binary: <90 \u2192 0.10, \u226590 \u2192 0.0)",
+      "passed": true,
+      "details": "Values tested: [14, 89, 90, 200] \u2192 result unique per mero: \u2713",
+      "group": "H"
+    },
+    {
+      "name": "H-6: K_vanco \u2260 Kt for default patient (different PD models for each drug)",
+      "passed": true,
+      "details": "K_vanco = 2.150000\nKt      = 0.765625\nRatio   = 2.8082  (vancomycin has higher inherent curvature)",
+      "group": "H"
+    },
+    {
+      "name": "H-7: C_ceft/C_vanco = (\u03c4_ceft/\u03c4_vanco) \u00d7 (K_vanco/Kt) exactly",
+      "passed": true,
+      "details": "\u03c4 ratio (12/4): 3.0000\u00d7\nK ratio (K_vanco/Kt): 2.8082\u00d7\nProduct: 8.424490\nC_ceft/C_vanco: 8.424490\n|diff|: 0.00e+00",
+      "group": "H"
+    }
+  ]
+}

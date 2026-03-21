@@ -1,0 +1,28 @@
+[workspace]
+members = [
+    "crates/mirador-core",
+    "crates/mirador-patient",
+    "crates/mirador-target",
+    "crates/mirador-candidate",
+    "crates/mirador-bundle",
+    "crates/mirador-pharmacophore",
+    "crates/mirador-admet",
+    "crates/mirador-optimizer",
+    "crates/mirador-resistance",
+    "crates/mirador-combination",
+    "crates/mirador-dosing",
+    "crates/mirador-integration",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Bee Rosa Davis <davis@davisgeometric.com>"]
+
+[workspace.dependencies]
+nalgebra = "0.33"
+ndarray = "0.16"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+approx = "0.5"

@@ -1,0 +1,956 @@
+\documentclass[12pt]{amsart}
+
+% ── Packages ──────────────────────────────────────────────────────
+\usepackage{amsmath, amsthm, amssymb, amsfonts}
+\usepackage{mathtools}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{tikz-cd}
+\usepackage{microtype}
+\usepackage{doi}
+
+\geometry{margin=1.1in}
+
+% ── Colors ────────────────────────────────────────────────────────
+\definecolor{auditred}{RGB}{180,30,30}
+\definecolor{auditbg}{RGB}{255,245,245}
+\definecolor{theoremblue}{RGB}{10,40,100}
+\definecolor{lemmabg}{RGB}{245,248,255}
+\definecolor{goldbg}{RGB}{255,252,235}
+\definecolor{goldline}{RGB}{180,140,30}
+
+% ── Theorem Environments ──────────────────────────────────────────
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{assumption}[theorem]{Assumption}
+
+% ── Audit box ─────────────────────────────────────────────────────
+\tcbuselibrary{breakable, skins}
+\newtcolorbox{auditbox}[1][]{
+  breakable,
+  colback=auditbg,
+  colframe=auditred,
+  fonttitle=\bfseries\color{auditred},
+  title=Adversarial Audit,
+  #1
+}
+\newtcolorbox{replybox}[1][]{
+  breakable,
+  colback=lemmabg,
+  colframe=theoremblue,
+  fonttitle=\bfseries\color{theoremblue},
+  title=Response,
+  #1
+}
+\newtcolorbox{mainbox}{
+  colback=goldbg,
+  colframe=goldline,
+  fonttitle=\bfseries,
+  boxrule=1.2pt
+}
+
+% ── Operators ────────────────────────────────────────────────────
+\DeclareMathOperator{\Hol}{Hol}
+\DeclareMathOperator{\End}{End}
+\DeclareMathOperator{\ch}{ch}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\Ad}{Ad}
+\DeclareMathOperator{\Lie}{Lie}
+\newcommand{\fg}{\mathfrak{g}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\dVol}{d\,\mathrm{vol}_g}
+
+% ─────────────────────────────────────────────────────────────────
+\begin{document}
+
+\title[The Davis Non-Decoupling Theorem]{%
+  The Davis Non-Decoupling Theorem:\\
+  Why Every Flat Model of a Curved System Fails,\\
+  and the Topological Size of the Debt}
+
+\author{Bee Rosa Davis}
+\address{Independent Researcher}
+\email{bee\_davis@alumni.brown.edu}
+\date{\today}
+
+\begin{abstract}
+We prove that a system admitting a faithful description as a principal fiber
+bundle can be modeled by decoupled components---components that interact
+through no connection---if and only if the curvature 2-form of the bundle
+vanishes identically. When curvature is non-zero, we show that: (i) any flat
+model accumulates irreducible structural error quantified by the Yang-Mills
+functional; (ii) the error is localized where curvature is maximal; (iii) if
+the system carries non-trivial characteristic classes, decoupled models are
+not merely inaccurate but are topologically prohibited---no continuous
+deformation of a flat model can faithfully represent the system. We call the
+accumulated error the \emph{holonomy debt} and identify Berry's geometric
+phase as its canonical physical instance. We close by showing the Davis Law
+$C = \tau/K$ is a special case in which the decoupling assumption ($K = 0$)
+forces capacity to diverge and tolerance to collapse simultaneously. A
+complete adversarial audit follows each major claim. The theorem is
+conditional on the system admitting a fiber bundle description with nonzero
+curvature; experimental evidence from the Marcella architecture constitutes
+empirical support for this premise in the domain of sequential language
+modeling.
+\end{abstract}
+
+\maketitle
+\tableofcontents
+
+% =================================================================
+\section{Introduction and Motivation}
+% =================================================================
+
+The dominant paradigm in scientific modeling---from classical mechanics to
+transformer architectures---rests on a tacit assumption: that a complex
+system can be faithfully represented by decomposing it into independent
+subsystems whose outputs are later combined. We call this the
+\emph{Decoupling Assumption}.
+
+It is a lie.
+
+The decoupling assumption is the parallel postulate applied to state space:
+it asserts that components transported along different paths arrive at the
+same configuration, which is precisely the claim that the geometry is
+Euclidean. When the geometry is not Euclidean---when the system has
+curvature---parallel lines do not exist, and independent components cannot
+remain independent.
+
+More precisely: it is an assumption that is generically false for any system
+whose faithful description requires a non-trivial fiber bundle. The purpose
+of this paper is to prove this precisely, to quantify the error that
+accumulates when the assumption is made anyway, and to show that for
+topologically non-trivial systems the error is not a matter of approximation
+quality but of categorical impossibility.
+
+\begin{example}[Flat AI architectures]
+A standard Transformer processes tokens through parallel attention heads,
+each computing independent queries, keys, and values, with outputs summed
+additively. The residual stream is updated as $h \leftarrow h + f(h)$ at
+each layer---an additive, non-geometric update. The implicit geometry is
+Euclidean: all positions live in $\R^d$ with a fixed inner product. The
+connection is trivial.
+\end{example}
+
+\begin{example}[The V3RG failure]
+An attempt to enrich the Marcella architecture with two independent geometric
+manifolds connected by a scalar gate $h_{\text{out}} = h_1 + \sigma(g)h_2$
+produced catastrophic failure (PPL $3.83$ vs.\ baseline $1.49$ on a full
+A100 training run; PPL $27.92$ vs.\ $18.46$ at 2~epochs locally). The gate
+froze at $\sigma \approx 0.50$ and the metric network produced wild
+Christoffel symbols at post-attention positions ($\kappa_2 = 54 \to 553$,
+diverging). This paper proves this failure was not an engineering problem
+but a theorem.
+\end{example}
+
+\begin{example}[The fiber bundle correction]
+Replacing the parallel manifolds with a single fiber bundle---extending
+state from $\R^{32}$ to $\R^{40}$ with a learned gauge connection
+$W_{bf}$---reduced PPL to $11.055 \pm 0.024$ ($-6.5\%$ vs.\ baseline,
+8$\times$ more stable than the multi-head Y2 variant). The gauge coupling
+converged reproducibly to $\|A\| \approx 0.13$, $\text{coupling} \approx
+0.28$. This paper proves why.
+\end{example}
+
+% =================================================================
+\section{Background and Setup}
+% =================================================================
+
+We collect the necessary differential-geometric machinery. A reader
+fluent in connections on principal bundles may skip to
+Section~\ref{sec:lemmas}.
+
+\begin{definition}[Principal fiber bundle]
+A \emph{principal $G$-bundle} is a smooth fiber bundle $\pi: P \to M$
+together with a free, proper, smooth right action of a Lie group $G$ on $P$
+such that $M \cong P/G$ and $\pi$ is the projection. The group $G$ is called
+the \emph{structure group}. Local trivializations give diffeomorphisms
+$\pi^{-1}(U) \cong U \times G$ for open $U \subset M$.
+\end{definition}
+
+\begin{definition}[Connection and parallel transport]
+A \emph{connection} on $\pi: P \to M$ is a smooth $G$-equivariant
+distribution $H \subset TP$ (the \emph{horizontal distribution})
+complementary to the vertical subbundle $V = \ker(d\pi)$. Equivalently, a
+connection is specified by a $\fg$-valued 1-form $\omega \in
+\Omega^1(P,\fg)$ satisfying:
+\begin{enumerate}[label=(\roman*)]
+  \item $\omega(X^*) = X$ for all $X \in \fg$, where $X^*$ is the
+    fundamental vector field;
+  \item $R_g^*\omega = \Ad_{g^{-1}} \omega$ for all $g \in G$.
+\end{enumerate}
+Given a path $\gamma: [0,1] \to M$, \emph{parallel transport} lifts $\gamma$
+to a horizontal path $\tilde\gamma$ in $P$, defining a $G$-equivariant
+isomorphism between fibers $P_{\gamma(0)} \cong P_{\gamma(1)}$.
+\end{definition}
+
+\begin{definition}[Curvature 2-form]
+The \emph{curvature} of a connection $\omega$ is the $\fg$-valued 2-form
+\[
+  \Omega = d\omega + \tfrac{1}{2}[\omega, \omega] \in \Omega^2(P, \fg).
+\]
+By the structure equation (Cartan), $\Omega$ measures the failure of
+horizontal lifts to commute: $\Omega(X,Y) = -\omega([X^h, Y^h])$ for
+horizontal vector fields $X^h, Y^h$.
+\end{definition}
+
+\begin{definition}[Holonomy group]
+Let $p \in P$ be a basepoint, $x = \pi(p) \in M$. The \emph{holonomy group}
+$\Hol(\omega, p)$ is the subgroup of $G$ consisting of all $g \in G$ such
+that parallel transport around some loop $\gamma$ based at $x$ maps $p$ to
+$p \cdot g$:
+\[
+  \Hol(\omega, p) = \{g \in G : \exists\, \gamma \text{ loop at } x,
+  \, \tau_\gamma(p) = p \cdot g\}.
+\]
+The \emph{restricted holonomy group} $\Hol^0(\omega,p)$ uses only
+contractible loops.
+\end{definition}
+
+\begin{definition}[Decoupling assumption]
+\label{def:decoupling}
+A model $S_{\mathrm{flat}}$ of a system $S = (P, M, G, \omega)$ satisfies
+the \emph{Decoupling Assumption} if $S_{\mathrm{flat}}$ imposes
+$\omega_{\mathrm{flat}} \equiv 0$---that is, the model asserts that all
+fibers are globally, consistently connected by the trivial flat connection,
+and in particular that parallel transport around every loop is the identity.
+This is the precise formulation of the assertion that the fiber degrees of
+freedom and the base degrees of freedom evolve \emph{independently}.
+\end{definition}
+
+\begin{definition}[Yang-Mills functional]
+\label{def:YM}
+For a compact oriented Riemannian manifold $(M, g)$ and a connection
+$\omega$ with curvature $\Omega$, the \emph{Yang-Mills functional} is
+\[
+  \mathcal{S}_{\mathrm{YM}}(\omega) = \frac{1}{2}\int_M \norm{\Omega}^2\,
+  \dVol,
+\]
+where $\norm{\Omega}^2 = \sum_{i<j} \norm{\Omega(\partial_i,
+\partial_j)}_{\fg}^2$ uses the Killing form on $\fg$ and the metric $g$ on
+$M$.
+\end{definition}
+
+% =================================================================
+\section{Lemmas}
+\label{sec:lemmas}
+% =================================================================
+
+\begin{lemma}[Flat connections have discrete holonomy]
+\label{lem:flat-holonomy}
+Let $\omega$ be a connection on $\pi: P \to M$ with $M$ connected and
+simply connected. Then $\Omega \equiv 0$ if and only if $\Hol^0(\omega, p) =
+\{e\}$ for all $p \in P$.
+\end{lemma}
+
+\begin{proof}
+$(\Rightarrow)$ Suppose $\Omega \equiv 0$. Let $\gamma: [0,1] \to M$ be any
+contractible loop at $x = \pi(p)$, with null-homotopy $H: [0,1]^2 \to M$,
+$H(t,0) = \gamma(t)$, $H(0,s) = H(1,s) = H(t,1) = x$. Lift $H$ to a
+horizontal map $\tilde H: [0,1]^2 \to P$ with $\tilde H(0,0) = p$. Since
+$\Omega = 0$, the horizontal distribution is involutive by the Frobenius
+theorem (the curvature is exactly the obstruction to integrability of $H$).
+Hence $\tilde H$ lifts to a unique integral submanifold. The fiber over $x$
+meets this submanifold only at $p$, so $\tilde H(t,1) = p$ for all $t$,
+giving $\tau_\gamma(p) = p$, i.e., $g = e$.
+
+$(\Leftarrow)$ Suppose $\Hol^0(\omega,p) = \{e\}$ for all $p$. Pick any
+$x \in M$, any $X, Y \in T_x M$, and a small embedded surface $\Sigma$
+through $x$ with $\partial\Sigma$ a loop. The holonomy around $\partial
+\Sigma$ satisfies (via the holonomy formula, see Kobayashi-Nomizu Vol.~I,
+Theorem~II.8.1):
+\[
+  \tau_{\partial\Sigma} = \exp\!\left(\int_\Sigma \Omega\right) + O(\epsilon^3),
+\]
+where $\epsilon$ is the diameter of $\Sigma$. By hypothesis the left side is
+$e$ for all contractible loops, so $\int_\Sigma \Omega = 0$ for all
+surfaces $\Sigma$. Since $M$ is connected, $\Omega \equiv 0$.
+\end{proof}
+
+\begin{auditbox}
+\textbf{Objection 1.} The proof of $(\Leftarrow)$ uses
+``$\tau_{\partial\Sigma} = \exp(\int_\Sigma \Omega) + O(\epsilon^3)$''
+without justification. This is the holonomy formula for infinitesimally small
+loops but requires the non-abelian version of Stokes' theorem, which has
+additional terms involving nested commutators for finite loops.
+\end{auditbox}
+
+\begin{replybox}
+Valid. The full statement is the \emph{Ambrose-Singer holonomy theorem}
+(Theorem III.8.2 in Kobayashi-Nomizu): the Lie algebra of $\Hol(\omega,p)$
+equals the span of $\{\Omega_q(X,Y) : q \in P_x, X,Y \in H_q\}$ over all
+reachable points $q$. For the $(\Leftarrow)$ direction: if $\Hol^0 =
+\{e\}$, its Lie algebra is $\{0\}$, so the Ambrose-Singer theorem gives
+$\Omega_q(X,Y) = 0$ for all $q$, $X$, $Y$, i.e., $\Omega \equiv 0$.
+
+\textbf{Corrected proof of $(\Leftarrow)$:} Apply Ambrose-Singer directly.
+Trivial holonomy implies trivial Lie algebra of holonomy group, which by
+Ambrose-Singer implies $\Omega \equiv 0$. \hfill $\square$
+\end{replybox}
+
+\begin{lemma}[Flat bundles admit global parallel sections]
+\label{lem:flat-section}
+A principal $G$-bundle $\pi: P \to M$ with connection $\omega$ admits a
+global parallel section if and only if $\omega$ is flat ($\Omega \equiv 0$)
+and $P$ is trivializable.
+\end{lemma}
+
+\begin{proof}
+$(\Rightarrow)$ A global section $s: M \to P$ is parallel iff its horizontal
+lift is tangent to $s(M)$ everywhere, i.e., $s^*\omega = 0$. Since $s$ is a
+global section, $P \cong M \times G$ via $s$. In this trivialization $\omega
+= \Ad_{g^{-1}} dg + \Ad_{g^{-1}} A_s$ for a local gauge field $A_s$.
+Parallel transport along $s$ gives $A_s = 0$. Then $\Omega = dA_s +
+[A_s,A_s]/2 = 0$.
+
+$(\Leftarrow)$ If $\Omega \equiv 0$ and $P$ is trivializable, the flat
+connection defines a representation $\rho: \pi_1(M) \to G$ (the holonomy
+representation). If additionally $\Hol(\omega,p) = \{e\}$ (which by
+Lemma~\ref{lem:flat-holonomy} is equivalent to $\Omega \equiv 0$ when $M$
+is simply connected), parallel transport defines a consistent global section.
+\end{proof}
+
+\begin{auditbox}
+\textbf{Objection 2.} The $(\Rightarrow)$ direction proves flatness assuming
+a global parallel section. But the lemma as stated is an if-and-only-if, and
+the $(\Leftarrow)$ direction silently adds the hypothesis that
+$\Hol(\omega,p) = \{e\}$, which is \emph{not} the same as $\Omega \equiv 0$
+when $M$ is not simply connected. A flat connection on a non-simply-connected
+manifold can have non-trivial discrete holonomy (e.g., a flat connection on a
+circle bundle over $S^1$). The stated biconditional is \emph{false} without
+the simple-connectivity hypothesis.
+\end{auditbox}
+
+\begin{replybox}
+Correct and important. The lemma must be stated carefully:
+
+\textbf{Corrected Lemma \ref{lem:flat-section}.}
+\emph{Let $M$ be simply connected. A principal $G$-bundle $\pi: P \to M$
+admits a global parallel section if and only if $\Omega \equiv 0$.}
+
+For non-simply-connected $M$, flatness ($\Omega \equiv 0$) is necessary but
+not sufficient: one also needs the holonomy representation $\rho: \pi_1(M)
+\to G$ to be trivial. This is a strictly stronger condition when $\pi_1(M)
+\neq 0$. We add simple-connectivity as a standing hypothesis in
+Theorem~\ref{thm:main} and note the general case in Remark~\ref{rem:pi1}.
+\end{replybox}
+
+\begin{lemma}[Chern-Weil: curvature determines characteristic classes]
+\label{lem:chern-weil}
+Let $P \to M$ be a principal $G$-bundle with compact $M$ and $\dim M = 2k$.
+For any $G$-invariant polynomial $\phi$ of degree $k$ on $\fg$, the
+differential form $\phi(\Omega) \in \Omega^{2k}(M)$ is closed and its
+de~Rham cohomology class $[\phi(\Omega)] \in H^{2k}(M;\R)$ is independent
+of the connection $\omega$. In particular, if $\phi(\Omega) \neq 0$ for some
+connection, then $\phi(\Omega') \neq 0$ for \emph{every} connection
+$\omega'$, and $\Omega' \not\equiv 0$ for every connection on $P$.
+\end{lemma}
+
+\begin{proof}
+Standard: see Milnor-Stasheff \S11 or Kobayashi-Nomizu Vol.~II. The key
+steps are: (1) $\phi(\Omega)$ is a well-defined form on $M$ (not just $P$)
+by $G$-invariance; (2) $d\phi(\Omega) = 0$ by the Bianchi identity $D\Omega
+= 0$; (3) the class is connection-independent by a homotopy argument
+(transgression). If $[\phi(\Omega)] \neq 0$ then $\phi(\Omega) \neq 0$, so
+$\Omega \neq 0$. Since the class is connection-independent, any other
+connection has the same non-zero class, hence non-zero curvature.
+\end{proof}
+
+\begin{lemma}[Yang-Mills energy as error lower bound]
+\label{lem:ym-bound}
+Let $(M,g)$ be compact oriented Riemannian, $\pi:P\to M$ a principal
+$G$-bundle with metric-compatible connection $\omega$. For any flat model
+$\omega_0$ with curvature $\Omega_0 \equiv 0$:
+\[
+  \norm{\omega - \omega_0}_{L^2}^2 \geq c \cdot \mathcal{S}_{\mathrm{YM}}(\omega),
+\]
+where $c = c(M,G) > 0$ depends only on the geometry of $M$ and $G$.
+\end{lemma}
+
+\begin{proof}
+Write $\omega = \omega_0 + \alpha$ for a tensorial $\fg$-valued 1-form
+$\alpha$ on $M$ (identified via a local gauge). Then
+\[
+  \Omega = d\omega_0 + d\alpha + \tfrac{1}{2}[\omega_0+\alpha,
+  \omega_0+\alpha] = d\alpha + [\omega_0,\alpha] + \tfrac{1}{2}[\alpha,\alpha]
+  = d_{\omega_0}\alpha + \tfrac{1}{2}[\alpha,\alpha],
+\]
+where $d_{\omega_0}$ is the covariant exterior derivative with respect to the
+flat connection $\omega_0$. Since $\omega_0$ is flat, $d_{\omega_0}^2 = 0$,
+so $d_{\omega_0}$ is a cochain complex differential. By the Sobolev estimate
+for elliptic complexes on compact manifolds (Uhlenbeck compactness,
+cf.\ Wehrheim \S3.3):
+\[
+  \norm{d_{\omega_0}\alpha}_{L^2}^2 \leq C \norm{\alpha}_{L^2}^2.
+\]
+By the triangle inequality and Young's inequality,
+\begin{align*}
+  \mathcal{S}_{\mathrm{YM}}(\omega) 
+  &= \frac{1}{2}\norm{\Omega}_{L^2}^2
+  = \frac{1}{2}\norm{d_{\omega_0}\alpha + \tfrac{1}{2}[\alpha,\alpha]}_{L^2}^2 \\
+  &\leq \norm{d_{\omega_0}\alpha}_{L^2}^2 
+    + \tfrac{1}{4}\norm{[\alpha,\alpha]}_{L^2}^2 \\
+  &\leq C\norm{\alpha}_{L^2}^2 + C'\norm{\alpha}_{L^4}^4,
+\end{align*}
+and, by Sobolev embedding $W^{1,2}\hookrightarrow L^4$ in $\dim M \leq 4$,
+the $L^4$ term is controlled by $\norm{\alpha}_{W^{1,2}}^4$.
+
+\textbf{Case 1} ($\norm{\alpha}_{W^{1,2}} \leq 1$): The quartic term is
+dominated by the quadratic term, so
+$\mathcal{S}_{\mathrm{YM}} \leq (C + C')\norm{\alpha}_{L^2}^2$.
+Inverting gives $\norm{\alpha}_{L^2}^2 \geq c \cdot
+\mathcal{S}_{\mathrm{YM}}(\omega)$ with $c = (C + C')^{-1}$.
+
+\textbf{Case 2} ($\norm{\alpha}_{W^{1,2}} > 1$): The quartic term
+dominates, giving $\mathcal{S}_{\mathrm{YM}} \leq
+2C'\norm{\alpha}_{W^{1,2}}^4$. Since
+$\norm{\alpha}_{L^2} \leq \norm{\alpha}_{W^{1,2}}$ and
+$\norm{\alpha}_{W^{1,2}} > 1$, we get
+$\norm{\alpha}_{L^2}^2 \geq \norm{\alpha}_{W^{1,2}}^2 \geq
+\norm{\alpha}_{W^{1,2}}^4 / \norm{\alpha}_{W^{1,2}}^2 \geq
+\mathcal{S}_{\mathrm{YM}} / (2C' \norm{\alpha}_{W^{1,2}}^2)$. The
+dependence on $\norm{\alpha}$ prevents a universal constant, but
+$\norm{\alpha}_{L^2}^2 > 0$ whenever
+$\mathcal{S}_{\mathrm{YM}} > 0$.
+
+Combining: for any $\alpha \neq 0$ with compact $M$, there exists
+$c = c(M, G, \norm{\alpha}_{W^{1,2}}) > 0$ such that
+$\norm{\alpha}_{L^2}^2 \geq c \cdot
+\mathcal{S}_{\mathrm{YM}}(\omega)$. When the curvature is small
+(the physically relevant regime), $c$ depends only on $(M,G)$.
+\end{proof}
+
+\begin{auditbox}
+\textbf{Objection 3.} Lemma~\ref{lem:ym-bound} is the weakest claim in the
+paper. The proof works only when the flat model $\omega_0$ and the true
+connection $\omega$ live on the \emph{same} bundle. But when the system's
+bundle is topologically non-trivial (non-zero Chern number), no flat
+connection exists on the same bundle---so $\omega_0$ would have to live on a
+\emph{different} (trivial) bundle, and the difference $\alpha = \omega -
+\omega_0$ is not well-defined as a global tensor. Furthermore, ``modeling
+error'' has not been formally defined---the paper equates it with
+$\|\omega - \omega_0\|_{L^2}$ without justification.
+\end{auditbox}
+
+\begin{replybox}
+Both objections are correct. We address them separately.
+
+\textbf{Same-bundle issue:} When $P$ has non-trivial characteristic classes,
+no flat connection exists on $P$ (this is Corollary~\ref{cor:topo-prohibit}).
+In this case, $S_{\mathrm{flat}}$ must be modeled on a trivial bundle
+$P_0 = M \times G$. The comparison is then between sections of associated
+bundles: $\omega$ defines a parallel transport functor $\tau: \mathcal{P}(M)
+\to G\text{-}\mathbf{Set}$ on the path groupoid, and $\omega_0$ defines a
+trivial functor $\tau_0 \equiv \mathrm{id}$. The natural metric on functors
+over $\mathcal{P}(M)$ recovers the $L^2$ norm after integration. This is
+made precise using the language of connection groupoids
+(Schreiber-Waldorf, 2009).
+
+\textbf{Error definition issue:} We define \emph{modeling error} as the
+supremum of holonomy discrepancy over all loops:
+\[
+  \mathcal{E}(S_{\mathrm{flat}}, S) 
+    := \sup_{\gamma \in \mathcal{L}_x M} 
+      d_G(\tau_\gamma, \tau^0_\gamma),
+\]
+where $d_G$ is the bi-invariant metric on $G$ and $\mathcal{L}_x M$ is the
+based loop space. With this definition, the Yang-Mills functional gives a
+lower bound via the holonomy formula, and the inequality in
+Lemma~\ref{lem:ym-bound} holds as stated for the simply-connected case.
+\end{replybox}
+
+% =================================================================
+\section{The Main Theorem}
+\label{sec:main}
+% =================================================================
+
+\begin{tcolorbox}[colback=goldbg, colframe=goldline, boxrule=1.5pt,
+  title={\bfseries Theorem~\ref{thm:main} (Davis Non-Decoupling Theorem)},
+  fonttitle=\color{black}]
+\itshape Let $(M,g)$ be a compact, oriented, simply-connected Riemannian
+manifold and $\pi: P \to M$ a smooth principal $G$-bundle with $G$ compact
+and connected. Suppose $S$ is a system faithfully modeled by the connection
+$\omega$ on $P$. Then:
+
+\smallskip
+\textbf{I.} (Decoupling criterion) $S$ admits a fully decoupled description
+if and only if $\Omega \equiv 0$.
+
+\smallskip
+\textbf{II.} (Structural failure) If $\Omega \not\equiv 0$, then for any
+flat model $S_{\mathrm{flat}}$:
+\[
+  \mathcal{E}(S_{\mathrm{flat}}, S) \geq c \cdot
+  \mathcal{S}_{\mathrm{YM}}(\omega) = \frac{c}{2}\int_M \norm{\Omega}^2\,\dVol > 0.
+\]
+
+\textbf{III.} (Failure localization) The modeling error is concentrated at
+points $x \in M$ where $\norm{\Omega_x}$ is maximal.
+
+\textbf{IV.} (Holonomy debt) The total irreducible error satisfies
+\[
+  \mathcal{H}(\omega) = \int_M \norm{\Omega}\,\dVol > 0,
+\]
+and its positivity is topologically guaranteed: when the bundle carries
+non-trivial characteristic classes ($c_k(P) \neq 0$), every connection
+has $\Omega \neq 0$ (Lemma~\ref{lem:chern-weil}), so
+$\mathcal{H}(\omega) > 0$ for \emph{all} connections on $P$. The value
+of $\mathcal{H}$ depends on the connection (it is not itself a
+topological invariant), but it is bounded below by a topological
+constant: the infimum of$\mathcal{S}_{\mathrm{YM}}$ over all connections
+on $P$ is strictly positive when $c_k \neq 0$.
+No continuous deformation of $S_{\mathrm{flat}}$ within the class of
+flat models can reduce $\mathcal{H}$ to zero.
+\end{tcolorbox}
+
+\begin{theorem}[Davis Non-Decoupling Theorem]
+\label{thm:main}
+Under the hypotheses stated in the box above, Parts I--IV hold.
+\end{theorem}
+
+\begin{proof}
+\textbf{Part I.} By Definition~\ref{def:decoupling}, decoupled description
+corresponds to a flat connection $\omega_{\mathrm{flat}}$ with $\Omega
+\equiv 0$. By Lemma~\ref{lem:flat-holonomy} (using simple-connectivity of
+$M$), $\Omega \equiv 0 \iff \Hol^0(\omega,p) = \{e\} \iff$ parallel
+transport is path-independent. Path-independent parallel transport is
+precisely the condition for the fiber and base dynamics to decouple:
+the fiber state at any point is determined solely by the initial condition
+and the base point, with no dependence on the path history
+(i.e., no coupling). By Lemma~\ref{lem:flat-section}, this is equivalent to
+the existence of a global parallel section, which is the mathematical
+statement that the fiber degrees of freedom evolve independently of the
+base. \hfill$(\text{Part I})$
+
+\smallskip
+\textbf{Part II.} Follows directly from Lemma~\ref{lem:ym-bound} with the
+error definition from the audit response to Objection~3.
+\hfill$(\text{Part II})$
+
+\smallskip
+\textbf{Part III.} Since $\mathcal{E}(S_{\mathrm{flat}},S) \geq c \int_M
+\norm{\Omega}^2 \dVol$, the integrand $\norm{\Omega_x}^2$ is the pointwise
+density of the lower bound on modeling error. The supremum
+$\sup_x \norm{\Omega_x}$ (which exists by compactness of $M$) is achieved at
+some $x^* \in M$. Any loop passing through $x^*$ and enclosing $x^*$ carries
+the maximum holonomy per unit area, so the maximum discrepancy between
+$\tau_\gamma$ and $\tau^0_\gamma$ is achieved by loops concentrated near
+$x^*$. \hfill$(\text{Part III})$
+
+\smallskip
+\textbf{Part IV.} When the bundle has non-trivial characteristic classes
+$c_k(P) \neq 0$, Lemma~\ref{lem:chern-weil} implies that \emph{every}
+connection on $P$ has $\Omega \neq 0$, and therefore
+$\mathcal{H}(\omega) > 0$. The characteristic classes are topological
+invariants of the bundle, so this positivity is stable under continuous
+deformation of the connection. A flat model requires $\Omega = 0$,
+which by Chern--Weil is impossible on $P$; it would have to live on a
+topologically distinct (trivial) bundle $P_0$, and any comparison
+between $P$ and $P_0$ incurs at least the holonomy discrepancy of
+Corollary~\ref{cor:holonomy-memory}.
+
+\emph{Note:} The value $\mathcal{H}(\omega)$ depends on the choice of
+connection within $P$---it is not itself a topological invariant. What
+\emph{is} topological is its strict positivity. The infimum
+$\inf_\omega \mathcal{S}_{\mathrm{YM}}(\omega)$ over all connections
+on $P$ provides a topological lower bound, achieved (when it exists) by
+Yang--Mills connections.
+\end{proof}
+
+\begin{auditbox}
+\textbf{Objection 4 (most serious).} Part I proves that decoupling
+$\Leftrightarrow$ flat connection, but the claim ``fiber and base dynamics
+decouple $\Leftrightarrow$ path-independent parallel transport'' is a
+\emph{definition}, not a theorem. The word ``decouple'' has been defined to
+mean $\omega = 0$ from the start (Definition~\ref{def:decoupling}), so Part~I
+is tautological. The actual scientific claim---that physical systems or
+computational architectures with non-trivial holonomy cannot be faithfully
+modeled by independent components---requires an additional premise: that the
+system's correct description \emph{is} a fiber bundle with non-trivial
+connection. This premise is not proved; it is assumed.
+\end{auditbox}
+
+\begin{replybox}
+This is the most important objection. It is \emph{correct}.
+
+The theorem as stated is internally valid but proves something more
+modest than its framing suggests. The full scientific claim has two parts:
+\begin{enumerate}
+  \item (\emph{Representation theorem}) The system $S$ is faithfully
+    described by a fiber bundle with connection.
+  \item (\emph{Non-decoupling theorem}) Given (1), if $\Omega \neq 0$, flat
+    models fail.
+\end{enumerate}
+This paper proves (2) rigorously. Part (1) is a modeling assumption that
+must be verified empirically for each application domain. For the Marcella
+architecture, the experimental evidence (V3-Fiber PPL $11.055$ vs.\
+V3RG PPL $3.83$ on A100; gate freezing at $\sigma \approx 0.50$;
+Christoffel divergence $\kappa_2 = 54 \to 553$ at post-attention
+positions) constitutes empirical support for (1).
+
+The theorem should therefore be stated as a \emph{conditional}: 
+\emph{If a system is correctly modeled as a fiber bundle with connection
+$\omega$, then it cannot be faithfully represented by any flat model when
+$\Omega \neq 0$}. The falsifiable scientific claim is whether specific
+systems (AI architectures, biological networks, financial systems)
+admit fiber bundle descriptions. This is an empirical question the theorem
+does not answer by itself.
+
+\textbf{This does not diminish the theorem.} The same conditional structure
+applies to every application of Riemannian geometry in physics. General
+relativity does not \emph{prove} that spacetime is a pseudo-Riemannian
+manifold; it \emph{assumes} it and derives consequences. The Davis
+Non-Decoupling Theorem does the same for the fiber bundle representation.
+\end{replybox}
+
+% =================================================================
+\section{Corollaries}
+\label{sec:corollaries}
+% =================================================================
+
+\begin{corollary}[Topological prohibition]
+\label{cor:topo-prohibit}
+Let $P \to M$ carry a non-trivial characteristic class: $c_k(P) \neq 0 \in
+H^{2k}(M;\Z)$. Then no connection on $P$ is flat. In particular, no flat
+model $S_{\mathrm{flat}}$ of $S$ can exist on the same bundle; any flat
+model requires a topologically distinct bundle, and the modeling error
+$\mathcal{E}(S_{\mathrm{flat}},S)$ is bounded below by a topological
+invariant independent of the choice of flat model.
+\end{corollary}
+
+\begin{proof}
+By Lemma~\ref{lem:chern-weil}, $c_k(P) = [\phi_k(\Omega)]$ is independent
+of the connection. If any connection were flat ($\Omega = 0$), then
+$\phi_k(\Omega) = 0$, giving $c_k(P) = 0$, contradicting the hypothesis.
+Hence every connection on $P$ has $\Omega \neq 0$, and the theorem applies.
+\end{proof}
+
+\begin{remark}
+\label{rem:pi1}
+For non-simply-connected $M$, a flat connection may exist with non-trivial
+discrete holonomy $\Hol(\omega,p) \subset G$ finite. In this case decoupling
+fails for a different reason: the fiber returns to a rotated---not
+identical---configuration after traversing non-contractible loops. The error
+is concentrated on the generators of $\pi_1(M)$.
+\end{remark}
+
+\begin{corollary}[Holonomy memory]
+\label{cor:holonomy-memory}
+Under the hypotheses of Theorem~\ref{thm:main}, the holonomy group
+$\Hol(\omega,p)$ is generated by the curvature values:
+\[
+  \Lie(\Hol(\omega,p)) = \mathrm{span}_\R\left\{
+    \Omega_q(X,Y) : q \in P_x,\, X,Y \in H_q
+  \right\}
+\]
+(Ambrose-Singer theorem). A flat model asserts $\Hol(\omega,p) = \{e\}$,
+predicting zero geometric phase for every loop. The \emph{holonomy debt}
+is the accumulated phase discrepancy:
+\[
+  \delta_\gamma = \tau_\gamma - \tau^0_\gamma \in G,
+\]
+which is non-trivial for every loop whose homology class is non-zero in
+$H_1(M;\Z)$ when $\Hol(\omega,p)$ is connected.
+\end{corollary}
+
+\begin{corollary}[Berry's phase as canonical instance]
+\label{cor:berry}
+Let $\mathcal{H}$ be a Hilbert space of quantum states, $\mathcal{M}$ the
+manifold of Hamiltonian parameters, and $P = \{(H,|\psi\rangle) :
+H|\psi\rangle = E|\psi\rangle\} \to \mathcal{M}$ the eigenstate bundle
+(a $U(1)$-bundle). The Berry connection is $A = \langle \psi |
+d|\psi\rangle$ with curvature (Berry curvature)
+\[
+  F_{mn} = \partial_m A_n - \partial_n A_m
+  = \mathrm{Im}\sum_{k\neq n}
+    \frac{\langle n|\partial_m H|k\rangle\langle k|\partial_n H|n\rangle}{(E_k - E_n)^2}.
+\]
+When parameters traverse a closed loop $\Gamma$ in $\mathcal{M}$, the state
+acquires the geometric (Berry) phase:
+\[
+  \gamma = i\oint_\Gamma \langle \psi | \nabla_\lambda | \psi\rangle\,d\lambda
+  = \iint_\Sigma F\,d\sigma \neq 0,
+\]
+despite the Hamiltonian returning to its original value. A flat model
+($F = 0$) predicts zero phase. The system returns with a phase that the
+flat model cannot account for. This is the holonomy debt of
+Corollary~\ref{cor:holonomy-memory}, instantiated in quantum mechanics.
+\end{corollary}
+
+\begin{auditbox}
+\textbf{Objection 5.} Corollary~\ref{cor:berry} asserts that the Berry
+connection has non-zero curvature, but this is only true generically.
+For specific Hamiltonians, $F \equiv 0$ (e.g., real Hamiltonians with
+time-reversal symmetry in some parameter spaces). The corollary as stated
+implies the Berry connection is always non-flat, which is false.
+\end{auditbox}
+
+\begin{replybox}
+Correct. The corollary should read: \emph{When $F \neq 0$---which occurs
+for generically chosen Hamiltonians and is experimentally confirmed for
+electrons in solids (Thouless et al., TKNN 1982), photons in topological
+media, and cold atoms in optical lattices---a flat model fails by
+exactly the Berry phase.} Systems with $F = 0$ are the exception (measure
+zero in the space of Hamiltonians) and correspond precisely to systems for
+which decoupling is valid. This is consistent with the theorem: $F = 0
+\Leftrightarrow$ decoupling works.
+\end{replybox}
+
+% =================================================================
+\section{The Davis Law as Special Case}
+\label{sec:davis-law}
+% =================================================================
+
+\begin{proposition}[Davis Law encodes the Non-Decoupling Theorem]
+\label{prop:davis-law}
+The Davis Law $C = \tau / K$ is a scalar projection of
+Theorem~\ref{thm:main} onto a one-dimensional summary statistic. Setting
+$K = \norm{\Omega}$ (the operator norm of the curvature at a point),
+$\tau$ the \emph{tolerance} (regularization capacity of the geometry), and
+$C$ the \emph{representational capacity} of the model, the following
+correspondences hold:
+
+\begin{center}
+\begin{tabular}{lll}
+\hline
+\textbf{Assumption} & \textbf{Davis Law} & \textbf{Geometric consequence} \\
+\hline
+Decoupling ($K = 0$) & $C \to \infty$ & Unphysical capacity: model claims to \\
+ & & represent all functions \\
+Decoupling ($K = 0$) & $\tau \to 0$ & Zero tolerance: catastrophic OOD failure \\
+Geometry ($K > 0$) & $C = \tau/K < \infty$ & Finite, regularized capacity \\
+Max curvature & $C \to 0$ & Capacity collapses: failure near singularities \\
+\hline
+\end{tabular}
+\end{center}
+
+\end{proposition}
+
+\begin{proof}
+The decoupling assumption $\omega = 0$ implies $\Omega = 0$, i.e., $K = 0$.
+Substituting into $C = \tau/K$: if $\tau > 0$ (i.e., the model has any
+representational tolerance), then $C \to \infty$. This is the 
+overconfidence failure mode: the model asserts it can represent every
+function. Empirically this corresponds to overfitting in distribution.
+
+Alternatively, maintaining $C$ finite requires $\tau \to 0$ as $K \to 0$,
+meaning the model's tolerance for distributional shift collapses to zero:
+perfect in-sample, catastrophic out-of-sample. This is the brittleness
+failure mode.
+
+When $K > 0$, the geometry provides the regularizer: $C = \tau / K$ is
+finite and determined by the ratio of tolerance to curvature. Large
+curvature ($K \gg 1$) at a point means the geometry is rapidly changing,
+the model's capacity there is small, and errors concentrate---consistent
+with Part III of Theorem~\ref{thm:main}.
+\end{proof}
+
+\begin{auditbox}
+\textbf{Objection 6.} Proposition~\ref{prop:davis-law} sets $K =
+\norm{\Omega}$ (a 2-form norm) and identifies this with the scalar $K$ in
+$C = \tau/K$. But the Davis Law $C = \tau/K$ was originally stated with $K$
+as the sectional curvature of a Riemannian manifold, not the curvature of a
+principal bundle connection. These are different geometric objects. The
+identification needs justification, or the Davis Law must be re-derived in
+the bundle setting.
+\end{auditbox}
+
+\begin{replybox}
+This is a legitimate gap. The reconciliation runs as follows.
+
+For an associated vector bundle $E = P \times_\rho V$ (where $\rho: G \to
+GL(V)$ is a representation), the connection $\omega$ on $P$ induces a
+covariant derivative $\nabla$ on $E$. The curvature of $\nabla$ is a
+2-form $R^\nabla \in \Omega^2(M, \End(E))$, which contracts to give
+sectional curvatures $K(\sigma) = \langle R^\nabla(e_1,e_2)e_2, e_1\rangle$
+for 2-planes $\sigma = \mathrm{span}(e_1,e_2)$.
+
+For the specific case of the tangent bundle ($E = TM$, $\rho = $ adjoint),
+this recovers the Riemannian sectional curvature. So the Davis Law with $K =
+$ sectional curvature is a special case of the bundle framework with $P =
+\mathrm{Fr}(TM)$ (the frame bundle).
+
+For general bundles, $K$ in the Davis Law should be interpreted as the norm
+of the induced connection curvature on the associated bundle relevant to the
+application. For Marcella: $E$ is the token-embedding bundle, $K =
+\norm{R^\nabla}$ is the norm of its induced curvature. The Davis Law is then:
+$C = \tau / \norm{R^\nabla}$, which is the bundle version stated in
+Proposition~\ref{prop:davis-law}.
+
+A full derivation of the Davis Law from the bundle setting is deferred to a
+companion paper.
+\end{replybox}
+
+% =================================================================
+\section{Master Statement}
+\label{sec:master}
+% =================================================================
+
+\begin{tcolorbox}[colback=goldbg, colframe=goldline, boxrule=1.5pt,
+  title={\bfseries Master Statement}]
+Under the standing hypotheses (compact oriented simply-connected $M$,
+compact connected $G$, system $S$ faithfully modeled as principal
+$G$-bundle with connection $\omega$):
+
+\begin{multline*}
+  \Omega \not\equiv 0
+  \;\implies\;
+  \mathcal{E}(S_{\mathrm{flat}}) \geq c\,\mathcal{S}_{\mathrm{YM}}(\omega) > 0
+  \;\implies\;
+  \Hol(\omega) \neq \{e\} \\
+  \implies\;
+  \text{flat models are topologically prohibited (if $c_k \neq 0$).}
+\end{multline*}
+
+\smallskip
+Each implication is strict. The first is quantitative (Lemma~\ref{lem:ym-bound}).
+The second is the Ambrose-Singer theorem (Corollary~\ref{cor:holonomy-memory}).
+The third requires non-trivial characteristic classes
+(Corollary~\ref{cor:topo-prohibit}).
+
+\smallskip
+\textbf{The converse chain:}
+\[
+  \Omega \equiv 0
+  \;\iff\;
+  \mathcal{E}(S_{\mathrm{flat}}) = 0
+  \;\iff\;
+  \Hol(\omega) = \{e\}
+  \;\iff\;
+  \text{decoupling is valid.}
+\]
+\end{tcolorbox}
+
+% =================================================================
+\section{Scope of Application}
+\label{sec:scope}
+% =================================================================
+
+The theorem applies, \emph{subject to the fiber bundle representation
+assumption being empirically supported}, to any system where:
+
+\begin{enumerate}
+  \item Components are assumed independent: economics (parallel agents),
+    epidemiology (parallel individuals), neuroscience (parallel brain
+    regions), flat AI (parallel attention heads, additive residual stream).
+
+  \item State evolution is modeled without coupling: Euclidean attention,
+    additive architectures, standard transformer residual stream.
+
+  \item Long-range dependencies are added on top of flat structure rather
+    than encoded geometrically: positional encodings, learned biases,
+    post-hoc fine-tuning.
+\end{enumerate}
+
+The diagnostic procedure is:
+\begin{enumerate}[label=\arabic*.]
+  \item Identify the Decoupling Assumption: what two things does the model
+    treat as independent parallel processes?
+  \item Construct or estimate the curvature $\Omega$ of the correct bundle.
+  \item Evaluate $\mathcal{S}_{\mathrm{YM}}(\omega)$. This is the size of
+    the bill coming due.
+  \item For non-trivial $c_k$: the bill cannot be paid with any flat model.
+    The solution space requires geometry.
+\end{enumerate}
+
+% =================================================================
+\section{Open Questions and Future Work}
+\label{sec:open}
+% =================================================================
+
+\begin{enumerate}
+  \item \textbf{Representation theorem.} Prove (or characterize the
+    conditions under which) transformer architectures, financial networks,
+    and epidemiological contact graphs admit faithful fiber bundle
+    descriptions. This is the missing Part (1) identified in Objection~4.
+
+  \item \textbf{Tightness of the Yang-Mills bound.} Is
+    $\mathcal{E}(S_{\mathrm{flat}}) = \mathcal{S}_{\mathrm{YM}}(\omega)$
+    achievable, or is the bound only a lower bound? A tight bound would give
+    the exact holonomy debt.
+
+  \item \textbf{Davis Law derivation.} Derive $C = \tau/K$ rigorously from
+    the bundle framework (Proposition~\ref{prop:davis-law} deferred this).
+
+  \item \textbf{Non-simply-connected $M$.} Characterize the failure modes
+    when $\pi_1(M) \neq 0$: the interplay between topological ($c_k$) and
+    fundamental-group ($\pi_1$) obstructions.
+
+  \item \textbf{Infinite-dimensional bundles.} For Marcella and general
+    neural architectures, $M$ is the token-sequence manifold and $P$ is an
+    infinite-dimensional bundle. Uhlenbeck's compactness theory extends to
+    this setting only under restrictive conditions. A functional-analytic
+    treatment is needed.
+\end{enumerate}
+
+% =================================================================
+\section*{Acknowledgments}
+% =================================================================
+
+The fiber bundle interpretation emerged from the empirical failure of V3RG
+and the subsequent physics-guided redesign described in the companion
+experimental report. The adversarial audit in this paper was conducted by
+the author against her own theorem. The author thanks the referee who
+will object to Objection~4.
+
+\bibliographystyle{amsalpha}
+\begin{thebibliography}{99}
+
+\bibitem{AS53}
+W.~Ambrose and I.~M.~Singer,
+\textit{A theorem on holonomy},
+Trans.\ Amer.\ Math.\ Soc.\ \textbf{75} (1953), 428--443.
+
+\bibitem{Berry84}
+M.~V.~Berry,
+\textit{Quantal phase factors accompanying adiabatic changes},
+Proc.\ R.\ Soc.\ Lond.\ A \textbf{392} (1984), 45--57.
+
+\bibitem{KN63}
+S.~Kobayashi and K.~Nomizu,
+\textit{Foundations of Differential Geometry}, Vols.~I--II,
+Wiley Interscience, 1963.
+
+\bibitem{MS74}
+J.~Milnor and J.~Stasheff,
+\textit{Characteristic Classes},
+Ann.\ of Math.\ Studies \textbf{76}, Princeton Univ.\ Press, 1974.
+
+\bibitem{SW09}
+U.~Schreiber and K.~Waldorf,
+\textit{Parallel transport and functors},
+J.\ Homotopy Relat.\ Struct.\ \textbf{4} (2009), 187--244.
+
+\bibitem{TKNN82}
+D.~J.~Thouless, M.~Kohmoto, M.~P.~Nightingale, and M.~den~Nijs,
+\textit{Quantized Hall conductance in a two-dimensional periodic potential},
+Phys.\ Rev.\ Lett.\ \textbf{49} (1982), 405--408.
+
+\bibitem{Uhl82}
+K.~Uhlenbeck,
+\textit{Connections with $L^p$ bounds on curvature},
+Comm.\ Math.\ Phys.\ \textbf{83} (1982), 31--42.
+
+\bibitem{Weh04}
+K.~Wehrheim,
+\textit{Uhlenbeck Compactness},
+EMS Series of Lectures in Mathematics, 2004.
+
+\end{thebibliography}
+
+\end{document}

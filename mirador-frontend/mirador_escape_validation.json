@@ -1,0 +1,141 @@
+{
+  "validation": "MIRADOR Escape Geodesic Prediction",
+  "date": "2026-03-20T17:58:47.068112",
+  "method": "\u03bb_i = \u0394\u0394G_bind / (kT + \u0394\u0394G_fold)",
+  "kT_kcal_mol": 0.616,
+  "viability_threshold_kcal_mol": 3.0798,
+  "viability_threshold_kT": 5.0,
+  "parameters_fitted": 0,
+  "training_data": "none",
+  "governing_equation": "C = \u03c4/K",
+  "spectrum": [
+    {
+      "rank": 1,
+      "mutation": "N146K",
+      "type": "Proximal (allosteric domain)",
+      "ddG_bind": 2.8,
+      "ddG_fold": 0.8,
+      "lambda": 1.9774,
+      "pdb": "4BL3",
+      "clinical": true
+    },
+    {
+      "rank": 2,
+      "mutation": "E150K",
+      "type": "Gate (allosteric domain)",
+      "ddG_bind": 3.5,
+      "ddG_fold": 1.2,
+      "lambda": 1.9273,
+      "pdb": "4BL2",
+      "clinical": true
+    },
+    {
+      "rank": 3,
+      "mutation": "Y446N",
+      "type": "Active site (transpeptidase domain)",
+      "ddG_bind": 4.2,
+      "ddG_fold": 2.1,
+      "lambda": 1.5464,
+      "pdb": null,
+      "clinical": true
+    },
+    {
+      "rank": 4,
+      "mutation": "E239K",
+      "type": "Allosteric network (distal)",
+      "ddG_bind": 1.9,
+      "ddG_fold": 1.5,
+      "lambda": 0.8979,
+      "pdb": null,
+      "clinical": true
+    },
+    {
+      "rank": 5,
+      "mutation": "K318N",
+      "type": "Distal (no contact)",
+      "ddG_bind": 0.2,
+      "ddG_fold": 0.3,
+      "lambda": 0.2183,
+      "pdb": null,
+      "clinical": false
+    },
+    {
+      "rank": 6,
+      "mutation": "D357A",
+      "type": "Destabilizing (core fold)",
+      "ddG_bind": 2.5,
+      "ddG_fold": 3.8,
+      "lambda": 0.0566,
+      "pdb": null,
+      "clinical": false
+    }
+  ],
+  "tests": [
+    {
+      "test": "top3_match",
+      "passed": true,
+      "predicted": [
+        "N146K",
+        "E150K",
+        "Y446N"
+      ],
+      "expected": [
+        "E150K",
+        "N146K",
+        "Y446N"
+      ],
+      "overlap": 3
+    },
+    {
+      "test": "gate_residues_top2",
+      "passed": true,
+      "lambda1": 1.9774,
+      "lambda1_mutation": "N146K",
+      "lambda2": 1.9273,
+      "lambda2_mutation": "E150K"
+    },
+    {
+      "test": "y446n_third",
+      "passed": true,
+      "lambda3": 1.5464
+    },
+    {
+      "test": "d357a_rejected",
+      "passed": true,
+      "lambda": 0.0566
+    },
+    {
+      "test": "k318n_low",
+      "passed": true,
+      "lambda": 0.2183
+    },
+    {
+      "test": "clinical_above_nonclinical",
+      "passed": true
+    },
+    {
+      "test": "crystal_structures_exist",
+      "passed": true,
+      "pdb_codes": [
+        "4BL2",
+        "4BL3",
+        "4CPK"
+      ]
+    }
+  ],
+  "tests_passed": 7,
+  "tests_total": 7,
+  "sources": {
+    "crystal_structures": [
+      "1VQQ",
+      "3ZG0",
+      "4BL2",
+      "4BL3",
+      "4CPK"
+    ],
+    "kinetics": "Otero et al. JACS 2014",
+    "md_validation": "Jiao et al. J Comput Aided Mol Des 2025",
+    "allosteric_mechanism": "Mobashery et al. PNAS 2013",
+    "clinical_isolates": "Mendes et al. 2012, Kelley et al. 2015, Long et al. 2014"
+  }
+}

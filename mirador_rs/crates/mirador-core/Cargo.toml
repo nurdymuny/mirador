@@ -1,0 +1,13 @@
+[package]
+name = "mirador-core"
+version.workspace = true
+edition = "2021"
+
+[dependencies]
+nalgebra.workspace = true
+ndarray.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+approx.workspace = true

@@ -1,0 +1,13 @@
+[package]
+name = "mirador-admet"
+version.workspace = true
+edition = "2021"
+
+[dependencies]
+mirador-core = { path = "../mirador-core" }
+mirador-patient = { path = "../mirador-patient" }
+serde.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+approx.workspace = true
