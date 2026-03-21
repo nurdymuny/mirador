@@ -254,12 +254,7 @@ export default function MiradorSite() {
         borderBottom: "1px solid #1a1a2e", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: "50%", background: "conic-gradient(from 0deg, #22c55e, #3b82f6, #a855f7, #ef4444, #f59e0b, #22c55e)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#08080f", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontSize: 9, fontWeight: 700, fontFamily: FM }}>M</span>
-            </div>
-          </div>
-          <span style={{ fontSize: 14, fontWeight: 700, fontFamily: FM, letterSpacing: 3 }}>MIRADOR</span>
+          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: FM, letterSpacing: 4, color: "#e2e8f0" }}>MIRADOR</div>
         </div>
         <div style={{ display: "flex", gap: 24, fontSize: 11, fontFamily: FS, color: "#64748b" }}>
           {[["#proof","Proof"],["#problem","The Problem"],["#demo","Demo"],["#science","Science"],["#roadmap","Roadmap"],["#contact","Contact"]].map(([h,l]) => (
