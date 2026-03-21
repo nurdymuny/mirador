@@ -521,6 +521,19 @@ export default function MiradorApp() {
     });
     y = doc.lastAutoTable.finalY + 14;
 
+    // ── BLUF box ──
+    checkY(68);
+    doc.setDrawColor(...NAVY); doc.setLineWidth(1.5);
+    doc.rect(ML, y, CW, 60);
+    doc.setFillColor(...NAVY); doc.rect(ML, y, CW, 14, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(255, 255, 255);
+    doc.text("CLINICAL RECOMMENDATIONS \u2014 BOTTOM LINE UP FRONT", ML + 6, y + 10);
+    doc.setFont("courier", "bold"); doc.setFontSize(8); doc.setTextColor(...NAVY);
+    doc.text(`>> PRESCRIBE: Ceftaroline fosamil ${d.pharmacokinetics.dose} mg IV q12h`, ML + 6, y + 24);
+    doc.text(`>> TAPER:     Vancomycin immediately (trough ${d.patient.vanco_trough} \u00b5g/mL \u2014 near-toxic)`, ML + 6, y + 37);
+    doc.text(`>> MONITOR:   eGFR + creatinine at 48h  |  mecA sequencing at Day 7`, ML + 6, y + 50);
+    y += 74;
+
     doc.setFont("courier", "bold"); doc.setFontSize(12); doc.setTextColor(...NAVY);
     doc.text("C  =  tau / K", W / 2, y, { align: "center" }); y += 14;
     doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...GRAY);
@@ -532,6 +545,23 @@ export default function MiradorApp() {
     h1("Section 1  —  Governing Framework");
     body("The MIRADOR coherence score C quantifies the ability of a drug to maintain sustained target engagement in the context of the patient's physiological barriers. It is defined as C = tau / K, where tau (topological persistence) equals the drug dosing interval in hours and K is the ADMET Curvature — a composite patient-specific impedance scalar. For beta-lactam antibiotics exhibiting time-dependent bactericidal activity, C is analogous to the %T>MIC index used in standard PK/PD optimisation.");
     y += 6;
+    h2("Translation: MIRADOR terms \u2192 standard PK/PD equivalent");
+    doc.autoTable({
+      startY: y, margin: { left: ML, right: MR },
+      head: [["MIRADOR term", "Standard PK/PD equivalent"]],
+      body: [
+        ["C = \u03c4/K",             "%T>MIC optimisation"],
+        ["\u03c4 (tau)",             "Dosing interval (hours)"],
+        ["K",                        "Patient-specific impedance scalar (ADMET composite)"],
+        ["\u03bb (lambda)",           "Mutation emergence probability"],
+        ["Gate open probability",    "Fractional time active site is thermally accessible"],
+      ],
+      headStyles: { fillColor: NAVY, textColor: [255,255,255], fontSize: 7.5, fontStyle: "bold" },
+      styles: { fontSize: 7.5, cellPadding: 3, lineColor: [203,213,225], lineWidth: 0.25 },
+      columnStyles: { 0: { fontStyle: "bold", textColor: NAVY, cellWidth: 130 }, 1: { textColor: SLATE } },
+      alternateRowStyles: { fillColor: LIGHT },
+    });
+    y = doc.lastAutoTable.finalY + 10;
     h2("Table 1  —  ADMET Curvature components");
     doc.autoTable( {
       startY: y, margin: { left: ML, right: MR },
@@ -623,6 +653,9 @@ export default function MiradorApp() {
     // ── S5: RESISTANCE ──
     h1("Section 5  —  Resistance Landscape");
     body("Resistance eigenvalues rank escape mutations by net selection advantage: high binding disruption combined with low conformational stability penalty yields high lambda and high clinical probability. Top 4 correspond to all clinically observed ceftaroline resistance mutations.");
+    y += 4;
+    const domEsc = d.escape_geodesics[0];
+    body(`The dominant escape route is ${domEsc.mutation} (\u03bb = ${domEsc.lam.toFixed(2)}, PDB ${domEsc.pdb}), with a mutation emergence probability of ${(domEsc.lam / d.escape_geodesics.reduce((s,e) => s+e.lam,0) * 100).toFixed(0)}% of total escape probability mass. mecA sequencing at Day 7 is recommended to detect early emergence.`, 0);
     y += 6;
     doc.autoTable( {
       startY: y, margin: { left: ML, right: MR },
