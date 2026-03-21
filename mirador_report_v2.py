@@ -85,12 +85,14 @@ DRUG = {
 }
 
 ESCAPE = [
-    {"mutation": "E150K", "type": "Gate residue",  "ddG_bind": 3.5, "ddG_fold": 1.2, "lam": 1.59, "pdb": "4BL2", "clinical": True},
-    {"mutation": "N146K", "type": "Proximal gate", "ddG_bind": 2.8, "ddG_fold": 0.8, "lam": 1.56, "pdb": "4BL3", "clinical": True},
-    {"mutation": "Y446N", "type": "Active site",   "ddG_bind": 4.2, "ddG_fold": 2.1, "lam": 1.35, "pdb": "--",   "clinical": True},
-    {"mutation": "E239K", "type": "Allosteric",    "ddG_bind": 1.9, "ddG_fold": 1.5, "lam": 0.76, "pdb": "--",   "clinical": True},
-    {"mutation": "K318N", "type": "Distal",        "ddG_bind": 0.2, "ddG_fold": 0.3, "lam": 0.15, "pdb": "--",   "clinical": False},
-    {"mutation": "D357A", "type": "Destabilising", "ddG_bind": 2.5, "ddG_fold": 3.8, "lam": 0.05, "pdb": "--",   "clinical": False},
+    # Ranked by lambda = ddG_bind / (kT + ddG_fold), kT = 0.6160 kcal/mol at 310 K
+    # D357A penalised 10x (ddG_fold > 5kT = 3.08 kcal/mol, Bloom et al. PNAS 2006)
+    {"mutation": "N146K", "type": "Proximal gate", "ddG_bind": 2.8, "ddG_fold": 0.8, "lam": 1.9774, "pdb": "4BL3", "clinical": True},
+    {"mutation": "E150K", "type": "Gate residue",  "ddG_bind": 3.5, "ddG_fold": 1.2, "lam": 1.9273, "pdb": "4BL2", "clinical": True},
+    {"mutation": "Y446N", "type": "Active site",   "ddG_bind": 4.2, "ddG_fold": 2.1, "lam": 1.5464, "pdb": "--",   "clinical": True},
+    {"mutation": "E239K", "type": "Allosteric",    "ddG_bind": 1.9, "ddG_fold": 1.5, "lam": 0.8979, "pdb": "--",   "clinical": True},
+    {"mutation": "K318N", "type": "Distal",        "ddG_bind": 0.2, "ddG_fold": 0.3, "lam": 0.2183, "pdb": "--",   "clinical": False},
+    {"mutation": "D357A", "type": "Destabilising", "ddG_bind": 2.5, "ddG_fold": 3.8, "lam": 0.0566, "pdb": "--",   "clinical": False},
 ]
 
 SOURCES = [
@@ -804,18 +806,20 @@ def build_report(output_path):
         S["body_sm"]))
     story.append(Spacer(1, 8))
 
-    story.append(Paragraph("Fitness cost analysis  —  E150K  (lambda-1)", S["h2"]))
+    story.append(Paragraph("Fitness cost analysis  —  N146K  (lambda-1)", S["h2"]))
     e1 = ESCAPE[0]
     kT_5 = 5.0 * kT_PHYS
     story.append(Paragraph(
         f"At physiological temperature (310 K), kT = {kT_PHYS:.3f} kcal/mol. "
         f"The standard viability threshold for a tolerated point mutation is "
         f"delta-delta-G_fold < 5kT = {kT_5:.3f} kcal/mol [7].  "
-        f"E150K: delta-delta-G_fold = {e1['ddG_fold']:.1f} kcal/mol  <<  {kT_5:.3f} kcal/mol.  "
-        f"This mutation is well within the bacterial fitness envelope — it is viable and "
-        f"will not be purged by negative selection.  Mechanistically, E150K disrupts the "
-        f"direct Glu150-ceftaroline ammonium salt bridge (pharmacophore Table 3, row 7), "
-        f"reducing allosteric affinity; PDB 4BL2 [4] provides crystallographic confirmation.",
+        f"N146K: delta-delta-G_fold = {e1['ddG_fold']:.1f} kcal/mol  <<  {kT_5:.3f} kcal/mol.  "
+        f"This mutation carries the lowest fitness cost of all allosteric gate mutations, "
+        f"making it the first to emerge under antibiotic pressure. "
+        f"Mechanistically, N146K imposes steric effects on beta-lactam ring orientation "
+        f"at the allosteric pocket; PDB 4BL3 [4] provides crystallographic confirmation. "
+        f"N146K co-occurs with E150K (lambda-2) in PDB 4CPK — both gate residues are "
+        f"predicted escape directions within thermal noise (1.98 vs 1.93 kT units).",
         S["body_sm"]))
     story.append(Spacer(1, 8))
 
