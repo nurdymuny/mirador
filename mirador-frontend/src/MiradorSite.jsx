@@ -306,23 +306,9 @@ function LiveValidation() {
   );
 }
 
-// ── Logo — same conic-gradient sphere used in the demo ───────────────────────
+// ── Logo — the real MIRADOR favicon (purple bolt)  ───────────────────────────
 function MiradorLogo({ size = 28 }) {
-  const inner = size * 0.714;
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: "50%",
-      background: "conic-gradient(from 0deg, #22c55e, #3b82f6, #a855f7, #ef4444, #f59e0b, #22c55e)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      <div style={{
-        width: inner, height: inner, borderRadius: "50%", background: "#08080f",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <span style={{ fontSize: size * 0.32, fontWeight: 700, fontFamily: FM }}>M</span>
-      </div>
-    </div>
-  );
+  return <img src="/favicon.svg" width={size} height={size} alt="MIRADOR" style={{ display: "block" }} />;
 }
 
 // ── Main site component ──────────────────────────────────────────────────────
