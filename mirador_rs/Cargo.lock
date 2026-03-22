@@ -118,6 +118,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "mirador-granuloma"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "mirador-integration"
 version = "0.1.0"
 dependencies = [
@@ -202,6 +211,42 @@ name = "mirador-target"
 version = "0.1.0"
 dependencies = [
  "approx",
+ "thiserror",
+]
+
+[[package]]
+name = "mirador-tb-combo"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "mirador-tb-patient"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "mirador-tb-phenotype"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "mirador-tb-reservoir"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "serde",
  "thiserror",
 ]
 

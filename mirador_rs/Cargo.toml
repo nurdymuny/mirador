@@ -17,6 +17,11 @@ members = [
     "crates/mirador-biofilm",
     "crates/mirador-reservoir",
     "crates/mirador-combo-bone",
+    "crates/mirador-tb-patient",
+    "crates/mirador-granuloma",
+    "crates/mirador-tb-phenotype",
+    "crates/mirador-tb-reservoir",
+    "crates/mirador-tb-combo",
 ]
 resolver = "2"
 
