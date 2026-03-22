@@ -267,11 +267,17 @@ export default function MiradorSite() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ fontSize: 18, fontWeight: 700, fontFamily: FM, letterSpacing: 4, color: "#e2e8f0" }}>MIRADOR</div>
         </div>
-        <div style={{ display: mob ? "none" : "flex", gap: 24, fontSize: 11, fontFamily: FS, color: "#64748b" }}>
+        <div style={{ display: mob ? "none" : "flex", gap: 24, fontSize: 11, fontFamily: FS, color: "#64748b", alignItems: "center" }}>
           {[["#proof","Proof"],["#problem","The Problem"],["#demo","Demo"],["#science","Science"],["#roadmap","Roadmap"],["#researcher","Researcher"],["#contact","Contact"]].map(([h,l]) => (
             <a key={h} href={h} style={{ color: "#64748b", textDecoration: "none", letterSpacing: 1 }}
               onMouseEnter={e => e.target.style.color = "#e2e8f0"} onMouseLeave={e => e.target.style.color = "#64748b"}>{l}</a>
           ))}
+          <a href="https://davisgeometric.com" target="_blank" rel="noopener noreferrer"
+            style={{ padding: "5px 12px", border: "1px solid #2a2a3e", borderRadius: 4, color: "#a855f7", textDecoration: "none", letterSpacing: 1, fontSize: 11, fontFamily: FM }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "#a855f7"; e.currentTarget.style.background = "#a855f710"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "#2a2a3e"; e.currentTarget.style.background = "transparent"; }}>
+            davisgeometric.com
+          </a>
         </div>
       </nav>
 
@@ -766,6 +772,7 @@ export default function MiradorSite() {
                 { label: "GitHub", url: "https://github.com/nurdymuny" },
                 { label: "Zenodo", url: "https://doi.org/10.5281/zenodo.18511755" },
                 { label: "LinkedIn", url: "https://www.linkedin.com/in/msbeedavis/" },
+                { label: "davisgeometric.com", url: "https://davisgeometric.com" },
               ].map(({ label, url }) => (
                 <a key={label} href={url} target="_blank" rel="noopener noreferrer" style={{ padding: "7px 16px", background: "transparent", border: "1px solid #2a2a3e", borderRadius: 5, color: "#64748b", fontFamily: FM, fontSize: 10, letterSpacing: 1, textDecoration: "none" }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = "#a855f7"; e.currentTarget.style.color = "#e2e8f0"; }}
