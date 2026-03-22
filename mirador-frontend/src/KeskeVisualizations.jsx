@@ -771,6 +771,7 @@ function DayOneWhatIf() {
   const [intraFrac, setIntraFrac] = useState(40);
   const [hasRif, setHasRif] = useState(false);
   const [activePreset, setActivePreset] = useState(1); // default = 6 YRS CHRONIC
+  const [optMsg, setOptMsg] = useState(null);
 
   const pt = {
     crp,
@@ -795,7 +796,39 @@ function DayOneWhatIf() {
     { label: "RELAPSE",       color: "#f59e0b", desc: "Treatment failed. Biofilm is back, surgery was incomplete, intracellular reservoirs are full. How bad is the impedance penalty?",            v: { crp: 180, bio: 95, drain: 50, debride: 40, intra: 50 } },
   ];
 
-  const applyPreset = (p, i) => { setActivePreset(i); setCrp(p.crp); setBiofilmPct(p.bio); setDrainPct(p.drain); setDebridePct(p.debride); setIntraFrac(p.intra); };
+  const applyPreset = (p, i) => { setActivePreset(i); setCrp(p.crp); setBiofilmPct(p.bio); setDrainPct(p.drain); setDebridePct(p.debride); setIntraFrac(p.intra); setOptMsg(null); };
+
+  // Auto-optimize: fix patient disease state (CRP, biofilm, intraFrac), search over
+  // surgical interventions (drain, debride) + rifampin to maximize best drug's C_bone.
+  const autoOptimize = () => {
+    const DRUGS_LIST_LOCAL = ["Vancomycin", "Ceftaroline", "Clindamycin", "Linezolid", "Rifampin", "Daptomycin"];
+    let bestScore = -Infinity;
+    let bestConfig = null;
+    for (const rif of [false, true]) {
+      for (let drain = 0; drain <= 100; drain += 10) {
+        for (let debride = 0; debride <= 100; debride += 10) {
+          const candidate = { crp, biofilm_prob: biofilmPct / 100, P_drain: drain / 100, P_debride: debride / 100, intra_frac: intraFrac / 100, hasRifampin: rif };
+          const topC = Math.max(...DRUGS_LIST_LOCAL.map(n => computeDrug(n, candidate).C_bone));
+          if (topC > bestScore) { bestScore = topC; bestConfig = { rif, drain, debride }; }
+        }
+      }
+    }
+    if (bestConfig) {
+      setHasRif(bestConfig.rif);
+      setDrainPct(bestConfig.drain);
+      setDebridePct(bestConfig.debride);
+      setActivePreset(null);
+      const bestDrug = DRUGS_LIST_LOCAL.reduce((best, n) => {
+        const c = computeDrug(n, { crp, biofilm_prob: biofilmPct/100, P_drain: bestConfig.drain/100, P_debride: bestConfig.debride/100, intra_frac: intraFrac/100, hasRifampin: bestConfig.rif }).C_bone;
+        return c > best.c ? { name: n, c } : best;
+      }, { name: "", c: -1 });
+      if (bestScore >= 5) {
+        setOptMsg({ ok: true, text: `✓ ${bestDrug.name} reaches C_bone ${bestScore.toFixed(1)} — green threshold cleared with${bestConfig.rif ? " Rifampin combo +" : ""} ${bestConfig.drain}% drainage / ${bestConfig.debride}% debridement.` });
+      } else {
+        setOptMsg({ ok: false, text: `Ceiling: ${bestScore.toFixed(1)} — even with optimal surgical clearance${bestConfig.rif ? " + Rifampin" : ""}, no drug crosses the cure threshold. The biofilm + intracellular burden is too high for monotherapy.` });
+      }
+    }
+  };
 
   const sliders = [
     { label: "CRP (inflammation)",   value: crp,        min: 0,  max: 500, color: "#ef4444", unit: "mg/L",     set: setCrp },
@@ -828,10 +861,24 @@ function DayOneWhatIf() {
           );
         })}
         <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontFamily: FM, color: "#94a3b8", cursor: "pointer", marginLeft: 8 }}>
-          <input type="checkbox" checked={hasRif} onChange={e => setHasRif(e.target.checked)} style={{ accentColor: "#f59e0b", width: 14, height: 14 }} />
+          <input type="checkbox" checked={hasRif} onChange={e => { setHasRif(e.target.checked); setOptMsg(null); }} style={{ accentColor: "#f59e0b", width: 14, height: 14 }} />
           + Rifampin in combo
         </label>
+        <button onClick={autoOptimize} style={{
+          marginLeft: 8, padding: "7px 14px", fontSize: 10, fontFamily: FM, fontWeight: 700, letterSpacing: 1,
+          background: "#0a1628", border: "1px solid #3b82f6", color: "#3b82f6", borderRadius: 6, cursor: "pointer",
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background = "#1e3a5f"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "#0a1628"; }}
+        >⚡ AUTO-OPTIMIZE</button>
       </div>
+
+      {/* Optimization result */}
+      {optMsg && (
+        <div style={{ marginBottom: 14, padding: "9px 14px", background: optMsg.ok ? "#05380f" : "#1a0a0a", border: `1px solid ${optMsg.ok ? "#22c55e44" : "#ef444444"}`, borderRadius: 8, fontSize: 11, color: optMsg.ok ? "#22c55e" : "#ef4444", fontFamily: FM, lineHeight: 1.6 }}>
+          {optMsg.text}
+        </div>
+      )}
 
       {/* Active scenario description */}
       {activePreset !== null && (
