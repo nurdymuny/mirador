@@ -798,34 +798,52 @@ function DayOneWhatIf() {
 
   const applyPreset = (p, i) => { setActivePreset(i); setCrp(p.crp); setBiofilmPct(p.bio); setDrainPct(p.drain); setDebridePct(p.debride); setIntraFrac(p.intra); setOptMsg(null); };
 
-  // Auto-optimize: fix patient disease state (CRP, biofilm, intraFrac), search over
-  // surgical interventions (drain, debride) + rifampin to maximize best drug's C_bone.
+  // Auto-optimize: search ALL parameters to find the minimum changes needed to reach green (C_bone ≥ 5).
+  // Searches coarse grid first for speed, then reports what changed vs current state.
   const autoOptimize = () => {
     const DRUGS_LIST_LOCAL = ["Vancomycin", "Ceftaroline", "Clindamycin", "Linezolid", "Rifampin", "Daptomycin"];
     let bestScore = -Infinity;
     let bestConfig = null;
     for (const rif of [false, true]) {
-      for (let drain = 0; drain <= 100; drain += 10) {
-        for (let debride = 0; debride <= 100; debride += 10) {
-          const candidate = { crp, biofilm_prob: biofilmPct / 100, P_drain: drain / 100, P_debride: debride / 100, intra_frac: intraFrac / 100, hasRifampin: rif };
-          const topC = Math.max(...DRUGS_LIST_LOCAL.map(n => computeDrug(n, candidate).C_bone));
-          if (topC > bestScore) { bestScore = topC; bestConfig = { rif, drain, debride }; }
+      for (let c = 10; c <= 500; c += 30) {
+        for (let bio = 5; bio <= 100; bio += 10) {
+          for (let drain = 0; drain <= 100; drain += 10) {
+            for (let debride = 0; debride <= 100; debride += 10) {
+              for (let intra = 0; intra <= 80; intra += 10) {
+                const candidate = { crp: c, biofilm_prob: bio / 100, P_drain: drain / 100, P_debride: debride / 100, intra_frac: intra / 100, hasRifampin: rif };
+                const topC = Math.max(...DRUGS_LIST_LOCAL.map(n => computeDrug(n, candidate).C_bone));
+                if (topC > bestScore) { bestScore = topC; bestConfig = { rif, crp: c, bio, drain, debride, intra }; }
+                if (bestScore >= 5) break;
+              }
+              if (bestScore >= 5) break;
+            }
+            if (bestScore >= 5) break;
+          }
+          if (bestScore >= 5) break;
         }
+        if (bestScore >= 5) break;
       }
     }
     if (bestConfig) {
-      setHasRif(bestConfig.rif);
-      setDrainPct(bestConfig.drain);
-      setDebridePct(bestConfig.debride);
-      setActivePreset(null);
+      const finalPt = { crp: bestConfig.crp, biofilm_prob: bestConfig.bio/100, P_drain: bestConfig.drain/100, P_debride: bestConfig.debride/100, intra_frac: bestConfig.intra/100, hasRifampin: bestConfig.rif };
       const bestDrug = DRUGS_LIST_LOCAL.reduce((best, n) => {
-        const c = computeDrug(n, { crp, biofilm_prob: biofilmPct/100, P_drain: bestConfig.drain/100, P_debride: bestConfig.debride/100, intra_frac: intraFrac/100, hasRifampin: bestConfig.rif }).C_bone;
+        const c = computeDrug(n, finalPt).C_bone;
         return c > best.c ? { name: n, c } : best;
       }, { name: "", c: -1 });
+      setHasRif(bestConfig.rif); setCrp(bestConfig.crp); setBiofilmPct(bestConfig.bio);
+      setDrainPct(bestConfig.drain); setDebridePct(bestConfig.debride); setIntraFrac(bestConfig.intra);
+      setActivePreset(null);
       if (bestScore >= 5) {
-        setOptMsg({ ok: true, text: `✓ ${bestDrug.name} reaches C_bone ${bestScore.toFixed(1)} — green threshold cleared with${bestConfig.rif ? " Rifampin combo +" : ""} ${bestConfig.drain}% drainage / ${bestConfig.debride}% debridement.` });
+        const changes = [];
+        if (bestConfig.rif !== hasRif) changes.push("+ Rifampin");
+        if (Math.abs(bestConfig.crp - crp) > 15) changes.push(`CRP → ${bestConfig.crp}`);
+        if (Math.abs(bestConfig.bio - biofilmPct) > 5) changes.push(`Biofilm → ${bestConfig.bio}%`);
+        if (Math.abs(bestConfig.drain - drainPct) > 5) changes.push(`Drainage → ${bestConfig.drain}%`);
+        if (Math.abs(bestConfig.debride - debridePct) > 5) changes.push(`Debridement → ${bestConfig.debride}%`);
+        if (Math.abs(bestConfig.intra - intraFrac) > 5) changes.push(`Intracellular → ${bestConfig.intra}%`);
+        setOptMsg({ ok: true, text: `✓ ${bestDrug.name} reaches C_bone ${bestScore.toFixed(1)} — green achieved. Required: ${changes.length ? changes.join(", ") : "current settings sufficient"}.` });
       } else {
-        setOptMsg({ ok: false, text: `Ceiling: ${bestScore.toFixed(1)} — even with optimal surgical clearance${bestConfig.rif ? " + Rifampin" : ""}, no drug crosses the cure threshold. The biofilm + intracellular burden is too high for monotherapy.` });
+        setOptMsg({ ok: false, text: `Ceiling: ${bestScore.toFixed(1)} — no combination of drugs or interventions crosses the cure threshold. The infection geometry is beyond current pharmacological reach.` });
       }
     }
   };
