@@ -1,0 +1,13 @@
+[package]
+name = "mirador-reservoir"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+serde.workspace = true
+mirador-bone = { path = "../mirador-bone" }
+
+[dev-dependencies]
+approx.workspace = true

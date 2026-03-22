@@ -1,0 +1,594 @@
+{
+  "suite": "keske_adversarial",
+  "total": 104,
+  "pass": 104,
+  "fail": 0,
+  "error": 0,
+  "suites": [
+    {
+      "suite": "A: Zero / Degenerate Inputs",
+      "pass": 17,
+      "fail": 0,
+      "error": 0,
+      "total": 17
+    },
+    {
+      "suite": "B: Boundary Value Analysis (exact thresholds)",
+      "pass": 16,
+      "fail": 0,
+      "error": 0,
+      "total": 16
+    },
+    {
+      "suite": "C: Physiological Monotonicity",
+      "pass": 13,
+      "fail": 0,
+      "error": 0,
+      "total": 13
+    },
+    {
+      "suite": "D: Domain Invariants",
+      "pass": 12,
+      "fail": 0,
+      "error": 0,
+      "total": 12
+    },
+    {
+      "suite": "E: Combination Model Correctness",
+      "pass": 7,
+      "fail": 0,
+      "error": 0,
+      "total": 7
+    },
+    {
+      "suite": "F: Clinical Claim Validation",
+      "pass": 8,
+      "fail": 0,
+      "error": 0,
+      "total": 8
+    },
+    {
+      "suite": "G: Out-of-Range / Adversarial Inputs",
+      "pass": 11,
+      "fail": 0,
+      "error": 0,
+      "total": 11
+    },
+    {
+      "suite": "H: Cross-Formula Consistency (spec reference values)",
+      "pass": 14,
+      "fail": 0,
+      "error": 0,
+      "total": 14
+    },
+    {
+      "suite": "I: Known Model Limitations / Flaw Documentation",
+      "pass": 6,
+      "fail": 0,
+      "error": 0,
+      "total": 6
+    }
+  ],
+  "results": [
+    {
+      "test": "schwartz_egfr: zero creatinine is guarded (no div-by-zero)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "schwartz_egfr: zero height gives zero eGFR",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "allometric_cl: 1 kg child (min guard) is finite and positive",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "allometric_cl: zero weight uses min guard of 1 kg",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "allometric_vd: zero weight uses min guard of 1 kg",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "r_bone_eff: CRP=0 returns baseline unchanged",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_penetration: r_bone=1.0 (perfect penetration) gives k=0",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_biofilm: MBEC==MIC (ratio=1) gives k=0",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_biofilm: MIC=0 is guarded (no log(0) or div-by-zero)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_biofilm: MBEC=0, MIC=1 → ratio forced to 1.0 → k=0",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_res_sac: p_drainage=1.0 gives zero SAC resistance",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_res_sac: p_drainage=0.0 gives max SAC resistance = 0.5",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_res_intra: frac=0.0 gives zero regardless of rifampin",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "combo_coherence: k_path=0 is guarded (no div-by-zero)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "p_scv: days=0 gives probability=0",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "vd_inflation: CRP=0 gives 1.0 (no inflation)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "bsa_mosteller: height=0 gives 0 (not NaN/negative)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "biofilm_prob: day=13 → 0.20 (acute, below 14)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "biofilm_prob: day=14 → 0.60 (transition boundary, spec says <14 is acute)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "biofilm_prob: day=13.99 → 0.20 (just below boundary)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "biofilm_prob: day=90 → 0.60 (spec: <=90 is subacute)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "biofilm_prob: day=91 → 0.95 (chronic)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "vd_inflation: CRP=100 → exactly 1.0 (threshold, no inflation below 100)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "vd_inflation: CRP=101 → 1.002 (just past threshold)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "vd_inflation: CRP=300 → cap = 1.4 (max 40% inflation)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "vd_inflation: never exceeds 1.4 regardless of CRP",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "r_bone_eff: CRP=100 → no boost (modifier=1.0 at threshold)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "r_bone_eff: CRP cap — r_bone never exceeds 2× baseline",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "p_scv: saturates towards 1.0 at extreme duration",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_res_sac: p_drainage=1.0 boundary gives exactly 0.0",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_res_sac: p_drainage=0.0 boundary gives exactly 0.5",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_biofilm: MBEC/MIC exactly 10 → log10(10) = 1.0",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_biofilm: MBEC/MIC exactly 1000 → log10(1000) = 3.0",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Higher CRP → higher r_bone_eff (inflammation opens vessels)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Higher CRP → lower k_penetration (better penetration)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Higher infection days → higher biofilm_prob (monotone step)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Higher infection days → higher p_scv (monotone exposure)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "More surgery (p_drainage) → lower k_res_sac",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "More debridement (p_debride) → lower k_res_mat",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Higher MBEC/MIC ratio → higher k_biofilm (more resistant)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Higher r_bone (drug penetrates more) → lower k_penetration",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Rifampin in combo → lower k_res_intra",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Higher synergy → lower K_combo (parallel model, more conduction)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Higher synergy → higher C_combo",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Higher weight → higher allometric CL (monotone)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Higher weight → higher allometric Vd (monotone)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_penetration always >= 0 for valid r_bone in (0,1]",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_biofilm always >= 0",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_res_sac in [0, 0.5] for all valid p_drainage",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_res_intra always >= 0",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "biofilm_prob always in {0.20, 0.60, 0.95}",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "p_scv always in [0, 1)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "vd_inflation always in [1.0, 1.4]",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "allometric_cl: 70 kg adult produces exactly 1.0× scaling",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "allometric_vd: 70 kg adult produces exactly 1.0× scaling",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "r_bone_eff never exceeds 2× baseline (cap)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_pathway is strict sum of its parts",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "C_combo is always finite for all reference drugs",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Combo K is less than either monotherapy K (parallel = lower resistance)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Combo is symmetric — A+B == B+A for K_combo",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Combo C_bone > both drug A and drug B monotherapy C_bone (Steven scenario)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Synergy=1.0 (additive) still gives higher C than worst monotherapy",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Two identical drugs in parallel halve K_combo (1/K_a + 1/K_a = 2/K_a → K=K/2 at synergy=1)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "K_combo is strictly positive even when both pathways have k=0.001 min guard",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "tau_combo = (tau_a + tau_b) * synergy",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Vancomycin has the highest K_pathway (worst performer) in Steven scenario",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Ceftaroline+Rifampin combo beats vancomycin monotherapy C_bone",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Rifampin reduces K_res_intra by exactly 60% (factor 0.4)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Clindamycin has the lowest K_pen of all drugs (best bone penetration)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Daptomycin has the highest K_pen (worst bone penetration)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Rifampin has lowest k_biofilm of all drugs (active against mature biofilm)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Vancomycin MBEC/MIC ratio highest (most biofilm resistant) among non-rifampin drugs",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Acute scenario (day 5): biofilm_prob=20%, ceftaroline still viable",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "MBEC < MIC (inverted — should yield k_biofilm = 0, not negative)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "r_bone > 1.0 (drug concentrates in bone) gives negative k_pen (known gap)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Negative infection days doesn't crash",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "p_drainage > 1.0 makes k_res_sac negative — unguarded upper bound flaw",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "intracellular_frac > 1.0 gives k_res_intra > 0.8 — unguarded flaw",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Neonate (weight=1 kg): k_pathway is finite and non-negative",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Morbidly obese (200 kg): allometric_cl gives >1.0× scaling (no upper cap)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Very high creatinine (15 mg/dL): schwartz_egfr still positive and finite",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "CRP=9999: vd_inflation capped at 1.4",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "FLAW: Synergy=0 in combo_coherence crashes with ZeroDivisionError — no guard",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "All six drugs: finite non-negative K_pathway in Steven scenario",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Ceftaroline K_pathway in Steven scenario: finite and positive",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Rifampin K_pathway in Steven scenario: finite and positive",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "r_bone_eff for ceftaroline at CRP=250: 0.30 * (1+0.006*150) = 0.30*1.9 = 0.57, capped at 0.60",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_penetration for vancomycin at CRP=0: 1/0.20 - 1 = 4.0",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_biofilm for vancomycin: log10(512/1) = log10(512) ≈ 2.7093",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_biofilm for rifampin: log10(0.5/0.008) = log10(62.5) ≈ 1.7959",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_res_sac at p_drainage=0.90: (1-0.90)*0.5 = 0.05",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_res_intra at frac=0.40, no rifampin: 0.8*0.40*1.0 = 0.32",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "k_res_intra at frac=0.40, with rifampin: 0.8*0.40*0.4 = 0.128",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "schwartz_egfr(140, 0.6) = 0.413*140/0.6 ≈ 96.37",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "allometric_cl(1.0, 32): (32/70)^0.75",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "vd_inflation(250): 1 + 0.002*150 = 1.30, within cap",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "bsa_mosteller(140, 32): sqrt(140*32/3600) ≈ 1.115",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "Two-drug parallel model resistance formula: K = 1/(1/Ka + 1/Kb) at synergy=1",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "FLAW: r_bone>1 gives negative k_penetration (drug accumulation unmodeled)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "FLAW: combo tau_combo = (tau_a + tau_b)*synergy grows linearly — not physiological",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "FLAW: p_scv saturates to float 1.0 at extreme days (exp underflow) — no explicit cap",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "FLAW: No antimicrobial pharmacodynamics — Cmax/MIC or T>MIC not incorporated",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "FLAW: k_res_mat = (1-p_deb)*k_pen — drug A's k_pen bleeds into Drug B's reservoir calc",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "test": "FLAW: vd_inflation is a constant multiplier — does not interact with k_pathway",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

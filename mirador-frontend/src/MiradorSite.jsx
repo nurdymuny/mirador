@@ -268,7 +268,7 @@ export default function MiradorSite() {
           <div style={{ fontSize: 18, fontWeight: 700, fontFamily: FM, letterSpacing: 4, color: "#e2e8f0" }}>MIRADOR</div>
         </div>
         <div style={{ display: mob ? "none" : "flex", gap: 24, fontSize: 11, fontFamily: FS, color: "#64748b" }}>
-          {[["#proof","Proof"],["#problem","The Problem"],["#demo","Demo"],["#science","Science"],["#roadmap","Roadmap"],["#contact","Contact"]].map(([h,l]) => (
+          {[["#proof","Proof"],["#problem","The Problem"],["#demo","Demo"],["#science","Science"],["#roadmap","Roadmap"],["#researcher","Researcher"],["#contact","Contact"]].map(([h,l]) => (
             <a key={h} href={h} style={{ color: "#64748b", textDecoration: "none", letterSpacing: 1 }}
               onMouseEnter={e => e.target.style.color = "#e2e8f0"} onMouseLeave={e => e.target.style.color = "#64748b"}>{l}</a>
           ))}
@@ -640,8 +640,16 @@ export default function MiradorSite() {
             "149/149 Rust tests passing across 12 crates",
             "Interactive demo with editable patient, 3D viewer, provenance citations",
           ]} />
-        </FadeIn>
-        <FadeIn delay={0.15}>
+        </FadeIn>        <FadeIn delay={0.08}>
+          <RoadmapItem phase="1b" title="Keske Method — Pediatric AHO" status="LIVE" color="#f97316" items={[
+            "Four bone-specific curvature layers: K1 pediatric PK · K2 penetration barrier · K3 biofilm · K4 multi-reservoir",
+            "Parallel-resistor combination engine with synergy term — rifampin mono hard-blocked",
+            "Preloaded with Steven's scenario: 10yr, 32kg, CRP 250, 2190 days of infection",
+            "C_bone vancomycin mono ≈ 0.77 → C_bone ceftaroline + rifampin ≈ 11.2 (14× improvement derivable from first principles)",
+            "161 Rust tests across 5 crates · Full PDF + JSON report generation",
+            <span key="ded" style={{ color: "#f97316" }}>Dedicated to Steven Keske — 6 years, 5 antibiotics, 4 surgeries, still fighting. One child who deserved better.</span>,
+          ]} />
+        </FadeIn>        <FadeIn delay={0.15}>
           <RoadmapItem phase="2" title="Retrospective Clinical Validation" status="SEEKING PARTNERS" color="#3b82f6" items={[
             "Run MIRADOR against 50-200 retrospective MRSA bacteremia cases with known outcomes",
             "Compare: would MIRADOR's recommendation have differed from the actual clinical decision?",
@@ -689,6 +697,86 @@ export default function MiradorSite() {
           </div>
         </section>
       </FadeIn>
+
+      {/* ============ RESEARCHER ============ */}
+      <section id="researcher" style={{ padding: mob ? "40px 16px" : "100px 24px 80px", maxWidth: 900, margin: "0 auto" }}>
+        <FadeIn>
+          <div style={{ fontSize: 11, fontFamily: FM, color: "#ec4899", letterSpacing: 3, marginBottom: 12 }}>THE RESEARCHER</div>
+          <h2 style={{ fontSize: "clamp(28px,4vw,48px)", fontFamily: F, fontWeight: 400, margin: "0 0 20px 0", lineHeight: 1.2 }}>
+            She grew up at a table where the patients were always present.
+          </h2>
+        </FadeIn>
+
+        <FadeIn delay={0.1}>
+          <div style={{ display: "flex", gap: 40, flexWrap: mob ? "wrap" : "nowrap", marginBottom: 60, alignItems: "flex-start" }}>
+            <div style={{ flex: "1 1 260px", minWidth: 0 }}>
+              <img
+                src="/bee-davis.jpg"
+                alt="Bee Rosa Davis"
+                style={{ width: "100%", maxWidth: 300, borderRadius: 10, border: "1px solid #1e1e30", display: "block" }}
+              />
+            </div>
+            <div style={{ flex: "2 1 400px", minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#ec4899", fontFamily: FM, letterSpacing: 1, marginBottom: 4 }}>BEE ROSA DAVIS</div>
+              <div style={{ fontSize: 11, color: "#64748b", fontFamily: FM, letterSpacing: 2, marginBottom: 20 }}>APPLIED MATHEMATICS · SECURITY ENGINEERING · INDEPENDENT RESEARCHER</div>
+              <p style={{ fontSize: 15, color: "#cbd5e1", lineHeight: 1.85, margin: "0 0 16px 0", fontFamily: FS }}>
+                Bee was born into a family where medicine was not a career — it was a calling. Her mother, aunts, uncles, cousins, and now her cousins' children have all walked the floors of hospitals across Trinidad and Tobago. Emergency rooms, ICUs, surgical suites, discharge planning: the full arc of a patient's life was the conversation at every dinner table, every family gathering, every holiday.
+              </p>
+              <p style={{ fontSize: 15, color: "#94a3b8", lineHeight: 1.85, margin: "0 0 16px 0", fontFamily: FS }}>
+                She was an only child, but never an isolated one. She was raised inside a community of caregivers — people who stayed after their shifts, who called families back after hours, who grieved when patients were lost. In the Davis family, the name has long been synonymous with something specific: deep, multigenerational, unhurried empathy. The kind that does not clock out.
+              </p>
+              <p style={{ fontSize: 15, color: "#94a3b8", lineHeight: 1.85, margin: 0, fontFamily: FS }}>
+                Bee is an applied mathematician. She always knew her gift was in something different — but she also knew she could translate it into care. So she built the tool no nurse had ever been given: one that does the math at the bedside, so a clinician can spend that time with the patient instead of the spreadsheet. That is MIRADOR. That is why it exists.
+              </p>
+            </div>
+          </div>
+        </FadeIn>
+
+        <FadeIn delay={0.3}>
+          <div style={{ fontSize: 11, color: "#64748b", fontFamily: FM, letterSpacing: 2, marginBottom: 20 }}>CREDENTIALS &amp; CAREER</div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 40 }}>
+            {[
+              { tag: "MS", body: "Digital Forensics · Brown University" },
+              { tag: "BA", body: "Logic · Morehouse College" },
+              { tag: "BA", body: "Communication · Univ. of the Pacific" },
+              { tag: "27yr", body: "Pandora → NSA → NASA → IBM X-Force Red" },
+              { tag: "28", body: "Patents Filed · Oct 2025 – Mar 2026" },
+              { tag: "8", body: "Books Published · including #1 Amazon Bestseller" },
+              { tag: "6", body: "Live Products · all on one geometric framework" },
+            ].map(({ tag, body }) => (
+              <div key={tag + body} style={{ flex: "1 1 200px", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 6, padding: "10px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#ec4899", fontFamily: FM, whiteSpace: "nowrap", marginTop: 1 }}>{tag}</div>
+                <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: FS, lineHeight: 1.5 }}>{body}</div>
+              </div>
+            ))}
+          </div>
+        </FadeIn>
+
+        <FadeIn delay={0.4}>
+          <div style={{ background: "linear-gradient(135deg, #0a0a1a, #12082a)", border: "1px solid #2a1a3e", borderRadius: 10, padding: mob ? "24px 18px" : "36px 44px", textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#a855f7", fontFamily: FM, letterSpacing: 3, marginBottom: 16 }}>ONE MATH</div>
+            <p style={{ fontSize: "clamp(15px, 2vw, 19px)", color: "#e2e8f0", lineHeight: 1.8, margin: "0 0 16px 0", fontFamily: F, fontStyle: "italic", maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
+              Every product, every paper, every patent traces back to a single geometric framework. The Davis Law governs how systems behave. The Davis Identity proves every decision. MIRADOR is what it looks like when that framework walks into a hospital.
+            </p>
+            <div style={{ fontFamily: FM, fontSize: 22, letterSpacing: 6, color: "#e2e8f0", marginBottom: 4 }}>C = <span style={{color:"#22c55e"}}>τ</span> / <span style={{color:"#ef4444"}}>K</span>&nbsp;&nbsp;·&nbsp;&nbsp;<span style={{color:"#a855f7"}}>S + d² = 1</span></div>
+            <div style={{ fontSize: 10, color: "#475569", fontFamily: FS }}>The Davis Law · The Davis Identity</div>
+            <div style={{ marginTop: 24, display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+              {[
+                { label: "ORCID", url: "https://orcid.org/0009-0009-8034-4308" },
+                { label: "GitHub", url: "https://github.com/nurdymuny" },
+                { label: "Zenodo", url: "https://doi.org/10.5281/zenodo.18511755" },
+                { label: "LinkedIn", url: "https://www.linkedin.com/in/msbeedavis/" },
+              ].map(({ label, url }) => (
+                <a key={label} href={url} target="_blank" rel="noopener noreferrer" style={{ padding: "7px 16px", background: "transparent", border: "1px solid #2a2a3e", borderRadius: 5, color: "#64748b", fontFamily: FM, fontSize: 10, letterSpacing: 1, textDecoration: "none" }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#a855f7"; e.currentTarget.style.color = "#e2e8f0"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#2a2a3e"; e.currentTarget.style.color = "#64748b"; }}>
+                  {label}
+                </a>
+              ))}
+            </div>
+          </div>
+        </FadeIn>
+      </section>
 
       {/* ============ CONTACT ============ */}
       <section id="contact" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 640, margin: "0 auto" }}>

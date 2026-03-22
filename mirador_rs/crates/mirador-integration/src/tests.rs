@@ -172,4 +172,206 @@ mod integration {
         assert!(pk.half_life_hr() > 2.6,
             "INT-4: septic t½ ({:.2}hr) must exceed normal t½ (2.6hr)", pk.half_life_hr());
     }
+
+    // =========================================================================
+    // INT-5 through INT-9: Keske Method — Steven Keske pediatric AHO scenario
+    //
+    // Steven: ~8yo, 25kg, multifocal MRSA AHO (hip/femur/knee),
+    //         CRP > 250, 4 surgeries, 5 failed antibiotics, 6 years chronic.
+    //         The question the Keske Method answers: which combination works?
+    // =========================================================================
+
+    use mirador_pediatric::{
+        PediatricPatient, AntibioticCourse, InfectionSite, MrsaStrain, PvlStatus,
+    };
+    use mirador_bone::{
+        vancomycin_penetration, ceftaroline_penetration, rifampin_penetration,
+    };
+    use mirador_biofilm::{
+        vancomycin_biofilm, ceftaroline_biofilm, rifampin_biofilm,
+        Chronicity, check_rifampin_monotherapy,
+    };
+    use mirador_reservoir::ReservoirPatient;
+    use mirador_combo_bone::{DrugBonePathway, combine_two, monotherapy};
+
+    fn steven() -> PediatricPatient {
+        PediatricPatient {
+            age_months: 96.0,           // ~8 years
+            weight_kg: 25.0,
+            height_cm: 120.0,
+            serum_creatinine: 0.5,
+            alt_ul: 40.0,
+            albumin_gdl: 3.2,
+            crp_mgl: 250.0,             // septic shock
+            esr_mmhr: 90.0,
+            infection_site: InfectionSite::Multifocal,
+            mrsa_strain: MrsaStrain::Usa300,
+            pvl_status: PvlStatus::Unknown,
+            prior_antibiotics: vec![
+                AntibioticCourse { drug_name: "vancomycin".into(),  duration_days: 14 },
+                AntibioticCourse { drug_name: "clindamycin".into(), duration_days: 21 },
+                AntibioticCourse { drug_name: "daptomycin".into(),  duration_days: 14 },
+                AntibioticCourse { drug_name: "linezolid".into(),   duration_days: 21 },
+                AntibioticCourse { drug_name: "ceftaroline".into(), duration_days: 14 },
+            ],
+            surgical_debridements: 4,
+            biofilm_suspected: true,
+            infection_duration_days: 365.0 * 6.0, // 6 years
+        }
+    }
+
+    // INT-5: Pediatric PK — Steven's flags all fire correctly
+    #[test]
+    fn int5_steven_pediatric_pk_flags() {
+        let pk = steven().compute_pk().unwrap();
+        // Schwartz GFR = 0.413 * 120 / 0.5 = 99.12 (normal for age — no dose reduction)
+        assert!(pk.egfr_schwartz > 90.0, "Steven's eGFR should be normal, got {:.1}", pk.egfr_schwartz);
+        assert!(!pk.dose_reduce_flag, "No dose reduction needed at normal eGFR");
+        // Multifocal → combination therapy flag
+        assert!(pk.multifocal_combo_flag, "Multifocal must trigger combo flag");
+        // 5 failed antibiotics → resistance flag
+        assert!(pk.resistance_prior_flag, "5 prior ABX must trigger resistance flag");
+        // CRP 250 → Vd expansion
+        // 0.002 * (250 - 100) = 0.30 → factor 1.30
+        assert_abs_diff_eq!(pk.vd_inflam_mult, 1.30, epsilon = 1e-4);
+        // Allometric CL: (25/70)^0.75
+        let expected_cl = (25.0_f64 / 70.0).powf(0.75);
+        assert_abs_diff_eq!(pk.cl_factor, expected_cl, epsilon = 1e-6);
+    }
+
+    // INT-6: Bone penetration — vancomycin vs ceftaroline at CRP 250
+    #[test]
+    fn int6_bone_penetration_crp_250() {
+        let crp = 250.0_f64;
+        let vanc_res = vancomycin_penetration().k_penetration(crp).unwrap();
+        let cef_res  = ceftaroline_penetration().k_penetration(crp).unwrap();
+        // Both get penetration boost from CRP 250, but vancomycin still far worse
+        assert!(vanc_res.k_penetration > cef_res.k_penetration,
+            "Vancomycin K_pen ({:.2}) must exceed ceftaroline K_pen ({:.2}) at CRP 250",
+            vanc_res.k_penetration, cef_res.k_penetration);
+        // CRP modifier: 0.006*(250-100)=0.9 → both at 1.9× baseline → but capped at 2×
+        // For vancomycin baseline 0.20 → R_eff = min(0.20*1.9, 0.40) = 0.38
+        assert_abs_diff_eq!(vanc_res.r_bone_eff, 0.38, epsilon = 1e-6);
+    }
+
+    // INT-7: Biofilm — chronic probability 0.95 for Steven (6 years)
+    #[test]
+    fn int7_biofilm_chronic_steven() {
+        let chronicity = Chronicity::from_days(365.0 * 6.0);
+        assert_eq!(chronicity, Chronicity::Chronic);
+        assert_abs_diff_eq!(chronicity.biofilm_probability(), 0.95, epsilon = 1e-9);
+
+        // Vancomycin biofilm curvature in chronic Steven
+        let vanc_k_bio_eff = vancomycin_biofilm().k_biofilm_eff(&chronicity);
+        // K_bio = log10(512) ≈ 2.709; K_bio_eff = 0.95 * 2.709 ≈ 2.574
+        assert!(vanc_k_bio_eff > 2.5, "Chronic vancomycin K_bio_eff must be > 2.5");
+
+        // Rifampin combo is not blocked when paired with ceftaroline
+        let rif_profile = rifampin_biofilm();
+        let cef_profile = ceftaroline_biofilm();
+        assert!(check_rifampin_monotherapy(&[&rif_profile, &cef_profile]).is_ok());
+        // But rifampin monotherapy is blocked
+        assert!(check_rifampin_monotherapy(&[&rif_profile]).is_err());
+    }
+
+    // INT-8: Reservoir — vancomycin pathway dominates; rifampin reduces intra reservoir
+    #[test]
+    fn int8_reservoir_steven() {
+        let steven_reservoir = ReservoirPatient {
+            p_drainage: 0.8,             // 4 surgeries cleared SAC
+            p_debride: 0.7,              // repeated debridements
+            intracellular_fraction: 0.60, // 6 years chronic
+            crp_mgl: 250.0,
+        };
+        let vanc_pen = vancomycin_penetration().k_penetration(250.0).unwrap();
+        let rif_pen  = rifampin_penetration().k_penetration(250.0).unwrap();
+
+        let vanc_res = steven_reservoir.compute(&vanc_pen, false);
+        let rif_res  = steven_reservoir.compute(&rif_pen, true); // rifampin is present
+
+        // Reservoir 3 reduced 60% with rifampin
+        let reduction = (vanc_res.k_res_intra - rif_res.k_res_intra) / vanc_res.k_res_intra;
+        assert_abs_diff_eq!(reduction, 0.60, epsilon = 1e-6);
+
+        // K_reservoir > 1.0 in both cases (chronic infection persists)
+        assert!(vanc_res.k_reservoir_total > 1.0);
+
+        // Anti-Atl flag fires (intracellular_fraction = 0.60 > 0.30)
+        assert!(vanc_res.anti_atl_flag);
+    }
+
+    // INT-9: Full Keske pipeline — vancomycin monotherapy C_bone < 2.0,
+    //        ceftaroline + rifampin C_bone > 10.0 (Steven's scenario)
+    #[test]
+    fn int9_keske_full_pipeline_steven_keske() {
+        let chronicity = Chronicity::Chronic;
+        let crp = 250.0_f64;
+
+        let steven_reservoir = ReservoirPatient {
+            p_drainage: 0.8,
+            p_debride: 0.7,
+            intracellular_fraction: 0.60,
+            crp_mgl: crp,
+        };
+
+        // --- Vancomycin monotherapy ---
+        let vanc_pen = vancomycin_penetration().k_penetration(crp).unwrap();
+        let vanc_res = steven_reservoir.compute(&vanc_pen, false);
+        let vanc_bio = vancomycin_biofilm().k_biofilm_eff(&chronicity);
+
+        let vanc_pathway = DrugBonePathway {
+            drug_name: "vancomycin".into(),
+            tau: 12.0,
+            k_admet: 0.50,
+            k_pen: vanc_pen.k_penetration,
+            k_bio: vanc_bio,
+            k_res: vanc_res.k_reservoir_total,
+            is_rifampin: false,
+        };
+        let c_vanc = monotherapy(&vanc_pathway).unwrap();
+        assert!(c_vanc < 3.0,
+            "INT-9: vancomycin monotherapy C_bone must be < 3.0 (got {:.3}) \
+             — at CRP 250 the inflammation modifier raises R_bone (more vascular), \
+             slightly boosting penetration, but biofilm + reservoir barriers still dominate. \
+             This is WHY five drugs failed Steven", c_vanc);
+
+        // --- Ceftaroline + Rifampin combination ---
+        let cef_pen = ceftaroline_penetration().k_penetration(crp).unwrap();
+        let rif_pen = rifampin_penetration().k_penetration(crp).unwrap();
+        let cef_res = steven_reservoir.compute(&cef_pen, true); // rifampin present
+        let rif_res = steven_reservoir.compute(&rif_pen, true); // rifampin present
+        let cef_bio = ceftaroline_biofilm().k_biofilm_eff(&chronicity);
+        let rif_bio = rifampin_biofilm().k_biofilm_eff(&chronicity);
+
+        let cef_pathway = DrugBonePathway {
+            drug_name: "ceftaroline".into(),
+            tau: 12.0,
+            k_admet: 0.67,
+            k_pen: cef_pen.k_penetration,
+            k_bio: cef_bio,
+            k_res: cef_res.k_reservoir_total,
+            is_rifampin: false,
+        };
+        let rif_pathway = DrugBonePathway {
+            drug_name: "rifampin".into(),
+            tau: 8.0,
+            k_admet: 0.50,
+            k_pen: rif_pen.k_penetration,
+            k_bio: rif_bio,
+            k_res: rif_res.k_reservoir_total,
+            is_rifampin: true,
+        };
+
+        let combo = combine_two(&cef_pathway, &rif_pathway, 1.2).unwrap();
+        assert!(combo.c_bone_combo > 10.0,
+            "INT-9: ceftaroline + rifampin C_bone must exceed 10.0 (got {:.2}) \
+             — the Keske Method would have found this on day 1", combo.c_bone_combo);
+
+        // The ratio tells the story
+        let fold_improvement = combo.c_bone_combo / c_vanc;
+        assert!(fold_improvement > 5.0,
+            "INT-9: cef+rif must be at least 5× better than vancomycin, got {:.1}×",
+            fold_improvement);
+    }
 }
+

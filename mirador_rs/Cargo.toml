@@ -12,6 +12,11 @@ members = [
     "crates/mirador-combination",
     "crates/mirador-dosing",
     "crates/mirador-integration",
+    "crates/mirador-pediatric",
+    "crates/mirador-bone",
+    "crates/mirador-biofilm",
+    "crates/mirador-reservoir",
+    "crates/mirador-combo-bone",
 ]
 resolver = "2"
 

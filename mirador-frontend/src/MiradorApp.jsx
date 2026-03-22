@@ -713,6 +713,7 @@ export default function MiradorApp() {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button onClick={() => { window.location.hash = ''; }} style={{ fontSize: 9, fontFamily: FONT, color: "#475569", background: "none", border: "1px solid #1e1e30", borderRadius: 4, padding: "4px 10px", cursor: "pointer" }}>← HOME</button>
           <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 4, color: "#e2e8f0" }}>MIRADOR</div>
+          <button onClick={() => { window.location.hash = 'keske'; }} style={{ fontSize: 9, fontFamily: FONT, color: "#f97316", background: "none", border: "1px solid #f9731633", borderRadius: 4, padding: "4px 10px", cursor: "pointer" }}>KESKE EDITION →</button>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ fontSize: 10, color: "#475569" }}>STAGE {stage + 1} / 5</div>

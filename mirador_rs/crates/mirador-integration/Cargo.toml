@@ -13,6 +13,11 @@ mirador-admet        = { path = "../mirador-admet" }
 mirador-resistance   = { path = "../mirador-resistance" }
 mirador-combination  = { path = "../mirador-combination" }
 mirador-dosing       = { path = "../mirador-dosing" }
+mirador-pediatric    = { path = "../mirador-pediatric" }
+mirador-bone         = { path = "../mirador-bone" }
+mirador-biofilm      = { path = "../mirador-biofilm" }
+mirador-reservoir    = { path = "../mirador-reservoir" }
+mirador-combo-bone   = { path = "../mirador-combo-bone" }
 
 [dev-dependencies]
 approx = { workspace = true }

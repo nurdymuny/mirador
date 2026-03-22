@@ -45,6 +45,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "mirador-biofilm"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "mirador-bone"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "mirador-bundle"
 version = "0.1.0"
 dependencies = [
@@ -65,6 +83,18 @@ name = "mirador-combination"
 version = "0.1.0"
 dependencies = [
  "approx",
+ "thiserror",
+]
+
+[[package]]
+name = "mirador-combo-bone"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "mirador-biofilm",
+ "mirador-bone",
+ "mirador-reservoir",
+ "serde",
  "thiserror",
 ]
 
@@ -93,11 +123,16 @@ version = "0.1.0"
 dependencies = [
  "approx",
  "mirador-admet",
+ "mirador-biofilm",
+ "mirador-bone",
  "mirador-combination",
+ "mirador-combo-bone",
  "mirador-core",
  "mirador-dosing",
  "mirador-patient",
+ "mirador-pediatric",
  "mirador-pharmacophore",
+ "mirador-reservoir",
  "mirador-resistance",
  "mirador-target",
 ]
@@ -126,11 +161,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "mirador-pediatric"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "mirador-pharmacophore"
 version = "0.1.0"
 dependencies = [
  "approx",
  "mirador-core",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "mirador-reservoir"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "mirador-bone",
  "serde",
  "thiserror",
 ]

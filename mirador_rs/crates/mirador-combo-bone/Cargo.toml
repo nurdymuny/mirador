@@ -1,0 +1,15 @@
+[package]
+name = "mirador-combo-bone"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+serde.workspace = true
+mirador-bone      = { path = "../mirador-bone" }
+mirador-biofilm   = { path = "../mirador-biofilm" }
+mirador-reservoir = { path = "../mirador-reservoir" }
+
+[dev-dependencies]
+approx.workspace = true
