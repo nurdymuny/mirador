@@ -268,7 +268,7 @@ export default function MiradorSite() {
           <div style={{ fontSize: 18, fontWeight: 700, fontFamily: FM, letterSpacing: 4, color: "#e2e8f0" }}>MIRADOR</div>
         </div>
         <div style={{ display: mob ? "none" : "flex", gap: 24, fontSize: 11, fontFamily: FS, color: "#64748b", alignItems: "center" }}>
-          {[["#proof","Proof"],["#problem","The Problem"],["#demo","Demo"],["#science","Science"],["#roadmap","Roadmap"],["#researcher","Researcher"],["#contact","Contact"]].map(([h,l]) => (
+          {[["#proof","Proof"],["#problem","The Problem"],["#demo","Demo"],["#science","Science"],["#roadmap","Roadmap"],["#researcher","Researcher"],["#book","Book"],["#contact","Contact"]].map(([h,l]) => (
             <a key={h} href={h} style={{ color: "#64748b", textDecoration: "none", letterSpacing: 1 }}
               onMouseEnter={e => e.target.style.color = "#e2e8f0"} onMouseLeave={e => e.target.style.color = "#64748b"}>{l}</a>
           ))}
@@ -780,6 +780,73 @@ export default function MiradorSite() {
                   {label}
                 </a>
               ))}
+            </div>
+          </div>
+        </FadeIn>
+      </section>
+
+      {/* ============ BOOK ============ */}
+      <section id="book" style={{ padding: mob ? "40px 16px" : "100px 24px 80px", maxWidth: 980, margin: "0 auto" }}>
+        <FadeIn>
+          <div style={{ fontSize: 11, fontFamily: FM, color: "#ef4444", letterSpacing: 3, marginBottom: 12 }}>THE BOOK</div>
+          <div style={{ display: "flex", flexDirection: mob ? "column" : "row", gap: mob ? 32 : 56, alignItems: "flex-start" }}>
+
+            {/* Cover */}
+            <a href="https://a.co/d/04z3CCO3" target="_blank" rel="noopener noreferrer"
+              style={{ flexShrink: 0, display: "block", width: mob ? 180 : 220, alignSelf: mob ? "center" : "flex-start" }}>
+              <img src="/geometry-of-medicine.jpg" alt="The Geometry of Medicine book cover"
+                style={{ width: "100%", borderRadius: 6, boxShadow: "0 16px 48px #00000080", display: "block" }} />
+            </a>
+
+            {/* Text */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{ fontSize: "clamp(24px,3.5vw,42px)", fontFamily: F, fontWeight: 400, margin: "0 0 4px 0", lineHeight: 1.15 }}>
+                The Geometry of Medicine
+              </h2>
+              <div style={{ fontSize: 12, fontFamily: FM, color: "#64748b", letterSpacing: 2, marginBottom: 20 }}>
+                A GEOMETRIC FRAMEWORK FOR UNDERSTANDING DISEASE
+              </div>
+
+              <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.8, margin: "0 0 16px" }}>
+                Every year, new viral variants blindside our vaccines. Cancers are caught too late.
+                Antibiotic resistance spreads faster than we can track it. The problem isn't a lack
+                of data — it's that our tools weren't built for a world that drifts.
+              </p>
+              <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.8, margin: "0 0 16px" }}>
+                In <em>The Geometry of Medicine</em>, Bee Rosa Davis introduces a radical framework:
+                diseases don't just <em>exist</em> — they <em>move</em> through geometric spaces where
+                distance has meaning. A virus drifting toward immune escape. A tumor crossing from
+                watchful waiting into action. A bacterial strain acquiring the mutations that will make
+                it untreatable. These aren't random events. They're paths on a manifold, and the
+                geometry can see them coming.
+              </p>
+              <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.8, margin: "0 0 24px" }}>
+                Drawing on her work at NASA — where she learned that "nominal" is a geometric judgment
+                and uncertainty must be budgeted — Davis builds surveillance systems with something most
+                medical AI lacks: <em>honesty</em>. Her frameworks don't just output probabilities.
+                They show their work. They know when to abstain. They come with receipts.
+              </p>
+
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                <a href="https://a.co/d/04z3CCO3" target="_blank" rel="noopener noreferrer"
+                  style={{ padding: "10px 24px", background: "#ef4444", border: "none", borderRadius: 5, color: "#fff", fontFamily: FM, fontSize: 11, letterSpacing: 2, textDecoration: "none", fontWeight: 600 }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
+                  onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}>
+                  GET THE BOOK →
+                </a>
+                <span style={{ fontSize: 11, color: "#475569", fontFamily: FM }}>Available on Amazon</span>
+              </div>
+
+              <div style={{ marginTop: 28, padding: "16px 20px", background: "#0f0f1a", borderRadius: 6, borderLeft: "3px solid #ef4444" }}>
+                <div style={{ fontSize: 12, fontFamily: FM, color: "#64748b", letterSpacing: 1, marginBottom: 8 }}>INSIDE THIS BOOK</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px" }}>
+                  {["HERALD — viral antigenic drift", "GEODESIC — cancer detection", "TESSERA — antimicrobial resistance", "The Davis Field Equation C = τ/K", "Honest uncertainty quantification", "When to abstain"].map(t => (
+                    <div key={t} style={{ fontSize: 12, color: "#94a3b8", fontFamily: FS }}>
+                      <span style={{ color: "#ef4444", marginRight: 6 }}>·</span>{t}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </FadeIn>
