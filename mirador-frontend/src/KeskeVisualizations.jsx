@@ -901,7 +901,7 @@ function DayOneWhatIf() {
               </span>
             </div>
             <input type="range" min={s.min} max={s.max} value={s.value}
-              onChange={e => s.set(Number(e.target.value))}
+              onChange={e => { s.set(Number(e.target.value)); setOptMsg(null); }}
               style={{ width: "100%", accentColor: s.color }} />
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, color: "#334155", fontFamily: FM }}>
               <span>{s.min}{s.unit !== "mg/L" ? "%" : ""}</span>
