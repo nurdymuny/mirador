@@ -12,6 +12,19 @@ function useIsMobile() {
 
 const FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 
+// Load jsPDF + autotable from CDN on demand
+const loadScript = (src) => new Promise((resolve, reject) => {
+  if (document.querySelector(`script[src="${src}"]`)) return resolve();
+  const s = document.createElement("script");
+  s.src = src; s.onload = resolve; s.onerror = reject;
+  document.head.appendChild(s);
+});
+async function loadJsPDF() {
+  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js");
+  return window.jspdf.jsPDF;
+}
+
 // ─── tiny UI primitives (identical to Keske/TB design system) ───────────────
 
 function Src({ text }) {
