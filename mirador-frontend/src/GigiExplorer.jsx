@@ -376,6 +376,9 @@ export default function GigiExplorer() {
             <div style={{ fontSize: 10, color: '#475569', letterSpacing: 2, borderLeft: '1px solid #1a1a2e', paddingLeft: 14 }}>
               FIBER BUNDLE<br/>EXPLORER
             </div>
+            <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5, maxWidth: 420, borderLeft: '1px solid #1a1a2e', paddingLeft: 14 }}>
+              Query MIRADOR's pharmacokinetic database using <span style={{ color: '#22d3ee' }}>GQL</span> — the geometric query language for fiber bundles. Pick a preset from the sidebar or write your own <code style={{ color: '#a78bfa', background: '#a78bfa12', padding: '1px 4px', borderRadius: 3 }}>COVER</code> / <code style={{ color: '#a78bfa', background: '#a78bfa12', padding: '1px 4px', borderRadius: 3 }}>SECTION</code> / <code style={{ color: '#a78bfa', background: '#a78bfa12', padding: '1px 4px', borderRadius: 3 }}>LIST</code> query.
+            </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {demoMode && (

@@ -39,9 +39,18 @@ const TABS = [
 ];
 
 function TabBar({ page }) {
+  const [mobMenuOpen, setMobMenuOpen] = useState(false);
+  const isMob = typeof window !== 'undefined' && window.innerWidth < 640;
+
   return (
-    <div style={{ position: 'sticky', top: 0, zIndex: 100, background: '#03030a', borderBottom: '1px solid #1a1a2e', display: 'flex', alignItems: 'center', gap: 0, paddingLeft: 8, fontFamily: FONT }}>
-      {TABS.map(tab => {
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: '#03030a', borderBottom: '1px solid #1a1a2e', display: 'flex', alignItems: 'center', gap: 0, paddingLeft: 8, fontFamily: FONT }}>
+      {/* Home button */}
+      <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', fontSize: 10, fontWeight: 700, letterSpacing: 2, color: '#e2e8f0', textDecoration: 'none', borderRight: '1px solid #1a1a2e' }}>
+        ← HOME
+      </a>
+
+      {/* Desktop tabs */}
+      {!isMob && TABS.map(tab => {
         const active = page === tab.key;
         return (
           <a key={tab.key} href={tab.hash}
@@ -53,6 +62,36 @@ function TabBar({ page }) {
           </a>
         );
       })}
+
+      {/* Mobile: current module label + hamburger */}
+      {isMob && (
+        <>
+          <span style={{ flex: 1, padding: '9px 12px', fontSize: 10, fontWeight: 700, letterSpacing: 2, color: TABS.find(t => t.key === page)?.color || '#e2e8f0' }}>
+            {TABS.find(t => t.key === page)?.label || ''}
+          </span>
+          <button onClick={() => setMobMenuOpen(!mobMenuOpen)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <span style={{ display: 'block', width: 18, height: 2, background: '#e2e8f0', borderRadius: 2 }} />
+            <span style={{ display: 'block', width: 18, height: 2, background: '#e2e8f0', borderRadius: 2 }} />
+            <span style={{ display: 'block', width: 18, height: 2, background: '#e2e8f0', borderRadius: 2 }} />
+          </button>
+        </>
+      )}
+
+      {/* Mobile dropdown */}
+      {isMob && mobMenuOpen && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#03030a', borderBottom: '1px solid #1a1a2e', display: 'flex', flexDirection: 'column', zIndex: 99 }}>
+          {TABS.map(tab => {
+            const active = page === tab.key;
+            return (
+              <a key={tab.key} href={tab.hash} onClick={() => setMobMenuOpen(false)}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '12px 20px', fontSize: 10, fontWeight: active ? 700 : 400, letterSpacing: 2, color: active ? tab.color : '#64748b', borderLeft: active ? `3px solid ${tab.color}` : '3px solid transparent', textDecoration: 'none', background: active ? tab.color + '08' : 'transparent' }}>
+                {tab.label}
+                {tab.isNew && <span style={{ fontSize: 7, background: tab.color + '33', color: tab.color, border: `1px solid ${tab.color}55`, borderRadius: 3, padding: '1px 4px', letterSpacing: 1 }}>NEW</span>}
+              </a>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -79,14 +118,15 @@ function App() {
 
   const goDemo = () => { window.location.hash = 'demo'; };
   const showTabBar = ['demo', 'keske', 'tb', 'hiv', 'meningitis', 'science', 'explorer'].includes(page);
+  const tabSpacer = <div style={{ height: 38 }} />;
 
-  if (page === 'demo') return <><TabBar page={page} /><MiradorApp /></>;
-  if (page === 'keske') return <><TabBar page={page} /><KeskeApp /></>;
-  if (page === 'tb') return <><TabBar page={page} /><TbApp /></>;
-  if (page === 'hiv') return <><TabBar page={page} /><ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading HIV module…</div>}><HivApp /></Suspense></ErrorBoundary></>;
-  if (page === 'meningitis') return <><TabBar page={page} /><ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading Meningitis module…</div>}><MeningitisApp /></Suspense></ErrorBoundary></>;
-  if (page === 'science') return <><TabBar page={page} /><ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading Science page…</div>}><SciencePage /></Suspense></ErrorBoundary></>;
-  if (page === 'explorer') return <><TabBar page={page} /><ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading Explorer…</div>}><GigiExplorer /></Suspense></ErrorBoundary></>;
+  if (page === 'demo') return <><TabBar page={page} />{tabSpacer}<MiradorApp /></>;
+  if (page === 'keske') return <><TabBar page={page} />{tabSpacer}<KeskeApp /></>;
+  if (page === 'tb') return <><TabBar page={page} />{tabSpacer}<TbApp /></>;
+  if (page === 'hiv') return <><TabBar page={page} />{tabSpacer}<ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading HIV module…</div>}><HivApp /></Suspense></ErrorBoundary></>;
+  if (page === 'meningitis') return <><TabBar page={page} />{tabSpacer}<ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading Meningitis module…</div>}><MeningitisApp /></Suspense></ErrorBoundary></>;
+  if (page === 'science') return <><TabBar page={page} />{tabSpacer}<ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading Science page…</div>}><SciencePage /></Suspense></ErrorBoundary></>;
+  if (page === 'explorer') return <><TabBar page={page} />{tabSpacer}<ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading Explorer…</div>}><GigiExplorer /></Suspense></ErrorBoundary></>;
   if (page === 'visuals') return <KeskeVisualizations />;
   return <MiradorSite onLaunchDemo={goDemo} />;
 }

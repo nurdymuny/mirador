@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 const F = "'Instrument Serif', 'Georgia', serif";
 const FM = "'JetBrains Mono', 'Fira Code', monospace";
@@ -252,11 +252,15 @@ export default function MiradorSite() {
   const [showCompliance, setShowCompliance] = useState(false);
   const mob = useIsMobile();
 
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+
   return (
-    <div style={{ background: "#08080f", color: "#e2e8f0", fontFamily: FS, minHeight: "100vh", overflowX: "hidden" }}>
+    <div style={{ background: "#08080f", color: "#e2e8f0", fontFamily: FS, minHeight: "100vh" }}>
       <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
       <style>{`
-        html { scroll-behavior: smooth; }
+        html { scroll-behavior: smooth; overflow-x: clip; }
+        body { overflow-x: clip; }
         ::selection { background: #3b82f644; }
         a { color: #3b82f6; text-decoration: none; }
         a:hover { text-decoration: underline; }
@@ -264,14 +268,16 @@ export default function MiradorSite() {
 
       {/* ============ NAV ============ */}
       <nav style={{
-        position: "sticky", top: 0, zIndex: 50, background: "#08080fdd", backdropFilter: "blur(12px)",
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: "#08080fdd", backdropFilter: "blur(12px)",
         borderBottom: "1px solid #1a1a2e", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ fontSize: 18, fontWeight: 700, fontFamily: FM, letterSpacing: 4, color: "#e2e8f0" }}>MIRADOR</div>
         </div>
+
+        {/* Desktop nav */}
         <div style={{ display: mob ? "none" : "flex", gap: 24, fontSize: 11, fontFamily: FS, color: "#64748b", alignItems: "center" }}>
-          {[["#proof","Proof"],["#problem","The Problem"],["#demo","Demo"],["#science","Science"],["#roadmap","Roadmap"],["#researcher","Researcher"],["#book","Book"],["#contact","Contact"]].map(([h,l]) => (
+          {[["#proof","Proof"],["#problem","The Problem"],["#demo","Demo"],["#science","Science"],["#paper","Paper"],["#roadmap","Roadmap"],["#researcher","Researcher"],["#book","Book"],["#contact","Contact"]].map(([h,l]) => (
             <a key={h} href={h} style={{ color: "#64748b", textDecoration: "none", letterSpacing: 1 }}
               onMouseEnter={e => e.target.style.color = "#e2e8f0"} onMouseLeave={e => e.target.style.color = "#64748b"}>{l}</a>
           ))}
@@ -282,7 +288,48 @@ export default function MiradorSite() {
             davisgeometric.com
           </a>
         </div>
+
+        {/* Mobile hamburger */}
+        {mob && (
+          <button onClick={() => setMenuOpen(!menuOpen)} style={{
+            background: "none", border: "none", cursor: "pointer", padding: 6,
+            display: "flex", flexDirection: "column", gap: 4, zIndex: 110,
+          }} aria-label="Toggle menu">
+            <span style={{ display: "block", width: 22, height: 2, background: menuOpen ? "transparent" : "#e2e8f0", borderRadius: 2, transition: "all 0.3s" }} />
+            <span style={{ display: "block", width: 22, height: 2, background: "#e2e8f0", borderRadius: 2, transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translate(0px, -3px)" : "none" }} />
+            <span style={{ display: "block", width: 22, height: 2, background: "#e2e8f0", borderRadius: 2, transition: "all 0.3s", transform: menuOpen ? "rotate(-45deg) translate(0px, 3px)" : "none" }} />
+          </button>
+        )}
       </nav>
+
+      {/* Mobile slide-out menu */}
+      {mob && (
+        <>
+          {menuOpen && <div onClick={closeMenu} style={{ position: "fixed", inset: 0, background: "#00000088", zIndex: 90 }} />}
+          <div style={{
+            position: "fixed", top: 0, right: 0, width: 240, height: "100vh",
+            background: "#0c0c18", borderLeft: "1px solid #1e1e30",
+            zIndex: 95, padding: "72px 24px 24px",
+            transform: menuOpen ? "translateX(0)" : "translateX(100%)",
+            transition: "transform 0.3s ease",
+            display: "flex", flexDirection: "column", gap: 4,
+          }}>
+            {[["#proof","Proof"],["#problem","The Problem"],["#demo","Demo"],["#science","Science"],["#paper","Paper"],["#roadmap","Roadmap"],["#researcher","Researcher"],["#book","Book"],["#contact","Contact"]].map(([h,l]) => (
+              <a key={h} href={h} onClick={closeMenu} style={{
+                color: "#94a3b8", textDecoration: "none", fontSize: 14, fontFamily: FS,
+                padding: "10px 0", borderBottom: "1px solid #1a1a2e", letterSpacing: 1,
+              }}>{l}</a>
+            ))}
+            <a href="https://davisgeometric.com" target="_blank" rel="noopener noreferrer" onClick={closeMenu} style={{
+              color: "#a855f7", textDecoration: "none", fontSize: 12, fontFamily: FM,
+              padding: "14px 0", letterSpacing: 1, marginTop: 8,
+            }}>davisgeometric.com →</a>
+          </div>
+        </>
+      )}
+
+      {/* Nav spacer for fixed positioning */}
+      <div style={{ height: 50 }} />
 
       {/* ============ COMPLIANCE BANNER ============ */}
       <div style={{
@@ -988,6 +1035,165 @@ export default function MiradorSite() {
         </FadeIn>
       </section>
 
+      {/* ============ PAPER PREVIEW ============ */}
+      <section id="paper" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 900, margin: "0 auto" }}>
+        <FadeIn>
+          <div style={{ fontSize: 11, fontFamily: FM, color: "#f97316", letterSpacing: 3, marginBottom: 12 }}>PUBLISHED RESEARCH</div>
+          <h2 style={{ fontSize: 32, fontFamily: F, fontWeight: 400, margin: "0 0 12px 0" }}>
+            Read the paper.
+          </h2>
+          <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.7, maxWidth: 640, marginBottom: 32 }}>
+            The complete mathematical framework, four disease validations, and 37 independent tests — peer-reviewable, reproducible, open.
+          </p>
+        </FadeIn>
+
+        <FadeIn delay={0.15}>
+          <a
+            href="https://doi.org/10.5281/zenodo.19240827"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: "none", display: "block", cursor: "pointer" }}
+          >
+            <div
+              style={{
+                background: "#fefdfb",
+                border: "1px solid #d4c9b0",
+                borderRadius: 4,
+                padding: mob ? "32px 24px" : "48px 56px",
+                maxWidth: 720,
+                margin: "0 auto",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.2)",
+                position: "relative",
+                transition: "transform 0.25s ease, box-shadow 0.25s ease",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.2)"; }}
+            >
+              {/* Zenodo badge */}
+              <div style={{ position: "absolute", top: mob ? 12 : 16, right: mob ? 12 : 20, display: "flex", alignItems: "center", gap: 6, background: "#1a5276", padding: "4px 10px", borderRadius: 3 }}>
+                <span style={{ fontSize: 9, color: "#fff", fontFamily: "Arial, sans-serif", fontWeight: 700, letterSpacing: 0.5 }}>ZENODO</span>
+                <span style={{ fontSize: 9, color: "#aed6f1", fontFamily: "Arial, sans-serif" }}>DOI</span>
+              </div>
+
+              {/* Title */}
+              <h3 style={{
+                fontFamily: "'Times New Roman', 'Georgia', 'Computer Modern', serif",
+                fontSize: mob ? 18 : 22,
+                fontWeight: 700,
+                color: "#1a1a1a",
+                lineHeight: 1.35,
+                margin: "0 0 10px 0",
+                paddingRight: mob ? 70 : 80,
+              }}>
+                The Geometry of the Cure: Geometric Therapeutic Optimization via the Davis Field Equations
+              </h3>
+
+              {/* Author */}
+              <div style={{
+                fontFamily: "'Times New Roman', Georgia, serif",
+                fontSize: 13,
+                color: "#444",
+                marginBottom: 4,
+              }}>
+                Bee Rosa Davis
+              </div>
+
+              {/* Affiliation / date */}
+              <div style={{
+                fontFamily: "'Times New Roman', Georgia, serif",
+                fontSize: 11,
+                color: "#888",
+                fontStyle: "italic",
+                marginBottom: 20,
+              }}>
+                Davis Geometric &nbsp;·&nbsp; March 2026 &nbsp;·&nbsp; Zenodo
+              </div>
+
+              {/* Divider */}
+              <div style={{ borderTop: "1px solid #d4c9b0", marginBottom: 16 }} />
+
+              {/* Abstract label */}
+              <div style={{
+                fontFamily: "'Times New Roman', Georgia, serif",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#1a1a1a",
+                letterSpacing: 0.5,
+                marginBottom: 8,
+                textTransform: "uppercase",
+              }}>
+                Abstract
+              </div>
+
+              {/* Abstract body */}
+              <p style={{
+                fontFamily: "'Times New Roman', Georgia, serif",
+                fontSize: mob ? 11.5 : 12.5,
+                color: "#333",
+                lineHeight: 1.85,
+                margin: "0 0 14px 0",
+                textAlign: "justify",
+                hyphens: "auto",
+              }}>
+                The standard pharmacokinetic approach to drug efficacy prediction — measuring serum concentrations and comparing with minimum inhibitory concentrations — fails predictably in compartmentalized infections where anatomical, biophysical, or phenotypic barriers separate the drug from the pathogen.
+                We introduce <em>MIRADOR</em> (Manifold-Informed Rational Architecture for Drug-Organism Response), a geometric framework for predicting drug efficacy requiring zero pharmacokinetic fitted parameters.
+                The framework rests on a single governing equation: therapeutic coherence <span style={{ fontStyle: "italic" }}>C</span> = <span style={{ fontStyle: "italic" }}>&tau;</span>/<span style={{ fontStyle: "italic" }}>K</span>,
+                where <span style={{ fontStyle: "italic" }}>&tau;</span> is the pharmacophoric potential and <span style={{ fontStyle: "italic" }}>K</span> is the total pathway impedance — a series sum of barrier, phenotype, reservoir, and systemic curvature terms, each computed entirely from published pharmacokinetic data.
+              </p>
+              <p style={{
+                fontFamily: "'Times New Roman', Georgia, serif",
+                fontSize: mob ? 11.5 : 12.5,
+                color: "#333",
+                lineHeight: 1.85,
+                margin: "0 0 14px 0",
+                textAlign: "justify",
+                hyphens: "auto",
+              }}>
+                We validate MIRADOR across four disease instances — pediatric bone MRSA (osteomyelitis), pulmonary tuberculosis, bacterial meningitis, and HIV latent reservoirs — spanning four pathogens, four organ systems, and four barrier types, using the same equation throughout.
+                Across 37 independent validation tests with strict separation of pharmacokinetic inputs from clinical ground truths, the framework reproduces established drug rankings, predicts documented clinical phenomena not used in model construction, and identifies five novel predictions.
+                The framework's predictive boundary is formally characterized by the Double Cover Identity (<span style={{ fontStyle: "italic" }}>S</span> + <span style={{ fontStyle: "italic" }}>d</span><sup>2</sup> = 1), which partitions every therapeutic problem into what penetration geometry explains and what it cannot.
+              </p>
+
+              {/* Keywords */}
+              <div style={{ borderTop: "1px solid #e8e0d0", paddingTop: 10, marginTop: 4 }}>
+                <span style={{ fontFamily: "'Times New Roman', Georgia, serif", fontSize: 10, color: "#888", fontWeight: 700 }}>Keywords: </span>
+                <span style={{ fontFamily: "'Times New Roman', Georgia, serif", fontSize: 10, color: "#666", fontStyle: "italic" }}>
+                  pharmacokinetics, geometric optimization, fiber bundles, therapeutic coherence, Davis Field Equations, compartmentalized infection, MRSA, tuberculosis, meningitis, HIV reservoirs
+                </span>
+              </div>
+
+              {/* Click prompt */}
+              <div style={{ textAlign: "center", marginTop: 20 }}>
+                <span style={{
+                  fontFamily: "Arial, Helvetica, sans-serif",
+                  fontSize: 11,
+                  color: "#1a5276",
+                  fontWeight: 700,
+                  letterSpacing: 1,
+                  padding: "6px 16px",
+                  border: "1px solid #1a5276",
+                  borderRadius: 3,
+                  display: "inline-block",
+                  transition: "background 0.2s, color 0.2s",
+                }}>
+                  READ FULL PAPER ON ZENODO →
+                </span>
+              </div>
+            </div>
+          </a>
+        </FadeIn>
+
+        {/* Citation box */}
+        <FadeIn delay={0.3}>
+          <div style={{ maxWidth: 720, margin: "24px auto 0", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 6, padding: "14px 20px" }}>
+            <div style={{ fontSize: 10, fontFamily: FM, color: "#64748b", letterSpacing: 1, marginBottom: 6 }}>CITE</div>
+            <div style={{ fontSize: 11, fontFamily: FM, color: "#94a3b8", lineHeight: 1.7, wordBreak: "break-all" }}>
+              Davis, B. R. (2026). The Geometry of the Cure: Geometric Therapeutic Optimization via the Davis Field Equations. <span style={{ fontStyle: "italic" }}>Zenodo</span>. https://doi.org/10.5281/zenodo.19240827
+            </div>
+          </div>
+        </FadeIn>
+      </section>
+
       {/* ============ ROADMAP ============ */}
       <section id="roadmap" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 800, margin: "0 auto" }}>
         <FadeIn>
@@ -1091,7 +1297,7 @@ export default function MiradorSite() {
         <FadeIn>
           <div style={{ fontSize: 11, fontFamily: FM, color: "#f59e0b", letterSpacing: 3, marginBottom: 12 }}>DATA ENGINE</div>
           <h2 style={{ fontSize: 32, fontFamily: F, fontWeight: 400, margin: "0 0 12px 0" }}>
-            GIGI — Geometric Intelligence Graph Interface
+            GIGI — Geometric Intrinsic Global Index
           </h2>
           <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.7, maxWidth: 700 }}>
             Every number in MIRADOR lives in <span style={{ color: "#f59e0b", fontFamily: FM, fontSize: 13 }}>GIGI</span> — a fiber bundle database built for geometric data.
@@ -1102,7 +1308,7 @@ export default function MiradorSite() {
         <FadeIn delay={0.1}>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", margin: "32px 0" }}>
             <div style={{ flex: "1 1 200px", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "20px 24px", borderTop: "3px solid #f59e0b" }}>
-              <div style={{ fontSize: 36, fontWeight: 700, fontFamily: FM, color: "#f59e0b", lineHeight: 1 }}>1,357</div>
+              <div style={{ fontSize: 36, fontWeight: 700, fontFamily: FM, color: "#f59e0b", lineHeight: 1 }}>1,564</div>
               <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: FS, marginTop: 6 }}>Validated PK/PD records from EUCAST, CLSI, WHO CC, and published clinical trials</div>
             </div>
             <div style={{ flex: "1 1 200px", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "20px 24px", borderTop: "3px solid #3b82f6" }}>
@@ -1150,7 +1356,7 @@ export default function MiradorSite() {
             </a>
           </div>
           <div style={{ textAlign: "center", fontSize: 10, color: "#64748b", fontFamily: FM, marginTop: 10 }}>
-            Explorer queries live GIGI on Fly.io · 1,357 records · No API key required
+            Explorer queries live GIGI on Fly.io · 1,564 records · No API key required
           </div>
         </FadeIn>
       </section>
