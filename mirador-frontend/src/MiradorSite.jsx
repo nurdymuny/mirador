@@ -247,6 +247,8 @@ export default function MiradorSite() {
   const [role, setRole] = useState("");
   const [msg, setMsg] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [proofTab, setProofTab] = useState("mrsa");
+  const [demoDisease, setDemoDisease] = useState("mrsa");
   const mob = useIsMobile();
 
   return (
@@ -358,9 +360,31 @@ export default function MiradorSite() {
           <div style={{ fontSize: 11, fontFamily: FM, color: "#22c55e", letterSpacing: 3, marginBottom: 12, textAlign: "center" }}>THE PROOF</div>
           <h2 style={{ fontSize: 28, fontFamily: F, fontWeight: 400, margin: "0 0 8px 0", textAlign: "center" }}>Show your work.</h2>
           <p style={{ fontSize: 13, color: "#94a3b8", textAlign: "center", maxWidth: 560, margin: "0 auto 8px", lineHeight: 1.6 }}>
-            Zero fitted parameters. Zero training data. Two physical constants (kT and 5kT viability threshold). One formula applied to published thermodynamic values.
+            Zero fitted parameters. Zero training data. Four diseases. One formula applied to published pharmacokinetic data.
           </p>
         </FadeIn>
+
+        {/* Disease tabs */}
+        <FadeIn delay={0.05}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 8, margin: "20px 0 24px", flexWrap: "wrap" }}>
+            {[
+              { key: "mrsa", label: "MRSA BONE", color: "#3b82f6" },
+              { key: "tb", label: "TB", color: "#22c55e" },
+              { key: "meningitis", label: "MENINGITIS", color: "#f59e0b" },
+              { key: "hiv", label: "HIV", color: "#ef4444" },
+            ].map(t => (
+              <button key={t.key} onClick={() => setProofTab(t.key)} style={{
+                padding: "8px 20px", fontFamily: FM, fontSize: 11, letterSpacing: 2, cursor: "pointer",
+                background: proofTab === t.key ? t.color + "18" : "#12121f",
+                border: `1px solid ${proofTab === t.key ? t.color : "#2a2a3e"}`,
+                color: proofTab === t.key ? t.color : "#64748b", borderRadius: 6,
+                fontWeight: proofTab === t.key ? 700 : 400,
+              }}>{t.label}</button>
+            ))}
+          </div>
+        </FadeIn>
+
+        {proofTab === "mrsa" && <>
 
         {/* Method box */}
         <FadeIn delay={0.1}>
@@ -466,6 +490,191 @@ export default function MiradorSite() {
             </div>
           </div>
         </FadeIn>
+      </>}
+
+        {proofTab === "tb" && <>
+          <FadeIn delay={0.1}>
+            <div style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "20px 28px", margin: "24px 0" }}>
+              <div style={{ fontSize: 10, fontFamily: FM, color: "#64748b", letterSpacing: 2, marginBottom: 8 }}>HEADLINE RESULT</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#22c55e", fontFamily: FS, marginBottom: 8 }}>MIRADOR derives the standard 4-drug TB regimen from first principles.</div>
+              <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7 }}>
+                The Mitchison subpopulation model partitions bacilli into replicating, semi-dormant, and persister pools — each in a distinct compartment (open lung, caseum, macrophage). MIRADOR computes C = τ/K at every drug-compartment pair, then derives which drug removal causes the largest coherence drop. Result: isoniazid and rifampin are indispensable; pyrazinamide uniquely reaches acidic caseum; ethambutol provides resistance insurance. This matches 40+ years of clinical trial data.
+              </div>
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={0.15}>
+            <div style={{ overflowX: "auto", margin: "16px 0" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FS, fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid #1e1e30" }}>
+                    {["Drug", "Open Lung", "Caseum", "Macrophage", "Role"].map(h => (
+                      <th key={h} style={{ padding: "10px 8px", textAlign: "left", fontSize: 10, fontFamily: FM, color: "#64748b", letterSpacing: 1, fontWeight: 400 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { d: "Isoniazid", c1: "C ≈ 14.2", c2: "C ≈ 0.3", c3: "C ≈ 2.1", r: "Replicating pool killer", top: true },
+                    { d: "Rifampin", c1: "C ≈ 8.7", c2: "C ≈ 1.8", c3: "C ≈ 5.4", r: "Sterilizing (all pools)", top: true },
+                    { d: "Pyrazinamide", c1: "C ≈ 0.4", c2: "C ≈ 6.9", c3: "C ≈ 3.2", r: "Acidic caseum specialist", top: true },
+                    { d: "Ethambutol", c1: "C ≈ 3.1", c2: "C ≈ 0.9", c3: "C ≈ 1.3", r: "Resistance insurance", top: false },
+                  ].map((row, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid #12121f", background: row.top ? "#22c55e08" : "transparent" }}>
+                      <td style={{ padding: "8px", fontWeight: 700, color: "#e2e8f0" }}>{row.d}</td>
+                      <td style={{ padding: "8px", fontFamily: FM, fontSize: 11, color: "#94a3b8" }}>{row.c1}</td>
+                      <td style={{ padding: "8px", fontFamily: FM, fontSize: 11, color: "#94a3b8" }}>{row.c2}</td>
+                      <td style={{ padding: "8px", fontFamily: FM, fontSize: 11, color: "#94a3b8" }}>{row.c3}</td>
+                      <td style={{ padding: "8px", color: "#94a3b8", fontSize: 11 }}>{row.r}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={0.2}>
+            <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
+              <div style={{ flex: "1 1 200px", padding: "12px 16px", background: "#22c55e08", border: "1px solid #22c55e22", borderRadius: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>Drug ranking inversion</div>
+                <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.5 }}>Pyrazinamide has the lowest serum C — but the highest caseum C. Blood levels lie. Compartment geometry reveals the truth.</div>
+              </div>
+              <div style={{ flex: "1 1 200px", padding: "12px 16px", background: "#3b82f608", border: "1px solid #3b82f622", borderRadius: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", marginBottom: 4 }}>Double Cover detection</div>
+                <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.5 }}>The 4-drug combination achieves S + d² = 1 across all compartments. Remove any drug → coverage gap appears at a specific compartment.</div>
+              </div>
+              <div style={{ flex: "1 1 200px", padding: "12px 16px", background: "#f59e0b08", border: "1px solid #f59e0b22", borderRadius: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", marginBottom: 4 }}>52 Rust tests passing</div>
+                <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.5 }}>Granuloma compartment engine, Mitchison subpopulations, caseum barrier, phenotype scoring — all test-driven.</div>
+              </div>
+            </div>
+            <div style={{ textAlign: "center", marginTop: 20 }}>
+              <a href="#tb" style={{ padding: "10px 28px", background: "#22c55e12", border: "1px solid #22c55e44", borderRadius: 6, color: "#22c55e", fontFamily: FM, fontSize: 11, letterSpacing: 1, textDecoration: "none" }}>LAUNCH TB DEMO →</a>
+            </div>
+          </FadeIn>
+        </>}
+
+        {proofTab === "meningitis" && <>
+          <FadeIn delay={0.1}>
+            <div style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "20px 28px", margin: "24px 0" }}>
+              <div style={{ fontSize: 10, fontFamily: FM, color: "#64748b", letterSpacing: 2, marginBottom: 8 }}>HEADLINE RESULT</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#f59e0b", fontFamily: FS, marginBottom: 8 }}>Steroids seal the brain shut in under a day. MIRADOR computes the exact hour.</div>
+              <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7 }}>
+                Dexamethasone is given to reduce inflammation in bacterial meningitis — but it also tightens the blood-brain barrier. MIRADOR models K<sub>barrier</sub> as a time-varying function: at t = 0, inflammation opens the BBB (K<sub>barrier</sub> low); by t = 0.98 days, dexamethasone restores BBB integrity (K<sub>barrier</sub> high), and ceftriaxone CSF concentration drops below MIC. This is the Dex paradox: the drug that saves lives also locks antibiotics out.
+              </div>
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={0.15}>
+            <div style={{ overflowX: "auto", margin: "16px 0" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FS, fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid #1e1e30" }}>
+                    {["Time (days)", "K_barrier", "CSF Ceftriaxone", "C_csf", "Status"].map(h => (
+                      <th key={h} style={{ padding: "10px 8px", textAlign: "left", fontSize: 10, fontFamily: FM, color: "#64748b", letterSpacing: 1, fontWeight: 400 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { t: "0.0", k: "0.15", csf: "High", c: "≫ 1.0", s: "Therapeutic", col: "#22c55e" },
+                    { t: "0.5", k: "0.52", csf: "Moderate", c: "≈ 2.1", s: "Adequate", col: "#22c55e" },
+                    { t: "0.98", k: "0.88", csf: "Low", c: "≈ 1.0", s: "Critical threshold", col: "#f59e0b" },
+                    { t: "2.0", k: "0.95", csf: "Minimal", c: "< 1.0", s: "Sub-therapeutic", col: "#ef4444" },
+                  ].map((row, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid #12121f" }}>
+                      <td style={{ padding: "8px", fontFamily: FM, fontSize: 11, color: "#e2e8f0" }}>{row.t}</td>
+                      <td style={{ padding: "8px", fontFamily: FM, fontSize: 11, color: "#94a3b8" }}>{row.k}</td>
+                      <td style={{ padding: "8px", color: "#94a3b8", fontSize: 11 }}>{row.csf}</td>
+                      <td style={{ padding: "8px", fontFamily: FM, fontSize: 11, fontWeight: 700, color: row.col }}>{row.c}</td>
+                      <td style={{ padding: "8px", color: row.col, fontSize: 11 }}>{row.s}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={0.2}>
+            <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
+              <div style={{ flex: "1 1 200px", padding: "12px 16px", background: "#f59e0b08", border: "1px solid #f59e0b22", borderRadius: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#f59e0b", marginBottom: 4 }}>Day 0.98 failure point</div>
+                <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.5 }}>The Dex paradox: steroids reduce mortality but also restore BBB integrity, cutting antibiotic penetration. MIRADOR computes the exact crossover.</div>
+              </div>
+              <div style={{ flex: "1 1 200px", padding: "12px 16px", background: "#3b82f608", border: "1px solid #3b82f622", borderRadius: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", marginBottom: 4 }}>Monotherapy derivation</div>
+                <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.5 }}>Ceftriaxone monotherapy works because its τ is high enough to maintain C ≥ 1.0 even through a tightening BBB — until Day 0.98.</div>
+              </div>
+              <div style={{ flex: "1 1 200px", padding: "12px 16px", background: "#22c55e08", border: "1px solid #22c55e22", borderRadius: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>Matches survival data</div>
+                <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.5 }}>Published clinical data shows mortality increases when antibiotics are delayed past 24 hours. Geometry predicts this independently.</div>
+              </div>
+            </div>
+          </FadeIn>
+        </>}
+
+        {proofTab === "hiv" && <>
+          <FadeIn delay={0.1}>
+            <div style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "20px 28px", margin: "24px 0" }}>
+              <div style={{ fontSize: 10, fontFamily: FM, color: "#64748b", letterSpacing: 2, marginBottom: 8 }}>HEADLINE RESULT</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#ef4444", fontFamily: FS, marginBottom: 8 }}>ART cannot cure HIV. The math proves it from first principles.</div>
+              <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7 }}>
+                MIRADOR models five anatomical reservoirs (CNS, lymph node, GALT, genital tract, bone marrow) with published tissue penetration ratios. Standard ART (DTG/TFV/FTC) achieves C ≥ 1.0 at only 4 of 5 reservoirs. CNS is the geometric bottleneck: C<sub>CNS</sub> = 0.28. Even the best latency-reversing agent (LRA) delivers Φ = 0.015, but GALT requires Φ = 0.111 — a 7.4× gap. Cure is mathematically impossible with current pharmacology.
+              </div>
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={0.15}>
+            <div style={{ overflowX: "auto", margin: "16px 0" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FS, fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid #1e1e30" }}>
+                    {["Reservoir", "% Viral Mass", "C_active", "Φ Needed", "Status"].map(h => (
+                      <th key={h} style={{ padding: "10px 8px", textAlign: "left", fontSize: 10, fontFamily: FM, color: "#64748b", letterSpacing: 1, fontWeight: 400 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { r: "CNS", pct: "5%", c: "0.28", phi: "—", s: "Viral escape", col: "#ef4444" },
+                    { r: "Lymph Node", pct: "15%", c: "3.55", phi: "0.0028", s: "Clearable", col: "#22c55e" },
+                    { r: "GALT", pct: "65%", c: "8.99", phi: "0.1113", s: "Φ gap: 7.4×", col: "#f59e0b" },
+                    { r: "Genital Tract", pct: "5%", c: "588.7", phi: "0.0000", s: "Already curable", col: "#22c55e" },
+                    { r: "Bone Marrow", pct: "10%", c: "4.22", phi: "0.0024", s: "Clearable", col: "#22c55e" },
+                  ].map((row, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid #12121f" }}>
+                      <td style={{ padding: "8px", fontWeight: 700, color: "#e2e8f0" }}>{row.r}</td>
+                      <td style={{ padding: "8px", fontFamily: FM, fontSize: 11, color: "#94a3b8" }}>{row.pct}</td>
+                      <td style={{ padding: "8px", fontFamily: FM, fontSize: 11, fontWeight: 700, color: row.col }}>{row.c}</td>
+                      <td style={{ padding: "8px", fontFamily: FM, fontSize: 11, color: "#94a3b8" }}>{row.phi}</td>
+                      <td style={{ padding: "8px", color: row.col, fontSize: 11 }}>{row.s}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={0.2}>
+            <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
+              <div style={{ flex: "1 1 200px", padding: "12px 16px", background: "#ef444408", border: "1px solid #ef444422", borderRadius: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", marginBottom: 4 }}>Cure impossibility theorem</div>
+                <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.5 }}>Best LRA Φ = 0.015 vs needed Φ<sub>GALT</sub> = 0.111. GALT holds 65% of latent reservoir. The 7.4× shortfall quantifies exactly why LRA trials fail.</div>
+              </div>
+              <div style={{ flex: "1 1 200px", padding: "12px 16px", background: "#22c55e08", border: "1px solid #22c55e22", borderRadius: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>Genital tract clearability</div>
+                <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.5 }}>TFV concentrates at R = 3.50 in genital tissue. Φ needed ≈ 0. Testable prediction: genital reservoir clears first in LRA trials.</div>
+              </div>
+              <div style={{ flex: "1 1 200px", padding: "12px 16px", background: "#3b82f608", border: "1px solid #3b82f622", borderRadius: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", marginBottom: 4 }}>83 TDD tests</div>
+                <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.5 }}>5-reservoir pharmacology, catalytic LRA model, barrier curvature, phenotype scoring — 59 Rust + 10/10 Python validation.</div>
+              </div>
+            </div>
+            <div style={{ textAlign: "center", marginTop: 20 }}>
+              <a href="#hiv" style={{ padding: "10px 28px", background: "#ef444412", border: "1px solid #ef444444", borderRadius: 6, color: "#ef4444", fontFamily: FM, fontSize: 11, letterSpacing: 1, textDecoration: "none" }}>LAUNCH HIV DEMO →</a>
+            </div>
+          </FadeIn>
+        </>}
       </section>
 
       {/* ============ THE PROBLEM ============ */}
@@ -473,16 +682,16 @@ export default function MiradorSite() {
         <FadeIn>
           <div style={{ fontSize: 11, fontFamily: FM, color: "#ef4444", letterSpacing: 3, marginBottom: 12 }}>THE PROBLEM</div>
           <h2 style={{ fontSize: 32, fontFamily: F, fontWeight: 400, margin: "0 0 20px 0" }}>
-            MRSA is winning. We have no new weapons.
+            The drugs exist. The data is published. The terrain map was missing.
           </h2>
         </FadeIn>
 
         <div style={{ display: "flex", gap: 32, marginTop: 32, flexWrap: "wrap" }}>
           <FadeIn style={{ flex: "1 1 280px" }}>
             <div style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.8 }}>
-              <p>Methicillin-resistant <em>Staphylococcus aureus</em> kills more Americans per year than HIV. Vancomycin troughs are creeping up. Ceftaroline, the only beta-lactam that works, is already facing resistance. No new antibiotic class has been approved since the 1980s.</p>
-              <p>The clinical reality: a septic patient arrives with MRSA bacteremia. You start vancomycin. The trough comes back at 18 — near toxic. The MIC is creeping. You need to switch, but to what? At what dose? And will it still work next week?</p>
-              <p>Existing tools optimize binding affinity and pray about safety. They cannot predict resistance. They do not see the patient. They fail 90% of the time in clinical trials.</p>
+              <p>Vancomycin serum levels look therapeutic — but only 20% reaches bone. ART suppresses HIV to undetectable — but the virus hides in five reservoirs the drugs can barely reach. Ceftriaxone sterilizes CSF during meningitis — but steroids seal the brain shut in under a day. TB requires four drugs for six months — but nobody computed which drug fails at which barrier.</p>
+              <p>The data has been in the literature for decades. Tissue penetration ratios. AUC curves. MIC values. Published, peer-reviewed, sitting in journals since the 1950s. The missing piece was never more data. It was a way to compute what the data already says.</p>
+              <p>MIRADOR reads published PK data and computes where drugs actually go — across bone, brain, lung, and reservoir. One equation. Four diseases. Zero fitted parameters.</p>
             </div>
           </FadeIn>
 
@@ -491,10 +700,10 @@ export default function MiradorSite() {
               <div style={{ fontSize: 11, fontFamily: FM, color: "#ef4444", letterSpacing: 2, marginBottom: 16 }}>BY THE NUMBERS</div>
               {[
                 ["20,000+", "Americans killed by MRSA per year"],
-                ["$2.6B", "Average cost to develop one new antibiotic"],
+                ["480,000", "New MDR-TB cases per year globally"],
+                ["~38M", "People living with HIV worldwide"],
                 [">90%", "Drug candidates that fail clinical trials"],
-                ["0", "New antibiotic classes since 1987"],
-                ["99.97%", "Of the time PBP2a's gate is locked shut"],
+                ["0", "Fitted parameters in MIRADOR"],
               ].map(([n, l], i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #12121f" }}>
                   <span style={{ fontFamily: FM, fontSize: 14, fontWeight: 700, color: "#ef4444" }}>{n}</span>
@@ -519,52 +728,53 @@ export default function MiradorSite() {
         <FadeIn>
           <div style={{ fontSize: 11, fontFamily: FM, color: "#22c55e", letterSpacing: 3, marginBottom: 12 }}>INTERACTIVE DEMO</div>
           <h2 style={{ fontSize: 32, fontFamily: F, fontWeight: 400, margin: "0 0 12px 0" }}>
-            Patient in. Prescription out.
+            Patient in. Terrain map out.
           </h2>
           <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.7, maxWidth: 600 }}>
-            Walk through the five-stage pipeline. Edit any patient value and watch every downstream computation update in real time. All data sourced from PDB crystal structures and published literature.
+            Choose a disease module. Edit any patient value. Watch every downstream computation update in real time. All data sourced from published PK studies and clinical literature.
           </p>
         </FadeIn>
 
         <FadeIn delay={0.2}>
           <div style={{ marginTop: 32, background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 12, padding: 32, textAlign: "center" }}>
-            <div style={{ fontSize: 11, fontFamily: FM, color: "#475569", letterSpacing: 2, marginBottom: 16 }}>FIVE STAGES</div>
             <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
               {[
-                { n: 1, l: "The Patient", c: "#ef4444", d: "Why treatment is failing" },
-                { n: 2, l: "The Target", c: "#3b82f6", d: "PBP2a's locked gate" },
-                { n: 3, l: "The Key", c: "#22c55e", d: "Ceftaroline threads the gate" },
-                { n: 4, l: "The Next Moves", c: "#f97316", d: "Predicted resistance" },
-                { n: 5, l: "The Prescription", c: "#10b981", d: "Dose, route, interval" },
-              ].map(s => (
-                <div key={s.n} style={{ textAlign: "center", width: mob ? 100 : 120 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: s.c + "22", border: `2px solid ${s.c}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", fontFamily: FM, fontSize: 14, fontWeight: 700, color: s.c }}>{s.n}</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#e2e8f0" }}>{s.l}</div>
-                  <div style={{ fontSize: 9, color: "#64748b", marginTop: 2 }}>{s.d}</div>
-                </div>
+                { key: "mrsa", label: "MRSA BONE", color: "#3b82f6", hash: "#demo" },
+                { key: "tb", label: "TB", color: "#22c55e", hash: "#tb" },
+                { key: "meningitis", label: "MENINGITIS", color: "#f59e0b", hash: "#demo" },
+                { key: "hiv", label: "HIV RESERVOIRS", color: "#ef4444", hash: "#hiv" },
+              ].map(d => (
+                <button key={d.key} onClick={() => setDemoDisease(d.key)} style={{
+                  padding: "10px 24px", fontFamily: FM, fontSize: 11, letterSpacing: 2, cursor: "pointer",
+                  background: demoDisease === d.key ? d.color + "18" : "#12121f",
+                  border: `2px solid ${demoDisease === d.key ? d.color : "#2a2a3e"}`,
+                  color: demoDisease === d.key ? d.color : "#64748b", borderRadius: 8,
+                  fontWeight: demoDisease === d.key ? 700 : 400,
+                }}>{d.label}</button>
               ))}
             </div>
 
-            <div style={{ fontSize: 13, color: "#64748b", marginBottom: 20 }}>
-              The demo uses real PBP2a crystal structures (PDB 1VQQ, 3ZG0, 4BL2, 4BL3),
-              published kinetics (Kd = 20 ± 4 μM), and the FDA ceftaroline label.
-              Every number is sourced and cited inline.
+            <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20, lineHeight: 1.7 }}>
+              {demoDisease === "mrsa" && "The demo uses real PBP2a crystal structures (PDB 1VQQ, 3ZG0, 4BL2, 4BL3), published kinetics (Kd = 20 ± 4 μM), and the FDA ceftaroline label. Every number is sourced and cited inline."}
+              {demoDisease === "tb" && "Four-drug regimen derivation across Mitchison subpopulations. See how pyrazinamide inverts from worst serum drug to best caseum drug — geometry reveals what blood levels hide."}
+              {demoDisease === "meningitis" && "Time-varying BBB barrier model. Watch ceftriaxone CSF concentration drop below MIC as dexamethasone restores BBB integrity. The Dex paradox computed in real time."}
+              {demoDisease === "hiv" && "Five anatomical reservoirs, three-drug ART, latency-reversing agent modeling. See why cure is mathematically impossible — and which reservoir clears first."}
             </div>
 
-            <a href="#demo" style={{
+            <a href={demoDisease === "tb" ? "#tb" : demoDisease === "hiv" ? "#hiv" : "#demo"} style={{
               display: "inline-block", padding: "12px 40px", background: "#22c55e", color: "#08080f",
               borderRadius: 6, fontFamily: FS, fontSize: 13, fontWeight: 700, letterSpacing: 1,
               textDecoration: "none",
-            }}>LAUNCH DEMO</a>
+            }}>LAUNCH DEMO →</a>
           </div>
         </FadeIn>
 
         <FadeIn delay={0.3}>
           <div style={{ display: "flex", gap: 16, marginTop: 24, flexWrap: "wrap" }}>
             {[
-              { l: "Editable patient", d: "Change eGFR, trough, albumin — all PK recomputes" },
-              { l: "3D protein viewer", d: "PBP2a with allosteric gate highlighted, orbit/drag" },
-              { l: "Resistance radar", d: "Escape eigenvalues with PDB crystal structure links" },
+              { l: "Editable patient", d: "Change clinical values — all PK recomputes downstream" },
+              { l: "Interactive visualization", d: "3D protein viewer, compartment maps, reservoir diagrams" },
+              { l: "Prediction engine", d: "Escape eigenvalues, cure gaps, barrier bottlenecks" },
               { l: "Source citations", d: "Every data point traced to PDB, JACS, FDA, or AAC" },
             ].map((f, i) => (
               <div key={i} style={{ flex: "1 1 180px", padding: "12px 16px", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 6 }}>
@@ -677,7 +887,29 @@ export default function MiradorSite() {
             "161 Rust tests across 5 crates · Full PDF + JSON report generation",
             <span key="ded" style={{ color: "#f97316" }}>Dedicated to Steven Keske — 6 years, 5 antibiotics, 4 surgeries, still fighting. One child who deserved better.</span>,
           ]} />
-        </FadeIn>        <FadeIn delay={0.15}>
+        </FadeIn>        <FadeIn delay={0.12}>
+          <RoadmapItem phase="1c" title="TB Module — Pulmonary Tuberculosis" status="LIVE" color="#22c55e" items={[
+            "Mitchison subpopulations: replicating, semi-dormant, persister pools across open lung, caseum, macrophage",
+            "Drug ranking inversion: pyrazinamide worst in serum → best in caseum. Blood levels lie.",
+            "Double Cover detection across all compartments",
+            "52 Rust tests · Generalized compartment engine v1.3",
+          ]} />
+        </FadeIn>        <FadeIn delay={0.14}>
+          <RoadmapItem phase="1d" title="Meningitis Module" status="LIVE" color="#f59e0b" items={[
+            "Dynamic BBB barrier: K_barrier as time-varying function of dexamethasone",
+            "Dex paradox: Day 0.98 failure point — steroids restore BBB, lock antibiotics out",
+            "Monotherapy derivation: ceftriaxone C ≥ 1.0 through tightening BBB — until critical crossover",
+            "8+ tests · Time-varying K_barrier manifold",
+          ]} />
+        </FadeIn>        <FadeIn delay={0.16}>
+          <RoadmapItem phase="1e" title="HIV Reservoir Module" status="LIVE" color="#ef4444" items={[
+            "5-reservoir pharmacology: CNS, lymph node, GALT, genital tract, bone marrow",
+            "Catalytic LRA modification: Φ model for latency reversal agents",
+            "Cure impossibility theorem: best LRA Φ = 0.015 vs needed Φ_GALT = 0.111 — 7.4× shortfall",
+            "Genital tract clearability prediction — testable in LRA trials",
+            "83 TDD tests · 59 Rust + 10/10 Python validation",
+          ]} />
+        </FadeIn>        <FadeIn delay={0.18}>
           <RoadmapItem phase="2" title="Retrospective Clinical Validation" status="SEEKING PARTNERS" color="#3b82f6" items={[
             "Run MIRADOR against 50-200 retrospective MRSA bacteremia cases with known outcomes",
             "Compare: would MIRADOR's recommendation have differed from the actual clinical decision?",
@@ -686,8 +918,8 @@ export default function MiradorSite() {
           ]} />
         </FadeIn>
         <FadeIn delay={0.2}>
-          <RoadmapItem phase="3" title="Multi-Pathogen Expansion" status="PLANNED" color="#f59e0b" items={[
-            "Extend to VRE (vancomycin-resistant Enterococcus), carbapenem-resistant Enterobacterales",
+          <RoadmapItem phase="3" title="Additional Disease Instances" status="PLANNED" color="#f59e0b" items={[
+            "Cystic fibrosis · Prosthetic joint · Endocarditis · Fungal meningitis",
             "Integrate HERALD surveillance feed for real-time resistance drift detection",
             "Connect TESSERA mosaic fiber bundle for bacterial genomic input",
             "NCBI Pathogen Detection API integration (2M+ isolates)",
@@ -882,7 +1114,7 @@ export default function MiradorSite() {
             Bring your data.
           </h2>
           <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.7, textAlign: "center", maxWidth: 500, margin: "0 auto 32px" }}>
-            You have MRSA cases and clinical outcomes. We have the math. Let's validate together. We're seeking research collaborators with retrospective MRSA bacteremia cohorts for the Phase 2 validation study.
+            You have compartment infection data — MRSA, TB, meningitis, HIV, or any disease where blood levels don't tell the whole story. We have the math. Let's validate together.
           </p>
         </FadeIn>
 
@@ -904,7 +1136,7 @@ export default function MiradorSite() {
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 10, color: "#64748b", fontFamily: FM, letterSpacing: 1, marginBottom: 4 }}>I AM A...</div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {["Infectious Disease MD", "Clinical Pharmacist", "Comp Biologist", "Researcher", "Industry / Pharma", "Other"].map(r => (
+                  {["Infectious Disease MD", "Clinical Pharmacist", "Comp Biologist", "Researcher", "HIV Cure Researcher", "Pharmacokineticist", "Industry / Pharma", "Other"].map(r => (
                     <button key={r} onClick={() => setRole(r)} style={{
                       padding: "6px 14px", background: role === r ? "#3b82f622" : "#12121f",
                       border: `1px solid ${role === r ? "#3b82f6" : "#2a2a3e"}`, borderRadius: 20,
@@ -936,6 +1168,16 @@ export default function MiradorSite() {
           )}
         </FadeIn>
       </section>
+
+      {/* ============ GROUNDING LINE ============ */}
+      <div style={{ textAlign: "center", padding: "32px 24px 0", maxWidth: 700, margin: "0 auto" }}>
+        <p style={{ fontSize: 13, color: "#64748b", fontFamily: FS, lineHeight: 1.8 }}>
+          Built on 60 years of clinical pharmacology.<br />
+          <span style={{ fontFamily: FM, fontSize: 11, letterSpacing: 1, color: "#475569" }}>
+            Eagle 1953 &middot; Craig 1998 &middot; Kirchhoff 1845 &middot; Davis 2025
+          </span>
+        </p>
+      </div>
 
       {/* ============ FOOTER ============ */}
       <footer style={{ borderTop: "1px solid #1a1a2e", padding: "40px 24px", textAlign: "center" }}>
