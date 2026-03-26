@@ -6,5 +6,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
+    proxy: {
+      '/gigi-api': {
+        target: 'http://localhost:3142',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/gigi-api/, ''),
+      },
+    },
   },
 })

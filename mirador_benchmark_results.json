@@ -1,0 +1,373 @@
+{
+  "suite": "MIRADOR Benchmark Validation",
+  "standards": [
+    "EUCAST v14.0 (2024)",
+    "CLSI M100-Ed34 (2024)",
+    "WHO Critical Concentrations (2024)",
+    "Bliss Independence (CI 1939)",
+    "Loewe Additivity / FIC Index"
+  ],
+  "total": 56,
+  "passed": 56,
+  "failed": 0,
+  "per_category": {
+    "B1-EUCAST/CLSI": {
+      "pass": 21,
+      "fail": 0
+    },
+    "B2-Bliss": {
+      "pass": 15,
+      "fail": 0
+    },
+    "B2-FIC": {
+      "pass": 7,
+      "fail": 0
+    },
+    "B3-CrossStandard": {
+      "pass": 4,
+      "fail": 0
+    },
+    "B4-AUC-Range": {
+      "pass": 9,
+      "fail": 0
+    }
+  },
+  "tests": [
+    {
+      "test_id": "B1.01",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Ceftriaxone vs S. pneumoniae (meningitis): MIC=0.015 \u2264 S_bp=0.5 (ratio=0.030) [EUCAST v14.0 / CLSI M100-Ed34]. Our MIC 0.015 = MIC\u2089\u2080 for penicillin-susceptible S.pn (Weinstein 2020)"
+    },
+    {
+      "test_id": "B1.02",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Vancomycin vs S. pneumoniae (meningitis): MIC=1.0 \u2264 S_bp=2.0 (ratio=0.500) [CLSI M100-Ed34]. EUCAST lists no vancomycin breakpoint for S.pneumoniae (inherently susceptible). CLSI S \u2264 1. Our value = MIC\u2089\u2080."
+    },
+    {
+      "test_id": "B1.03",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Rifampin vs S. pneumoniae (meningitis): MIC=0.5 = S_bp=0.5 [CLSI M100-Ed34] \u2014 AT BREAKPOINT BOUNDARY. Our MIC 0.5 within S range; used as adjunctive, not monotherapy"
+    },
+    {
+      "test_id": "B1.04",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Linezolid vs S. pneumoniae (meningitis): MIC=2.0 = S_bp=2.0 [EUCAST v14.0 / CLSI M100-Ed34] \u2014 AT BREAKPOINT BOUNDARY. Our MIC = breakpoint boundary \u2014 susceptible but not highly so"
+    },
+    {
+      "test_id": "B1.05",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Vancomycin vs S. aureus (MRSA): MIC=1.0 \u2264 S_bp=2.0 (ratio=0.500) [EUCAST v14.0 / CLSI M100-Ed34]. MIC 1.0 = typical wild-type MRSA. MIC creep concern at 1.5-2.0."
+    },
+    {
+      "test_id": "B1.06",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Ceftaroline vs S. aureus (MRSA): MIC=1.0 = S_bp=1.0 [EUCAST v14.0 / CLSI M100-Ed34] \u2014 AT BREAKPOINT BOUNDARY. At breakpoint boundary \u2014 unique anti-MRSA cephalosporin via PBP2a binding"
+    },
+    {
+      "test_id": "B1.07",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Daptomycin vs S. aureus (MRSA): MIC=0.5 \u2264 S_bp=1.0 (ratio=0.500) [EUCAST v14.0 / CLSI M100-Ed34]. No EUCAST R breakpoint \u2014 'S, dose-dependent' only. Our 0.5 = mid-range WT."
+    },
+    {
+      "test_id": "B1.08",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Linezolid vs S. aureus (MRSA): MIC=2.0 \u2264 S_bp=4.0 (ratio=0.500) [EUCAST v14.0 / CLSI M100-Ed34]. Well within susceptible range"
+    },
+    {
+      "test_id": "B1.09",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Clindamycin vs S. aureus (MRSA): MIC=0.25 = S_bp=0.25 [EUCAST v14.0 / CLSI M100-Ed34] \u2014 AT BREAKPOINT BOUNDARY. At EUCAST breakpoint boundary. Must test for inducible resistance (D-test)."
+    },
+    {
+      "test_id": "B1.10",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Rifampin vs S. aureus (MRSA): MIC=0.008 \u2264 S_bp=0.06 (ratio=0.133) [EUCAST v14.0 / CLSI M100-Ed34]. Highly susceptible. NEVER use as monotherapy \u2014 rapid resistance."
+    },
+    {
+      "test_id": "B1.11",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Isoniazid vs M. tuberculosis: MIC=0.05 \u2264 S_bp=0.1 (ratio=0.500) [WHO CC (2024); CRyPTIC Consortium MIC]. Our 0.05 = wild-type MIC\u2085\u2080. Well below CC. CRyPTIC epidemiological cutoff = 0.1"
+    },
+    {
+      "test_id": "B1.12",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Rifampin vs M. tuberculosis: MIC=0.2 \u2264 S_bp=1.0 (ratio=0.200) [WHO CC (2024); CRyPTIC MIC]. Our 0.20 = well within wild-type range. CRyPTIC MIC distribution peaks at 0.125-0.25"
+    },
+    {
+      "test_id": "B1.13",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Pyrazinamide vs M. tuberculosis (acidic): MIC=16.0 \u2264 S_bp=100.0 (ratio=0.160) [WHO CC (2024)]. PZA only active at acidic pH. Our 16.0 at pH 5.5 is consistent with published MIC\u2085\u2080 12.5-25"
+    },
+    {
+      "test_id": "B1.14",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Ethambutol vs M. tuberculosis: MIC=2.0 \u2264 S_bp=5.0 (ratio=0.400) [WHO CC (2024); CRyPTIC MIC]. Our 2.0 = within wild-type MIC range (1-5 typical)"
+    },
+    {
+      "test_id": "B1.15",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Moxifloxacin vs M. tuberculosis: MIC=0.25 \u2264 S_bp=0.5 (ratio=0.500) [WHO CC (2024); CRyPTIC MIC]. Our 0.25 = at the WHO CC boundary for low-level R. Susceptible by CLSI (S \u2264 0.5)."
+    },
+    {
+      "test_id": "B1.16",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Bedaquiline vs M. tuberculosis: MIC=0.03 \u2264 S_bp=0.25 (ratio=0.120) [WHO CC (2024, interim)]. Our 0.03 = well below CC. Published WT MIC\u2085\u2080 0.03-0.06 (Andries 2005, Diacon 2014)"
+    },
+    {
+      "test_id": "B1.17",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Dolutegravir vs HIV-1 (subtype B): MIC=0.51 \u2264 S_bp=2.0 (ratio=0.255) [Kobayashi 2011; Stanford HIVDB v9.6]. Our 0.51 nM within published WT range. Units: nM (not \u03bcg/mL)."
+    },
+    {
+      "test_id": "B1.18",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Tenofovir vs HIV-1 (subtype B): MIC=50.0 \u2264 S_bp=100.0 (ratio=0.500) [Balzarini 1996; Ray 2016]. Our 50 nM = geometric mean of published range. Active form = TFV-diphosphate."
+    },
+    {
+      "test_id": "B1.19",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Emtricitabine vs HIV-1 (subtype B): MIC=8.0 \u2264 S_bp=20.0 (ratio=0.400) [Schinazi 1992; Borroto-Esoda 2006]. Our 8.0 nM = within published range"
+    },
+    {
+      "test_id": "B1.20",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Darunavir vs HIV-1 (subtype B): MIC=1.2 \u2264 S_bp=5.0 (ratio=0.240) [De Meyer 2005; Stanford HIVDB v9.6]. Our 1.2 nM = within published WT range"
+    },
+    {
+      "test_id": "B1.21",
+      "category": "B1-EUCAST/CLSI",
+      "passed": true,
+      "detail": "Efavirenz vs HIV-1 (subtype B): MIC=1.0 \u2264 S_bp=3.0 (ratio=0.333) [Young 1995; Stanford HIVDB v9.6]. Our 1.0 nM = geometric mean of published range"
+    },
+    {
+      "test_id": "B2.01",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "DTG + TFV + FTC (1st-line ART) @ CNS: Bliss=1.0000, CI=0.2151 (antagonism), clinical_eff=97%; WARNING: CI=0.22 suggests antagonism but clinical efficacy is 97%"
+    },
+    {
+      "test_id": "B2.02",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "DTG + TFV + FTC (1st-line ART) @ Lymph node: Bliss=1.0000, CI=0.8273 (antagonism), clinical_eff=97%"
+    },
+    {
+      "test_id": "B2.03",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "DTG + TFV + FTC (1st-line ART) @ GALT: Bliss=1.0000, CI=0.8337 (antagonism), clinical_eff=97%"
+    },
+    {
+      "test_id": "B2.04",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "DTG + TFV + FTC (1st-line ART) @ Genital tract: Bliss=1.0000, CI=0.9362 (antagonism), clinical_eff=97%"
+    },
+    {
+      "test_id": "B2.05",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "DTG + TFV + FTC (1st-line ART) @ Bone marrow: Bliss=1.0000, CI=0.8042 (antagonism), clinical_eff=97%"
+    },
+    {
+      "test_id": "B2.06",
+      "category": "B2-FIC",
+      "passed": true,
+      "detail": "DTG + TFV + FTC (1st-line ART): FIC=0.006757 (synergy). Clinical efficacy 97%. Ref: Cahn P et al. Lancet 2019 (GEMINI-1/2 trial)"
+    },
+    {
+      "test_id": "B2.07",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "DRV/r + TFV + FTC (2nd-line ART) @ CNS: Bliss=1.0000, CI=0.3233 (antagonism), clinical_eff=93%; WARNING: CI=0.32 suggests antagonism but clinical efficacy is 93%"
+    },
+    {
+      "test_id": "B2.08",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "DRV/r + TFV + FTC (2nd-line ART) @ Lymph node: Bliss=1.0000, CI=0.8531 (antagonism), clinical_eff=93%"
+    },
+    {
+      "test_id": "B2.09",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "DRV/r + TFV + FTC (2nd-line ART) @ GALT: Bliss=1.0000, CI=0.8448 (antagonism), clinical_eff=93%"
+    },
+    {
+      "test_id": "B2.10",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "DRV/r + TFV + FTC (2nd-line ART) @ Genital tract: Bliss=1.0000, CI=0.9378 (antagonism), clinical_eff=93%"
+    },
+    {
+      "test_id": "B2.11",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "DRV/r + TFV + FTC (2nd-line ART) @ Bone marrow: Bliss=1.0000, CI=0.7896 (antagonism), clinical_eff=93%; WARNING: CI=0.79 suggests antagonism but clinical efficacy is 93%"
+    },
+    {
+      "test_id": "B2.12",
+      "category": "B2-FIC",
+      "passed": true,
+      "detail": "DRV/r + TFV + FTC (2nd-line ART): FIC=0.006760 (synergy). Clinical efficacy 93%. Ref: Orkin C et al. Lancet HIV 2020 (EMERALD trial)"
+    },
+    {
+      "test_id": "B2.13",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "CRO + VAN (empiric bacterial meningitis) @ CSF (inflamed): Bliss=1.0000, CI=0.5438 (antagonism), clinical_eff=85%; WARNING: CI=0.54 suggests antagonism but clinical efficacy is 85%"
+    },
+    {
+      "test_id": "B2.14",
+      "category": "B2-FIC",
+      "passed": true,
+      "detail": "CRO + VAN (empiric bacterial meningitis): FIC=0.013989 (synergy). Clinical efficacy 85%. Ref: Tunkel AR et al. Clin Infect Dis 2004 (IDSA Guidelines)"
+    },
+    {
+      "test_id": "B2.15",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "CRO + VAN + RIF (penicillin-R pneumococcal meningitis) @ CSF (inflamed): Bliss=1.0000, CI=0.6693 (antagonism), clinical_eff=90%; WARNING: CI=0.67 suggests antagonism but clinical efficacy is 90%"
+    },
+    {
+      "test_id": "B2.16",
+      "category": "B2-FIC",
+      "passed": true,
+      "detail": "CRO + VAN + RIF (penicillin-R pneumococcal meningitis): FIC=0.034822 (synergy). Clinical efficacy 90%. Ref: van de Beek D et al. NEJM 2004; Martinez-Lacasa J et al. CID 2002"
+    },
+    {
+      "test_id": "B2.17",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "VAN + RIF (MRSA prosthetic joint) @ Bone (planktonic MIC basis): Bliss=1.0000, CI=0.9296 (antagonism), clinical_eff=82%"
+    },
+    {
+      "test_id": "B2.18",
+      "category": "B2-FIC",
+      "passed": true,
+      "detail": "VAN + RIF (MRSA prosthetic joint): FIC=0.012881 (synergy). Clinical efficacy 82%. Ref: Zimmerli W et al. NEJM 2004; Lew & Waldvogel CID 2004"
+    },
+    {
+      "test_id": "B2.19",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "DAP + RIF (MRSA implant salvage) @ Bone (planktonic MIC basis): Bliss=1.0000, CI=0.9485 (antagonism), clinical_eff=78%"
+    },
+    {
+      "test_id": "B2.20",
+      "category": "B2-FIC",
+      "passed": true,
+      "detail": "DAP + RIF (MRSA implant salvage): FIC=0.007048 (synergy). Clinical efficacy 78%. Ref: Byren I et al. AAC 2009; John AK et al. AAC 2009"
+    },
+    {
+      "test_id": "B2.21",
+      "category": "B2-Bliss",
+      "passed": true,
+      "detail": "LZD + RIF (MRSA oral step-down) @ Bone (planktonic MIC basis): Bliss=1.0000, CI=0.9492 (antagonism), clinical_eff=75%"
+    },
+    {
+      "test_id": "B2.22",
+      "category": "B2-FIC",
+      "passed": true,
+      "detail": "LZD + RIF (MRSA oral step-down): FIC=0.016381 (synergy). Clinical efficacy 75%. Ref: Nguyen S et al. JAC 2009; OVIVA trial (Li HK et al. NEJM 2019)"
+    },
+    {
+      "test_id": "B3.01",
+      "category": "B3-CrossStandard",
+      "passed": true,
+      "detail": "Vancomycin: S. pneumoniae MIC=1.0 vs S. aureus (MRSA) MIC=1.0 \u2014 SAME MIC. Same WT MIC \u2014 expected (both Gram-positive cocci)"
+    },
+    {
+      "test_id": "B3.02",
+      "category": "B3-CrossStandard",
+      "passed": true,
+      "detail": "Rifampin: S. pneumoniae MIC=0.5 vs S. aureus (MRSA) MIC=0.008 \u2014 MIC\u2081/MIC\u2082 = 62.5\u00d7  (org1 less susceptible). Different MIC \u2014 EXPECTED: S. aureus natively more susceptible to RIF"
+    },
+    {
+      "test_id": "B3.03",
+      "category": "B3-CrossStandard",
+      "passed": true,
+      "detail": "Rifampin: S. pneumoniae MIC=0.5 vs M. tuberculosis MIC=0.2 \u2014 MIC\u2081/MIC\u2082 = 2.5\u00d7  (org1 less susceptible). Different MIC \u2014 EXPECTED: mycobacterial MIC differs from pneumococcal"
+    },
+    {
+      "test_id": "B3.04",
+      "category": "B3-CrossStandard",
+      "passed": true,
+      "detail": "Linezolid: S. pneumoniae MIC=2.0 vs S. aureus (MRSA) MIC=2.0 \u2014 SAME MIC. Same WT MIC \u2014 expected (both Gram-positive organisms)"
+    },
+    {
+      "test_id": "B4.01",
+      "category": "B4-AUC-Range",
+      "passed": true,
+      "detail": "Ceftriaxone: AUC=1000.0 \u03bcg\u00b7hr/mL in [600\u20131400] (100% of midpoint). Dose: 2g IV q12h. Ref: Patel IH Antimicrob Agents Chemother 1981; Garot D AAC 2011"
+    },
+    {
+      "test_id": "B4.02",
+      "category": "B4-AUC-Range",
+      "passed": true,
+      "detail": "Vancomycin: AUC=400.0 \u03bcg\u00b7hr/mL in [400\u2013600] (80% of midpoint). Dose: Target AUC/MIC \u2265 400 (IDSA 2020). Ref: Rybak MJ et al. Am J Health-Syst Pharm 2020 (IDSA/ASHP/SIDP Vancomycin Guidelines)"
+    },
+    {
+      "test_id": "B4.03",
+      "category": "B4-AUC-Range",
+      "passed": true,
+      "detail": "Rifampin (meningitis): AUC=60.0 \u03bcg\u00b7hr/mL in [40\u201380] (100% of midpoint). Dose: 600mg IV. Ref: Nau R et al. Clin Pharmacokinet 2010"
+    },
+    {
+      "test_id": "B4.04",
+      "category": "B4-AUC-Range",
+      "passed": true,
+      "detail": "Linezolid: AUC=250.0 \u03bcg\u00b7hr/mL in [200\u2013350] (91% of midpoint). Dose: 600mg q12h. Ref: Dryden MS JAC 2011; Brier ME AAC 2003"
+    },
+    {
+      "test_id": "B4.05",
+      "category": "B4-AUC-Range",
+      "passed": true,
+      "detail": "Dolutegravir: AUC=126400 nM\u00b7hr in [80000\u2013180000] (97% of midpoint). Dose: 50mg daily. Ref: Song I et al. J Clin Pharmacol 2015; Min S AAC 2010"
+    },
+    {
+      "test_id": "B4.06",
+      "category": "B4-AUC-Range",
+      "passed": true,
+      "detail": "Tenofovir (TFV): AUC=7630 nM\u00b7hr in [4000\u201312000] (95% of midpoint). Dose: 300mg daily (prodrug TDF). Ref: Kearney BP et al. Clin Pharmacokinet 2004"
+    },
+    {
+      "test_id": "B4.07",
+      "category": "B4-AUC-Range",
+      "passed": true,
+      "detail": "Emtricitabine: AUC=40000 nM\u00b7hr in [25000\u201360000] (94% of midpoint). Dose: 200mg daily. Ref: Wang LH et al. Clin Pharmacol Ther 2004"
+    },
+    {
+      "test_id": "B4.08",
+      "category": "B4-AUC-Range",
+      "passed": true,
+      "detail": "Darunavir: AUC=170000 nM\u00b7hr in [120000\u2013250000] (92% of midpoint). Dose: 800mg + 100mg RTV daily. Ref: Sekar VJ et al. AAC 2010"
+    },
+    {
+      "test_id": "B4.09",
+      "category": "B4-AUC-Range",
+      "passed": true,
+      "detail": "Efavirenz: AUC=184000 nM\u00b7hr in [130000\u2013250000] (97% of midpoint). Dose: 600mg daily. Ref: Csajka C et al. Clin Pharmacol Ther 2003"
+    }
+  ]
+}

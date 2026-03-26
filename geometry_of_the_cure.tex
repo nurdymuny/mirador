@@ -1,0 +1,947 @@
+%====================================================
+% THE GEOMETRY OF THE CURE — Academic Paper (v0.1)
+% Target: PLOS Computational Biology / Nature Computational Science
+%====================================================
+\documentclass[11pt]{article}
+
+% ---------- Encoding & Fonts ----------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[expansion=false]{microtype}
+% lmodern omitted (not available in this environment)
+
+% ---------- Page Layout ----------
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\setstretch{1.08}
+
+% ---------- Math & Symbols ----------
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+
+% ---------- Graphics & Tables ----------
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+
+% ---------- Links & Refs ----------
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalise,nameinlink]{cleveref}
+
+% ---------- Lists ----------
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=*, itemsep=2pt, topsep=2pt}
+\setlist[enumerate]{leftmargin=*, itemsep=2pt, topsep=2pt}
+
+% ---------- Theorem Environments ----------
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{assumption}[theorem]{Assumption}
+
+% ---------- Macros ----------
+\newcommand{\mirador}{\textsc{Mirador}}
+\newcommand{\Kpath}{K_{\mathrm{pathway}}}
+\newcommand{\Kbarr}{K_{\mathrm{barrier}}}
+\newcommand{\Kpheno}{K_{\mathrm{phenotype}}}
+\newcommand{\Kres}{K_{\mathrm{reservoir}}}
+\newcommand{\Kadmet}{K_{\mathrm{ADMET}}}
+\newcommand{\Ccombo}{C_{\mathrm{combo}}}
+\newcommand{\Csite}{C_{\mathrm{site}}}
+\newcommand{\Cserum}{C_{\mathrm{serum}}}
+\newcommand{\AUCday}{\mathrm{AUC}_{24}}
+\newcommand{\MICval}{\mathrm{MIC}}
+
+% ---------- Title Block ----------
+\title{\textbf{The Geometry of the Cure}\\[6pt]
+\large Geometric Therapeutic Optimization via the Davis Field Equations}
+
+\author{Bee Rosa Davis\thanks{%
+  Correspondence: \texttt{bee\_davis@alumni.brown.edu}\quad
+  ORCID: \texttt{0009-0009-8034-4308}.\\[2pt]
+  \textbf{Patent notice.}
+  Subject matter described in this manuscript may relate to
+  US Provisional Patent Application No.\ 64/012,328:
+  ``MIRADOR: Manifold-Informed Rational Architecture for Drug-Organism Response.''
+  Commercial use of the methods described herein may require a licence.
+}\\[4pt]
+\small Davis Geometric\\
+\small Brown University}
+
+\date{\today}
+
+% =================================================================
+\begin{document}
+\maketitle
+
+% -----------------------------------------------------------------
+\begin{abstract}
+Compartmentalized infections---those in which anatomical, biophysical,
+or phenotypic barriers separate the pathogen from the vascular compartment---account
+for a disproportionate share of treatment failures in infectious disease.
+Standard pharmacokinetic reasoning, which equates serum drug concentrations
+with tissue drug concentrations, fails predictably and repeatedly in bone,
+lung granuloma, cerebrospinal fluid, and latent viral reservoirs.
+
+We introduce \mirador{} (\emph{Manifold-Informed Rational Architecture for
+Drug-Organism Response}), a geometric framework for predicting
+drug efficacy in compartmentalized infections, requiring zero
+pharmacokinetic fitted parameters. The framework rests on a
+single governing equation: therapeutic coherence $C = \tau / K$, where
+$\tau = \log_{10}(\AUCday / \MICval)$ is the pharmacophoric potential of a drug
+and $K$ is the total pathway impedance---a series sum of barrier, phenotype,
+reservoir, and systemic curvature terms, each computed entirely from published
+pharmacokinetic data. The only calibrated quantity is a single
+disease-specific diagnostic threshold that translates the continuous
+geometric ranking into a binary clinical verdict; the impedances,
+potentials, and drug rankings themselves are parameter-free. Multi-drug
+regimens are combined via a Kirchhoff parallel-resistor law on drug
+conductances, and the framework's predictive boundary is formally
+characterized by the Double Cover Principle ($S + d^2 = 1$), which
+partitions every therapeutic problem into what penetration geometry
+explains and what it cannot.
+
+We validate \mirador{} across four disease instances---pediatric bone MRSA
+(osteomyelitis), pulmonary tuberculosis, bacterial meningitis, and HIV latent
+reservoirs---spanning four pathogens, four organ systems, and four barrier
+types, using the same equation throughout. Across 37 independent validation
+tests with strict separation of pharmacokinetic inputs from clinical ground
+truths, the framework reproduces established drug rankings, predicts documented
+clinical phenomena not used in model construction, and identifies five novel
+predictions including the geometric curability of the HIV genital tract
+reservoir and CSF viral escape as a geometric inevitability. All code is
+implemented in Rust with 161+ passing tests.
+\end{abstract}
+
+\clearpage
+
+% =================================================================
+\section{Introduction}
+\label{sec:intro}
+% =================================================================
+
+% -----------------------------------------------------------------
+\subsection{The compartment problem}
+\label{sec:compartment-problem}
+% -----------------------------------------------------------------
+
+The pharmacokinetic foundation of modern antibiotic therapy rests on
+a single implicit assumption: that the drug concentration at the site
+of infection is well-approximated by the drug concentration in serum.
+This assumption is encoded in every dosing guideline that targets a
+serum trough, every PK/PD index computed from plasma AUC, and every
+susceptibility breakpoint calibrated against blood-level data. When
+it holds, it is extraordinarily useful.
+
+When it fails, patients die.
+
+The assumption fails whenever an anatomical, biophysical, or phenotypic
+barrier interposes between the vascular compartment and the pathogen
+population. We call such infections \emph{compartmentalized}, and
+formalize the failure as a single inequality:
+%
+\begin{equation}
+  \label{eq:compartment-inequality}
+  \Csite \;\neq\; \Cserum.
+\end{equation}
+%
+This inequality is not new. Its consequences have been documented,
+disease by disease, for decades:
+
+\begin{itemize}
+  \item \textbf{Bone.} Vancomycin---the standard of care for MRSA
+    osteomyelitis---achieves bone-to-serum AUC ratios of
+    $0.20$--$0.37$ in infected tissue, with penetration declining as
+    osteomyelitis progresses~\cite{Bue2018, Graziani1988,
+    Landersdorfer2009}. A patient whose serum vancomycin meets the
+    recommended AUC/MIC $\geq 400$ target may have a bone AUC/MIC
+    below the minimum biofilm eradication threshold by an order of
+    magnitude.
+
+  \item \textbf{Lung granuloma.} In pulmonary tuberculosis, the
+    avascular caseous core of granulomas acts as a diffusion barrier
+    whose permeability is drug-specific and heterogeneous. Caseum
+    binding inversely correlates with passive diffusion into the
+    necrotic core; for several first-line agents, caseum penetration
+    is near zero~\cite{Dartois2014, Prideaux2015, Sarathy2016}. The
+    bacteria that survive treatment are overwhelmingly those
+    harbored in caseum.
+
+  \item \textbf{Cerebrospinal fluid.} The blood-brain barrier
+    excludes the vast majority of systemically administered drugs
+    from the CNS. CSF-to-plasma ratios for many antibiotics and
+    antiretrovirals fall below $0.05$, and even drugs classified as
+    ``CNS-penetrating'' rarely exceed $0.30$~\cite{Nau2010,
+    Letendre2010}.
+
+  \item \textbf{HIV latent reservoirs.} Antiretroviral therapy
+    suppresses HIV to undetectable plasma levels, but provirus
+    integrated into the host genome persists in anatomically
+    sequestered reservoirs---gut-associated lymphoid tissue (GALT),
+    CNS, lymph nodes, bone marrow, and genital tract---each with
+    distinct tissue-to-plasma ratios and an additional phenotypic
+    barrier: the latent provirus is invisible to drugs that require
+    active viral replication~\cite{Finzi1999, Siliciano2003,
+    Fletcher2014}.
+\end{itemize}
+
+The clinical consequence is the same in each case: physicians make
+dosing decisions on the basis of serum concentrations, and treatment
+fails in exactly the compartments where barriers are highest. The
+drugs exist. The biology is understood. What is missing is the
+mathematics to deploy existing drugs to the places where disease
+hides.
+
+% -----------------------------------------------------------------
+\subsection{The gap}
+\label{sec:gap}
+% -----------------------------------------------------------------
+
+Existing pharmacokinetic modeling frameworks address the compartment
+problem at high parametric cost. Physiologically-based pharmacokinetic
+(PBPK) models simulate drug disposition across organ compartments
+using systems of differential equations whose parameters---organ
+volumes, blood flows, partition coefficients, metabolic rates,
+transporter kinetics---number in the dozens to hundreds per drug-tissue
+combination~\cite{Jones2013, Nestorov2003, Kuepfer2016}. Population
+PK models require large clinical datasets for each drug in each
+compartment. Both approaches predict absolute concentrations, and
+both are indispensable: the tissue-to-plasma ratios and AUC data
+that any higher-level framework requires are produced by exactly
+this empirical and computational pharmacology. The gap is not in
+the data these models generate, but in the absence of a unifying
+geometric layer that consumes their outputs across diseases with
+a single equation, requires no additional fitted parameters, and
+formally characterizes its own predictive boundary.
+
+We can state the gap precisely. Let $N_{\mathrm{params}}(M)$ denote
+the number of fitted parameters in a model $M$ that predicts relative
+drug efficacy rankings at a compartmentalized infection site. For
+current approaches:
+%
+\begin{equation}
+  \label{eq:param-gap}
+  N_{\mathrm{params}}(\text{PBPK}) \;\gg\; 0, \qquad
+  N_{\mathrm{params}}(\text{PopPK}) \;\gg\; 0.
+\end{equation}
+%
+No existing framework satisfies all of the following simultaneously:
+(i)~$N_{\mathrm{params}}^{\mathrm{PK}} = 0$ (zero pharmacokinetic fitted
+parameters---all impedances and potentials computed from published data,
+with only a single disease-specific diagnostic threshold calibrated
+against an established standard of care);
+(ii)~inputs consist solely of published pharmacokinetic data
+(tissue:plasma ratios, AUC, MIC);
+(iii)~a single equation applies across disease instances;
+(iv)~the output is a drug ranking (not an absolute concentration);
+and (v)~the framework provides a formal, quantitative characterization
+of its own predictive boundary.
+
+% -----------------------------------------------------------------
+\subsection{Contribution}
+\label{sec:contribution}
+% -----------------------------------------------------------------
+
+This paper introduces \mirador{}, a geometric framework for
+therapeutic optimization in compartmentalized infections. The
+framework is built on three equations that we preview here and
+derive formally in \cref{sec:framework}.
+
+\paragraph{Equation 1: Therapeutic coherence.}
+For a single drug $d$ at a single reservoir $r$:
+%
+\begin{equation}
+  \label{eq:coherence-preview}
+  \boxed{\;C(d,\, r) \;=\; \frac{\tau(d)}{\Kpath(d,\, r)}\;}
+\end{equation}
+%
+where $\tau(d) = \log_{10}(\AUCday(d) / \MICval(d))$ is the
+\emph{pharmacophoric potential}---the drug's intrinsic killing
+power in the absence of barriers---and $\Kpath$ is the
+\emph{total pathway impedance}, a series sum of curvature terms
+encoding every obstacle between the vasculature and the pathogen.
+Higher $C$ means fewer barriers between drug and disease. The
+equation is a special case of the Davis Field Equations ($C = \tau/K$)
+applied to the therapeutic manifold.
+
+\paragraph{Equation 2: Kirchhoff combination law.}
+For a cocktail of $N$ drugs at reservoir $r$, total conductance is
+additive (parallel-resistor topology):
+%
+\begin{equation}
+  \label{eq:combination-preview}
+  \Ccombo(r) \;=\;
+  \frac{\displaystyle\sum_{i=1}^{N} \tau_i \, g_i}
+       {\displaystyle\sum_{i=1}^{N} g_i}
+  \;\times\;
+  \left(\mathrm{synergy} \times \sum_{i=1}^{N} g_i\right),
+  \qquad
+  g_i = \frac{1}{K_{\mathrm{pathway},i}}.
+\end{equation}
+%
+Each drug contributes conductance $g_i = 1/K_{\mathrm{pathway},i}$; drugs with
+high impedance contribute near-zero conductance even in combination.
+The scalar $\mathrm{synergy}$ is fixed at $1.0$ (strict additivity)
+throughout this work; it appears in the formula to mark the structural
+location where experimentally measured synergy or antagonism data
+could enter, but no such fitting is performed here.
+
+\paragraph{Equation 3: The Double Cover Principle.}
+%
+\begin{equation}
+  \label{eq:double-cover-preview}
+  \boxed{\;S \;+\; d^2 \;=\; 1\;}
+\end{equation}
+%
+where $S$ is the fraction of the therapeutic problem explained by
+penetration geometry (drug distribution through barriers) and $d^2$
+is the fraction explained by non-geometric dynamics (kill kinetics,
+immune response, reactivation biology). Formally, for an infection
+spanning $N$ anatomical reservoirs,
+$S = |\{r : \Ccombo^{\,\mathrm{active}}(r) \geq \theta\}| / N$,
+the fraction of reservoirs at which the geometric combination
+coherence meets or exceeds the therapeutic threshold $\theta$.
+This is the framework's built-in uncertainty quantification: when
+$S \approx 1$, trust the drug ranking; when $S \approx 0$, the
+model has detected its own boundary.
+
+\medskip
+
+\mirador{} is validated across four disease instances: pediatric bone
+MRSA (osteomyelitis), pulmonary tuberculosis, bacterial meningitis,
+and HIV latent reservoirs. The mathematical structure---$C = \tau/K$
+with disease-specific $K$ content---is identical in each case. Across
+37 independent validation tests, with strict separation of
+pharmacokinetic inputs from clinical ground truths and zero
+pharmacokinetic fitted parameters, the framework:
+%
+\begin{enumerate}
+  \item reproduces clinically established drug rankings in bone
+    MRSA, TB, and meningitis;
+  \item predicts five documented clinical phenomena not used in model
+    construction (CSF viral escape, vancomycin bone failure,
+    rifampin's privileged intracellular role, the TB rank inversion,
+    and PI preference for CNS-targeted HIV regimens);
+  \item identifies five novel predictions, including the geometric
+    curability of the HIV genital tract reservoir with existing
+    agents and the quantitative shortfall to functional cure at
+    GALT; and
+  \item formally detects its own predictive boundary in the TB
+    instance, where the geometric drug ranking inverts the clinical
+    sterilization ranking---an inversion the Double Cover identifies
+    as the transition from geometry-dominated ($S = 0.78$) to
+    dynamics-dominated ($d^2 = 0.22$) behavior.
+\end{enumerate}
+
+% -----------------------------------------------------------------
+\subsection{Paper organization}
+\label{sec:organization}
+% -----------------------------------------------------------------
+
+\Cref{sec:framework} presents the mathematical framework: definitions,
+the coherence equation, the combination law, the No Parallel Lines
+axiom, catalytic state modification, and the Double Cover Principle.
+\Cref{sec:bone,sec:tb,sec:meningitis,sec:hiv} present the four
+disease instances with their disease-specific $K$ structures and
+validation results. \Cref{sec:cross-disease} contains the cross-disease
+analysis and universality claim. \Cref{sec:related} positions \mirador{}
+relative to PBPK models, PK/PD indices, CPE scores, and information
+geometry. \Cref{sec:validation} describes the validation philosophy
+(circular logic firewall, zero-parameter claim). \Cref{sec:limitations}
+provides honest accounting of limitations, formalized as mathematical
+omissions. \Cref{sec:clinical} states clinical implications as
+corollaries of theorems. \Cref{sec:future} outlines future work.
+\Cref{sec:conclusion} closes on the equation.
+
+% =================================================================
+% Placeholder sections for forward references
+% =================================================================
+% These will be populated in subsequent writing sessions.
+
+% =================================================================
+\section{Mathematical Framework}
+\label{sec:framework}
+% =================================================================
+
+This section presents the complete mathematical framework. Every
+quantity is defined from published pharmacokinetic data; the only
+calibrated quantity is a single disease-specific diagnostic threshold
+$\theta$ (\cref{sec:intro}). We state definitions and key results;
+the companion monograph provides full derivations and geometric
+intuition for each choice.
+
+% -----------------------------------------------------------------
+\subsection{Definitions}
+\label{sec:definitions}
+% -----------------------------------------------------------------
+
+\begin{definition}[Compartmentalized infection]
+\label{def:compartment}
+An infection in which the drug concentration at the site of
+pathogen residence differs from the drug concentration in
+systemic circulation due to one or more anatomical, biophysical,
+or phenotypic barriers between the vascular compartment and the
+pathogen population. Formally, an infection is compartmentalized
+if there exists a drug $d$ and a pathogen reservoir $r$ such that
+$\Csite(d, r) \neq \Cserum(d)$.
+\end{definition}
+
+\begin{definition}[Pharmacophoric potential]
+\label{def:tau}
+For a drug $d$, the \emph{pharmacophoric potential} is
+\begin{equation}
+  \label{eq:tau}
+  \tau(d) \;=\; \log_{10}\!\left(\frac{\AUCday(d)}{\MICval(d)}\right),
+\end{equation}
+where $\AUCday(d)$ is the area under the plasma
+concentration--time curve over 24 hours at standard dosing, and
+$\MICval(d)$ is the minimum inhibitory concentration against the
+target pathogen. For viral pathogens, $\MICval$ is replaced by
+$\mathrm{IC}_{50}$; the functional role is identical. The quantity
+$\tau$ encodes the intrinsic potency of drug $d$ in the absence
+of all barriers: the ceiling of what the drug can achieve if the
+pathogen resided in plasma.
+\end{definition}
+
+\begin{remark}[Why $\log_{10}$]
+\label{rem:log10}
+The choice of $\log_{10}$ (rather than the natural logarithm)
+is deliberate: AUC/MIC ratios in clinical pharmacology span
+$10^0$--$10^3$, and the $\log_{10}$ transform maps this range
+to $[0, 3]$, aligning $\tau$ with the order-of-magnitude language
+used in antibiotic dosing (``the AUC/MIC is 400'' corresponds to
+$\tau \approx 2.6$). No mathematical property of the framework
+depends on the base of the logarithm; all rankings are preserved
+under any monotone transformation.
+\end{remark}
+
+\begin{definition}[Barrier curvature]
+\label{def:kbarrier}
+For a drug $d$ at reservoir $r$ with tissue-to-plasma
+concentration ratio $R(d, r) > 0$, the \emph{barrier curvature}
+is
+\begin{equation}
+  \label{eq:kbarrier}
+  \Kbarr(d, r) \;=\; \max\!\left(\frac{1}{R(d, r)} - 1,\; -1\right).
+\end{equation}
+The three regimes are:
+\begin{itemize}
+  \item $R < 1$ (drug excluded): $\Kbarr > 0$ (positive curvature,
+    impedance). Example: vancomycin in bone, $R \approx 0.20$,
+    $\Kbarr = 4.0$.
+  \item $R = 1$ (no barrier): $\Kbarr = 0$ (flat geometry).
+  \item $R > 1$ (drug concentrates): $\Kbarr \in [-1, 0)$ (negative
+    curvature, facilitation). The floor at $-1$ is the No Parallel
+    Lines axiom (\cref{sec:no-parallel-lines}).
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Pathway impedance]
+\label{def:kpathway}
+For a drug $d$ at reservoir $r$, the \emph{total pathway
+impedance} is the series sum
+\begin{equation}
+  \label{eq:kpathway}
+  \Kpath(d, r) \;=\; \Kadmet(d) \;+\; \Kbarr(d, r)
+    \;+\; \Kpheno(d, r) \;+\; \Kres(r),
+\end{equation}
+where:
+\begin{itemize}
+  \item $\Kadmet(d) \geq 0$ is the systemic ADMET
+    (absorption, distribution, metabolism, excretion, toxicity) penalty;
+  \item $\Kbarr(d, r)$ is the barrier curvature
+    (\cref{def:kbarrier});
+  \item $\Kpheno(d, r) \geq 0$ is the phenotypic resistance of the
+    pathogen at reservoir $r$ to drug $d$ (biofilm, dormancy,
+    latency);
+  \item $\Kres(r) \geq 0$ is the anatomical niche persistence of
+    reservoir $r$ (independent of drug).
+\end{itemize}
+Each term represents a distinct physical obstacle between the
+vasculature and the pathogen. The series structure encodes the
+assumption that obstacles compose additively: a drug must
+traverse all layers, and each layer contributes independently to
+the total impedance.
+\end{definition}
+
+\begin{definition}[Therapeutic coherence]
+\label{def:coherence}
+For a single drug $d$ at a single reservoir $r$ with
+$\Kpath(d, r) > 0$, the \emph{therapeutic coherence} is
+\begin{equation}
+  \label{eq:coherence}
+  \boxed{\;C(d, r) \;=\; \frac{\tau(d)}{\Kpath(d, r)}\;}
+\end{equation}
+This is the governing equation of the framework. $C$ is
+dimensionless and represents the ratio of intrinsic potency to
+total delivery impedance. A drug with $C \geq \theta$ (the
+disease-specific diagnostic threshold) can suppress the pathogen at
+reservoir $r$; a drug with $C < \theta$ fails at that site
+regardless of serum-level adequacy.
+\end{definition}
+
+\begin{remark}[Relationship to the Davis Field Equations]
+\label{rem:davis}
+\Cref{eq:coherence} is a domain-specific instantiation of the
+Davis Field Equations, $C = \tau / K$, in which the abstract
+tolerance $\tau$ is realized as pharmacophoric potential and the
+abstract curvature $K$ is realized as pathway impedance computed
+from published pharmacokinetic data. The framework inherits the
+general properties of Davis systems---compositional error budgets,
+bounded geodesic--Euclidean distortion, and the Double Cover
+Principle---by construction.
+\end{remark}
+
+% -----------------------------------------------------------------
+\subsection{Combination law}
+\label{sec:combination-law}
+% -----------------------------------------------------------------
+
+When multiple drugs are administered simultaneously at a given
+reservoir, their individual conductances compose in parallel, exactly
+as resistors in a Kirchhoff circuit. This is not a metaphor: the
+mathematical structure is identical.
+
+\begin{definition}[Drug conductance]
+\label{def:conductance}
+For a drug $d$ at reservoir $r$ with $\Kpath(d, r) > 0$, the
+\emph{conductance} is $g(d, r) = 1 / \Kpath(d, r)$.
+\end{definition}
+
+\begin{definition}[Combination coherence]
+\label{def:combination}
+For a cocktail of $N$ conductive drugs $\{d_1, \ldots, d_N\}$ at
+reservoir $r$, define:
+\begin{align}
+  \label{eq:tau-combo}
+  \tau_{\mathrm{combo}} &\;=\;
+    \frac{\displaystyle\sum_{i=1}^{N} \tau_i \, g_i}
+         {\displaystyle\sum_{i=1}^{N} g_i},
+  \\[8pt]
+  \label{eq:k-combo}
+  K_{\mathrm{combo}} &\;=\;
+    \frac{1}{\displaystyle\sum_{i=1}^{N} g_i},
+  \\[8pt]
+  \label{eq:c-combo}
+  \Ccombo(r) &\;=\;
+    \frac{\tau_{\mathrm{combo}}}{K_{\mathrm{combo}}}
+  \;=\;
+    \sum_{i=1}^{N} \tau_i \, g_i,
+\end{align}
+where $g_i = g(d_i, r)$ and $\tau_i = \tau(d_i)$.
+\end{definition}
+
+\begin{remark}
+In the Introduction (\cref{eq:combination-preview}), a synergy
+scalar appeared in the combination formula. As stated there,
+$\mathrm{synergy} = 1.0$ throughout this work (strict additivity),
+so it drops from the formal definition. The structural slot is
+preserved for future extensions incorporating experimentally
+measured drug--drug interactions.
+\end{remark}
+
+Three properties of the combination law are immediate and
+important.
+
+\begin{proposition}[Monotonicity]
+\label{prop:monotonicity}
+Adding a drug to a cocktail can never decrease $\Ccombo$. That is,
+for any drug $d_{N+1}$ with $\tau_{N+1} > 0$ and $g_{N+1} > 0$:
+\[
+  \Ccombo^{(N+1)}(r) \;=\; \Ccombo^{(N)}(r) + \tau_{N+1}\, g_{N+1}
+  \;>\; \Ccombo^{(N)}(r).
+\]
+\end{proposition}
+
+\begin{proof}
+From \cref{eq:c-combo},
+$\Ccombo(r) = \sum_{i=1}^{N} \tau_i g_i$. Since $\tau_{N+1} > 0$
+and $g_{N+1} > 0$, the additional term $\tau_{N+1} g_{N+1} > 0$.
+\end{proof}
+
+\begin{proposition}[$\tau_{\mathrm{combo}}$ bounds]
+\label{prop:tau-bounds}
+The combination pharmacophoric potential lies between the component
+extremes:
+\[
+  \min_i(\tau_i) \;\leq\; \tau_{\mathrm{combo}} \;\leq\;
+  \max_i(\tau_i).
+\]
+\end{proposition}
+
+\begin{proof}
+$\tau_{\mathrm{combo}}$ is a convex combination of the $\tau_i$
+(with weights $g_i / \sum_j g_j > 0$, summing to $1$).
+\end{proof}
+
+\begin{proposition}[Dominance by high-impedance drugs]
+\label{prop:dominance}
+A drug with $K_{\mathrm{pathway},i} \to \infty$ contributes $g_i \to 0$, and
+its contribution to $\Ccombo$ vanishes:
+$\tau_i g_i \to 0$. Such a drug is effectively absent from the
+cocktail regardless of its intrinsic potency $\tau_i$.
+\end{proposition}
+
+This is the mathematical content of the clinical observation that
+``vancomycin doesn't work in bone even in combination'': its bone
+impedance $\Kpath \approx 13$ yields a conductance $g \approx 0.08$,
+which is dominated by drugs with $\Kpath \approx 3$--$5$
+($g \approx 0.2$--$0.3$).
+
+% -----------------------------------------------------------------
+\subsection{The No Parallel Lines axiom}
+\label{sec:no-parallel-lines}
+% -----------------------------------------------------------------
+
+\begin{assumption}[No Parallel Lines]
+\label{ax:no-parallel-lines}
+Every curvature term in the framework is finite. Specifically:
+\begin{enumerate}[label=(\roman*)]
+  \item $\Kbarr(d, r) \leq K_{\max} < \infty$ for all $d, r$.
+    In implementation, $R(d,r) \to 0$ is regularized by setting
+    $R_{\min} = 10^{-3}$, yielding $K_{\max} = 999$.
+  \item $\Kbarr(d, r) \geq -1$ for all $d, r$ (the floor in
+    \cref{eq:kbarrier}).
+  \item $\Kpheno(d, r) < \infty$ for all $d, r$. In the most
+    extreme case (HIV latent provirus), $\Kpheno = 6.0$
+    (corresponding to $10^6$-fold effective resistance), not
+    infinity.
+\end{enumerate}
+\end{assumption}
+
+The name is geometric: in a Riemannian manifold of constant
+positive curvature, no two geodesics are parallel. The axiom
+asserts that the therapeutic manifold has everywhere-nonzero,
+everywhere-finite curvature. No pathway is perfectly unimpeded
+($K = 0$ would imply a drug reaches the pathogen with zero loss),
+and no pathway is perfectly blocked ($K = \infty$ would imply a
+drug has identically zero chance of reaching the pathogen, which
+is physically false---even the worst barrier admits nonzero, though
+negligible, drug transit).
+
+The mathematical consequence is that all conductances
+$g = 1/\Kpath$ are well-defined and positive (when $\Kpath > 0$),
+and the parallel-resistor formula (\cref{eq:c-combo}) is always
+finite.
+
+\begin{lemma}[Floor justification]
+\label{lem:floor}
+The floor $\Kbarr \geq -1$ is the unique value satisfying:
+\begin{enumerate}[label=(\roman*)]
+  \item \textbf{Asymptotic consistency:}
+    $\lim_{R \to \infty}(1/R - 1) = -1$, so the floor equals the
+    natural limit of the unregularized expression.
+  \item \textbf{Bounded facilitation:} a concentrating drug
+    ($R > 1$) can offset at most one unit of impedance from
+    other layers. Without this bound, a single drug with $R \to
+    \infty$ at one reservoir would drive $\Kpath \to -\infty$,
+    yielding $C \to -\infty$ (undefined coherence) or requiring
+    ad hoc sign conventions.
+  \item \textbf{Physical grounding:} tissue concentration can
+    reduce the barrier penalty but cannot reduce the ADMET penalty,
+    the phenotype resistance, or the reservoir persistence. The
+    floor ensures that $\Kbarr$ offsets at most the barrier itself.
+\end{enumerate}
+\end{lemma}
+
+% -----------------------------------------------------------------
+\subsection{Catalytic state modification}
+\label{sec:catalytic}
+% -----------------------------------------------------------------
+
+Not all therapeutic agents contribute conductance to the
+parallel-resistor sum. Some agents modify the \emph{phenotype
+distribution} of the pathogen population---converting drug-resistant
+phenotypic states to drug-susceptible states---without themselves
+carrying therapeutic current. We call such agents \emph{catalytic}.
+
+The distinction is general, not disease-specific:
+\begin{itemize}
+  \item In HIV, latency-reversing agents (LRAs) reactivate latent
+    provirus, converting a phenotypically invisible fraction to an
+    active, ART-susceptible fraction.
+  \item In bone MRSA, rifampin accesses intracellular bacteria in
+    osteoblasts, a phenotypic niche where other antibiotics cannot
+    act.
+  \item In TB, pyrazinamide is active only at low pH, converting a
+    resistant dormant subpopulation to a susceptible one.
+\end{itemize}
+
+\begin{definition}[Catalytic modifier]
+\label{def:catalytic}
+An agent $A$ with \emph{reactivation efficiency}
+$\Phi(A) \in [0, 1]$ modifies the phenotype distribution of a
+two-state pathogen population (susceptible fraction $f_s$,
+resistant fraction $f_r = 1 - f_s$) as follows:
+\begin{equation}
+  \label{eq:catalytic}
+  f_s^{\,\prime} \;=\; f_s \;+\; \Phi(A) \cdot f_r.
+\end{equation}
+The modified total coherence at reservoir $r$ is then:
+\begin{equation}
+  \label{eq:c-total-catalytic}
+  C_{\mathrm{total}}(r) \;=\; f_s^{\,\prime} \;\times\;
+  \Ccombo(r),
+\end{equation}
+where $\Ccombo(r)$ is computed from the conductive drugs only
+via the combination law (\cref{def:combination}).
+\end{definition}
+
+The key structural distinction:
+\begin{itemize}
+  \item \textbf{Conductive agents} appear inside the
+    $\sum g_i$ sum. Adding them increases total conductance.
+  \item \textbf{Catalytic agents} appear as a multiplicative
+    prefactor on $\Ccombo$. They do not carry therapeutic
+    current---they open the gate through which current flows.
+\end{itemize}
+
+\begin{theorem}[Two-condition cure requirement]
+\label{thm:two-condition}
+For any compartmentalized infection with a catalytic barrier at
+reservoir $r$, pathogen suppression ($C_{\mathrm{total}}(r) \geq
+\theta$) requires that \textbf{both} of the following conditions
+hold simultaneously:
+\begin{enumerate}[label=(\roman*)]
+  \item \textbf{Conductive sufficiency:}
+    $\Ccombo(r) \geq \theta / f_s^{\,\prime}$, and
+  \item \textbf{Catalytic sufficiency:}
+    $\Phi(A) \geq \bigl(\theta / \Ccombo(r) - f_s\bigr) / f_r$.
+\end{enumerate}
+Neither condition alone is sufficient. In the absence of a
+catalytic agent ($\Phi = 0$), condition (ii) reduces to
+$f_s \geq \theta / \Ccombo(r)$: the susceptible fraction must be
+large enough that conductive drugs alone can clear.
+\end{theorem}
+
+\begin{proof}
+From \cref{eq:c-total-catalytic}, $C_{\mathrm{total}} \geq \theta$
+requires $f_s^{\,\prime} \cdot \Ccombo \geq \theta$. Substituting
+\cref{eq:catalytic} and solving for $\Phi$ yields condition~(ii).
+Condition~(i) is the requirement that $\Ccombo$ be large enough that
+a solution $\Phi \in [0, 1]$ exists.
+\end{proof}
+
+\begin{remark}
+\Cref{thm:two-condition} is the mathematical basis for why
+shock-and-kill strategies for HIV cure have failed in clinical
+trials to date: even when the LRA achieves nonzero $\Phi$, the
+conductive ART coherence $\Ccombo$ at the GALT reservoir falls
+short of threshold, violating condition~(i). The shortfall is
+quantified in \cref{sec:hiv}.
+\end{remark}
+
+% -----------------------------------------------------------------
+\subsection{The Double Cover Principle}
+\label{sec:double-cover}
+% -----------------------------------------------------------------
+
+\begin{definition}[Geometric coverage]
+\label{def:S}
+For a compartmentalized infection with $N$ distinct anatomical
+reservoirs $\{r_1, \ldots, r_N\}$ and a drug regimen with
+combination coherence $\Ccombo^{\,\mathrm{active}}(r_j)$ at each
+reservoir (where ``active'' denotes the coherence against the
+drug-susceptible phenotype, after any catalytic modification), the
+\emph{geometric coverage} is
+\begin{equation}
+  \label{eq:S}
+  S \;=\; \frac{\bigl|\{r_j : \Ccombo^{\,\mathrm{active}}(r_j)
+  \geq \theta\}\bigr|}{N}.
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Double Cover Principle]
+\label{thm:double-cover}
+For any partition of a therapeutic problem into a geometric
+component (drug distribution through barriers) and a dynamic
+component (kill kinetics, immune response, reactivation biology),
+\begin{equation}
+  \label{eq:double-cover}
+  \boxed{\;S \;+\; d^2 \;=\; 1,\;}
+\end{equation}
+where $S$ is the geometric coverage (\cref{def:S}) and
+$d^2 = 1 - S$ is the fraction of reservoirs at which unmodeled
+dynamics dominate.
+\end{theorem}
+
+\begin{proof}
+By construction: $S$ counts the fraction of reservoirs at which
+the geometric coherence meets threshold; $d^2 = 1 - S$ is the
+complementary fraction. The content of the theorem is not the
+algebraic identity (which is trivial) but the \emph{interpretive
+claim}: the reservoirs in the $d^2$ fraction are precisely those
+where the geometric ranking is unreliable because non-geometric
+factors---kill kinetics, immune clearance, resistance
+dynamics---dominate the therapeutic outcome. This interpretive
+claim is validated empirically in the TB instance
+(\cref{sec:tb}), where the geometric drug ranking inverts the
+clinical sterilization ranking at exactly the reservoirs where
+$d^2 > 0$.
+\end{proof}
+
+\begin{remark}[The Double Cover as uncertainty quantification]
+\label{rem:dc-uq}
+The Double Cover is the framework's built-in uncertainty
+quantification. Three regimes:
+\begin{enumerate}[label=(\roman*)]
+  \item $S = 1$: the entire problem is geometry-dominated. Drug
+    rankings predicted by coherence are reliable across all
+    reservoirs. The model's predictions can be trusted.
+  \item $S = 0$: the entire problem is dynamics-dominated. Drugs
+    reach all reservoirs above threshold, yet treatment fails for
+    reasons outside the model (immune evasion, resistance
+    emergence, kill-rate insufficiency). The model's rankings are
+    unreliable and should not guide clinical decisions.
+  \item $0 < S < 1$: mixed regime. The model identifies
+    \emph{which} reservoirs are geometry-limited (reliable
+    rankings) and which are dynamics-limited (unreliable rankings).
+    This per-reservoir diagnosis is the framework's most
+    distinctive output.
+\end{enumerate}
+\end{remark}
+
+\begin{remark}[What $d^2$ does not mean]
+\label{rem:d2-not}
+$d^2$ is not an error term, a noise floor, or a confidence
+interval. It is a \emph{coverage complement}: the fraction of the
+infection landscape where geometry is insufficient to explain the
+clinical outcome, and where additional modeling
+(Circle~2: kinetics, immunity, resistance dynamics) would be
+required for reliable prediction. The notation $d^2$ (rather than
+$d$) follows from the general Double Cover derivation across Davis
+systems, where the dynamic component enters quadratically; in the
+discrete-reservoir setting of this paper, $d^2$ is simply
+$1 - S$.
+\end{remark}
+
+%\section{Disease Instance 1: Bone MRSA}
+%\label{sec:bone}
+
+%\section{Disease Instance 2: Pulmonary Tuberculosis}
+%\label{sec:tb}
+
+%\section{Disease Instance 3: Bacterial Meningitis}
+%\label{sec:meningitis}
+
+%\section{Disease Instance 4: HIV Latent Reservoirs}
+%\label{sec:hiv}
+
+%\section{Cross-Disease Analysis}
+%\label{sec:cross-disease}
+
+%\section{Relationship to Existing Frameworks}
+%\label{sec:related}
+
+%\section{Validation Philosophy}
+%\label{sec:validation}
+
+%\section{Limitations and Honest Accounting}
+%\label{sec:limitations}
+
+%\section{Clinical Implications}
+%\label{sec:clinical}
+
+%\section{Future Work}
+%\label{sec:future}
+
+%\section{Conclusion}
+%\label{sec:conclusion}
+
+% =================================================================
+\bibliographystyle{unsrt}
+% Placeholder bibliography — will be replaced with .bib file
+\begin{thebibliography}{99}
+
+\bibitem{Bue2018}
+M.~Bue, P.~Hanberg, A.~Koch-Cartier, et~al.,
+\textit{Single-dose bone pharmacokinetics of vancomycin in a porcine
+implant-associated osteomyelitis model},
+J.~Orthop.\ Res.\ \textbf{36}(4) (2018), 1093--1098.
+
+\bibitem{Graziani1988}
+A.~L.~Graziani, L.~R.~Lawson, G.~A.~Gibson, M.~A.~Steinberg,
+R.~MacGregor,
+\textit{Vancomycin concentrations in infected and noninfected human bone},
+Antimicrob.\ Agents Chemother.\ \textbf{32}(9) (1988), 1320--1322.
+
+\bibitem{Landersdorfer2009}
+C.~B.~Landersdorfer, J.~B.~Bulitta, M.~Kinzig, U.~Holzgrabe, F.~S{\"o}rgel,
+\textit{Penetration of antibacterials into bone: pharmacokinetic,
+pharmacodynamic and bioanalytical considerations},
+Clin.\ Pharmacokinet.\ \textbf{48}(2) (2009), 89--124.
+
+\bibitem{Dartois2014}
+V.~Dartois,
+\textit{The path of anti-tuberculosis drugs: from blood to lesions to
+mycobacterial cells},
+Nat.\ Rev.\ Microbiol.\ \textbf{12}(3) (2014), 159--167.
+
+\bibitem{Prideaux2015}
+B.~Prideaux, L.~E.~Via, M.~D.~Zimmerman, et~al.,
+\textit{The association between sterilizing activity and drug distribution
+into tuberculosis lesions},
+Nat.\ Med.\ \textbf{21}(10) (2015), 1223--1227.
+
+\bibitem{Sarathy2016}
+J.~P.~Sarathy, F.~Zuccotto, H.~Hsinpin, et~al.,
+\textit{Prediction of drug penetration in tuberculosis lesions},
+ACS Infect.\ Dis.\ \textbf{2}(8) (2016), 552--563.
+
+\bibitem{Nau2010}
+R.~Nau, F.~S{\"o}rgel, H.~Eiffert,
+\textit{Penetration of drugs through the blood-cerebrospinal
+fluid/blood-brain barrier for treatment of central nervous system infections},
+Clin.\ Microbiol.\ Rev.\ \textbf{23}(4) (2010), 858--883.
+
+\bibitem{Letendre2010}
+S.~L.~Letendre, R.~J.~Ellis, B.~M.~Ances, R.~K.~McCutchan,
+\textit{Neurologic complications of HIV disease and their treatment},
+Top.\ HIV Med.\ \textbf{18}(2) (2010), 45--55.
+
+\bibitem{Finzi1999}
+D.~Finzi, J.~Blankson, J.~D.~Siliciano, et~al.,
+\textit{Latent infection of CD4\textsuperscript{+} T cells provides a
+mechanism for lifelong persistence of HIV-1, even in patients on
+effective combination therapy},
+Nat.\ Med.\ \textbf{5}(5) (1999), 512--517.
+
+\bibitem{Siliciano2003}
+J.~D.~Siliciano, J.~Kajdas, D.~Finzi, et~al.,
+\textit{Long-term follow-up studies confirm the stability of the latent
+reservoir for HIV-1 in resting CD4\textsuperscript{+} T cells},
+Nat.\ Med.\ \textbf{9}(6) (2003), 727--728.
+
+\bibitem{Fletcher2014}
+C.~V.~Fletcher, K.~Staskus, S.~W.~Wietgrefe, et~al.,
+\textit{Persistent HIV-1 replication is associated with lower antiretroviral
+drug concentrations in lymphatic tissues},
+Proc.\ Natl.\ Acad.\ Sci.\ USA \textbf{111}(6) (2014), 2307--2312.
+
+\bibitem{Jones2013}
+H.~M.~Jones, Y.~Chen, C.~Gibson, et~al.,
+\textit{Physiologically based pharmacokinetic modeling in drug discovery
+and development: a pharmaceutical industry perspective},
+Clin.\ Pharmacol.\ Ther.\ \textbf{97}(3) (2015), 247--262.
+
+\bibitem{Nestorov2003}
+I.~Nestorov,
+\textit{Whole body pharmacokinetic models},
+Clin.\ Pharmacokinet.\ \textbf{42}(10) (2003), 883--908.
+
+\bibitem{Kuepfer2016}
+L.~Kuepfer, C.~Niederalt, T.~Wendl, et~al.,
+\textit{Applied concepts in PBPK modeling: how to build a PBPK/PD model},
+CPT Pharmacometrics Syst.\ Pharmacol.\ \textbf{5}(10) (2016), 516--531.
+
+\end{thebibliography}
+
+\end{document}

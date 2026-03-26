@@ -1,0 +1,2931 @@
+{
+  "version": "1.0",
+  "date": "2026-03-26",
+  "spec": "MIRADOR_GIGI_SPEC.md",
+  "total": 579,
+  "passed": 579,
+  "failed": 0,
+  "tests": [
+    {
+      "status": "PASS",
+      "name": "V1 DTG/cns",
+      "detail": "\u03c4_stored=5.39 \u03c4_computed=5.39 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 DTG/lymph_node",
+      "detail": "\u03c4_stored=5.39 \u03c4_computed=5.39 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 DTG/galt",
+      "detail": "\u03c4_stored=5.39 \u03c4_computed=5.39 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 DTG/genital_tract",
+      "detail": "\u03c4_stored=5.39 \u03c4_computed=5.39 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 DTG/bone_marrow",
+      "detail": "\u03c4_stored=5.39 \u03c4_computed=5.39 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 TFV/cns",
+      "detail": "\u03c4_stored=2.18 \u03c4_computed=2.18 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 TFV/lymph_node",
+      "detail": "\u03c4_stored=2.18 \u03c4_computed=2.18 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 TFV/galt",
+      "detail": "\u03c4_stored=2.18 \u03c4_computed=2.18 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 TFV/genital_tract",
+      "detail": "\u03c4_stored=2.18 \u03c4_computed=2.18 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 TFV/bone_marrow",
+      "detail": "\u03c4_stored=2.18 \u03c4_computed=2.18 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 FTC/cns",
+      "detail": "\u03c4_stored=3.70 \u03c4_computed=3.70 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 FTC/lymph_node",
+      "detail": "\u03c4_stored=3.70 \u03c4_computed=3.70 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 FTC/galt",
+      "detail": "\u03c4_stored=3.70 \u03c4_computed=3.70 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 FTC/genital_tract",
+      "detail": "\u03c4_stored=3.70 \u03c4_computed=3.70 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 FTC/bone_marrow",
+      "detail": "\u03c4_stored=3.70 \u03c4_computed=3.70 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 DRV/cns",
+      "detail": "\u03c4_stored=5.15 \u03c4_computed=5.15 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 DRV/lymph_node",
+      "detail": "\u03c4_stored=5.15 \u03c4_computed=5.15 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 DRV/galt",
+      "detail": "\u03c4_stored=5.15 \u03c4_computed=5.15 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 DRV/genital_tract",
+      "detail": "\u03c4_stored=5.15 \u03c4_computed=5.15 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 DRV/bone_marrow",
+      "detail": "\u03c4_stored=5.15 \u03c4_computed=5.15 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 EFV/cns",
+      "detail": "\u03c4_stored=5.26 \u03c4_computed=5.26 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 EFV/lymph_node",
+      "detail": "\u03c4_stored=5.26 \u03c4_computed=5.26 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 EFV/galt",
+      "detail": "\u03c4_stored=5.26 \u03c4_computed=5.26 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 EFV/genital_tract",
+      "detail": "\u03c4_stored=5.26 \u03c4_computed=5.26 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 EFV/bone_marrow",
+      "detail": "\u03c4_stored=5.26 \u03c4_computed=5.26 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 CRO/csf_uninflamed",
+      "detail": "\u03c4_stored=4.82 \u03c4_computed=4.82 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 CRO/csf_inflamed",
+      "detail": "\u03c4_stored=4.82 \u03c4_computed=4.82 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 VAN/csf_uninflamed",
+      "detail": "\u03c4_stored=2.60 \u03c4_computed=2.60 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 VAN/csf_inflamed",
+      "detail": "\u03c4_stored=2.60 \u03c4_computed=2.60 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 RIF/csf_uninflamed",
+      "detail": "\u03c4_stored=2.08 \u03c4_computed=2.08 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 RIF/csf_inflamed",
+      "detail": "\u03c4_stored=2.08 \u03c4_computed=2.08 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 LZD/csf_uninflamed",
+      "detail": "\u03c4_stored=2.10 \u03c4_computed=2.10 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V1 LZD/csf_inflamed",
+      "detail": "\u03c4_stored=2.10 \u03c4_computed=2.10 \u0394=0.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 DTG/cns",
+      "detail": "K_pathway=2.0500 \u03a3=2.0500"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 DTG/lymph_node",
+      "detail": "K_pathway=0.3688 \u03a3=0.3688"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 DTG/galt",
+      "detail": "K_pathway=0.5059 \u03a3=0.5059"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 DTG/genital_tract",
+      "detail": "K_pathway=1.2049 \u03a3=1.2049"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 DTG/bone_marrow",
+      "detail": "K_pathway=0.4479 \u03a3=0.4479"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 TFV/cns",
+      "detail": "K_pathway=1.4510 \u03a3=1.4510"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 TFV/lymph_node",
+      "detail": "K_pathway=0.6315 \u03a3=0.6315"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 TFV/galt",
+      "detail": "K_pathway=0.4510 \u03a3=0.4510"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 TFV/genital_tract",
+      "detail": "K_pathway=0.1500 \u03a3=0.1500"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 TFV/bone_marrow",
+      "detail": "K_pathway=0.6729 \u03a3=0.6729"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 FTC/cns",
+      "detail": "K_pathway=1.5729 \u03a3=1.5729"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 FTC/lymph_node",
+      "detail": "K_pathway=0.4479 \u03a3=0.4479"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 FTC/galt",
+      "detail": "K_pathway=0.3096 \u03a3=0.3096"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 FTC/genital_tract",
+      "detail": "K_pathway=0.0500 \u03a3=0.0500"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 FTC/bone_marrow",
+      "detail": "K_pathway=0.5059 \u03a3=0.5059"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 DRV/cns",
+      "detail": "K_pathway=1.4010 \u03a3=1.4010"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 DRV/lymph_node",
+      "detail": "K_pathway=0.2549 \u03a3=0.2549"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 DRV/galt",
+      "detail": "K_pathway=0.4468 \u03a3=0.4468"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 DRV/genital_tract",
+      "detail": "K_pathway=0.9239 \u03a3=0.9239"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 DRV/bone_marrow",
+      "detail": "K_pathway=0.5559 \u03a3=0.5559"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 EFV/cns",
+      "detail": "K_pathway=2.3810 \u03a3=2.3810"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 EFV/lymph_node",
+      "detail": "K_pathway=0.3396 \u03a3=0.3396"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 EFV/galt",
+      "detail": "K_pathway=0.4779 \u03a3=0.4779"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 EFV/genital_tract",
+      "detail": "K_pathway=1.7790 \u03a3=1.7790"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 EFV/bone_marrow",
+      "detail": "K_pathway=0.6029 \u03a3=0.6029"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 CRO/csf_uninflamed",
+      "detail": "K_pathway=2.3000 \u03a3=2.3000"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 CRO/csf_inflamed",
+      "detail": "K_pathway=1.1239 \u03a3=1.1239"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 VAN/csf_uninflamed",
+      "detail": "K_pathway=2.3500 \u03a3=2.3500"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 VAN/csf_inflamed",
+      "detail": "K_pathway=1.0947 \u03a3=1.0947"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 RIF/csf_uninflamed",
+      "detail": "K_pathway=1.0739 \u03a3=1.0739"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 RIF/csf_inflamed",
+      "detail": "K_pathway=0.6479 \u03a3=0.6479"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 LZD/csf_uninflamed",
+      "detail": "K_pathway=0.5979 \u03a3=0.5979"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 LZD/csf_inflamed",
+      "detail": "K_pathway=0.3549 \u03a3=0.3549"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 INH/lung_standard",
+      "detail": "K_pathway=0.2000 \u03a3=0.2000"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 INH/lung_acidic",
+      "detail": "K_pathway=1.2000 \u03a3=1.2000"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 INH/lung_dormant",
+      "detail": "K_pathway=3.2000 \u03a3=3.2000"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 RIF/lung_standard",
+      "detail": "K_pathway=0.3000 \u03a3=0.3000"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 RIF/lung_acidic",
+      "detail": "K_pathway=0.6979 \u03a3=0.6979"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 RIF/lung_dormant",
+      "detail": "K_pathway=1.3000 \u03a3=1.3000"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 PZA/lung_standard",
+      "detail": "K_pathway=0.1500 \u03a3=0.1500"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 PZA/lung_acidic",
+      "detail": "K_pathway=0.1500 \u03a3=0.1500"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 PZA/lung_dormant",
+      "detail": "K_pathway=0.1500 \u03a3=0.1500"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 EMB/lung_standard",
+      "detail": "K_pathway=0.2000 \u03a3=0.2000"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 EMB/lung_acidic",
+      "detail": "K_pathway=0.8021 \u03a3=0.8021"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 EMB/lung_dormant",
+      "detail": "K_pathway=0.2000 \u03a3=0.2000"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 BDQ/lung_standard",
+      "detail": "K_pathway=0.2500 \u03a3=0.2500"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 BDQ/lung_acidic",
+      "detail": "K_pathway=0.5510 \u03a3=0.5510"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 BDQ/lung_dormant",
+      "detail": "K_pathway=1.1708 \u03a3=1.1708"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 LZD/lung_standard",
+      "detail": "K_pathway=0.1500 \u03a3=0.1500"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 LZD/lung_acidic",
+      "detail": "K_pathway=0.4510 \u03a3=0.4510"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 LZD/lung_dormant",
+      "detail": "K_pathway=1.3541 \u03a3=1.3541"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 PMD/lung_standard",
+      "detail": "K_pathway=0.2000 \u03a3=0.2000"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 PMD/lung_acidic",
+      "detail": "K_pathway=0.2000 \u03a3=0.2000"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 PMD/lung_dormant",
+      "detail": "K_pathway=0.5010 \u03a3=0.5010"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 CAR/bone_cortical",
+      "detail": "K_pathway=1.1929 \u03a3=1.1929"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 RIF/bone_cortical",
+      "detail": "K_pathway=0.9559 \u03a3=0.9559"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 VAN/bone_cortical",
+      "detail": "K_pathway=1.1990 \u03a3=1.1990"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 LZD/bone_cortical",
+      "detail": "K_pathway=0.7010 \u03a3=0.7010"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 DAP/bone_cortical",
+      "detail": "K_pathway=1.4239 \u03a3=1.4239"
+    },
+    {
+      "status": "PASS",
+      "name": "V2 CLI/bone_cortical",
+      "detail": "K_pathway=0.7798 \u03a3=0.7798"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 DTG/cns",
+      "detail": "C=2.6313 computed=2.6313"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 DTG/lymph_node",
+      "detail": "C=14.6279 computed=14.6279"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 DTG/galt",
+      "detail": "C=10.6619 computed=10.6619"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 DTG/genital_tract",
+      "detail": "C=4.4769 computed=4.4769"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 DTG/bone_marrow",
+      "detail": "C=12.0422 computed=12.0422"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 TFV/cns",
+      "detail": "C=1.5048 computed=1.5048"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 TFV/lymph_node",
+      "detail": "C=3.4578 computed=3.4578"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 TFV/galt",
+      "detail": "C=4.8413 computed=4.8413"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 TFV/genital_tract",
+      "detail": "C=14.5570 computed=14.5570"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 TFV/bone_marrow",
+      "detail": "C=3.2451 computed=3.2451"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 FTC/cns",
+      "detail": "C=2.3517 computed=2.3517"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 FTC/lymph_node",
+      "detail": "C=8.2577 computed=8.2577"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 FTC/galt",
+      "detail": "C=11.9461 computed=11.9461"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 FTC/genital_tract",
+      "detail": "C=73.9794 computed=73.9794"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 FTC/bone_marrow",
+      "detail": "C=7.3112 computed=7.3112"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 DRV/cns",
+      "detail": "C=3.6768 computed=3.6768"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 DRV/lymph_node",
+      "detail": "C=20.2088 computed=20.2088"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 DRV/galt",
+      "detail": "C=11.5296 computed=11.5296"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 DRV/genital_tract",
+      "detail": "C=5.5755 computed=5.5755"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 DRV/bone_marrow",
+      "detail": "C=9.2660 computed=9.2660"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 EFV/cns",
+      "detail": "C=2.2112 computed=2.2112"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 EFV/lymph_node",
+      "detail": "C=15.5013 computed=15.5013"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 EFV/galt",
+      "detail": "C=11.0156 computed=11.0156"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 EFV/genital_tract",
+      "detail": "C=2.9595 computed=2.9595"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 EFV/bone_marrow",
+      "detail": "C=8.7328 computed=8.7328"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 CRO/csf_uninflamed",
+      "detail": "C=2.0974 computed=2.0974"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 CRO/csf_inflamed",
+      "detail": "C=4.2921 computed=4.2921"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 VAN/csf_uninflamed",
+      "detail": "C=1.1073 computed=1.1073"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 VAN/csf_inflamed",
+      "detail": "C=2.3769 computed=2.3769"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 RIF/csf_uninflamed",
+      "detail": "C=1.9361 computed=1.9361"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 RIF/csf_inflamed",
+      "detail": "C=3.2089 computed=3.2089"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 LZD/csf_uninflamed",
+      "detail": "C=3.5069 computed=3.5069"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 LZD/csf_inflamed",
+      "detail": "C=5.9084 computed=5.9084"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 INH/lung_standard",
+      "detail": "C=9.8500 computed=9.8500"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 INH/lung_acidic",
+      "detail": "C=1.6417 computed=1.6417"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 INH/lung_dormant",
+      "detail": "C=0.6156 computed=0.6156"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 RIF/lung_standard",
+      "detail": "C=5.5333 computed=5.5333"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 RIF/lung_acidic",
+      "detail": "C=2.3784 computed=2.3784"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 RIF/lung_dormant",
+      "detail": "C=1.2769 computed=1.2769"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 PZA/lung_standard",
+      "detail": "C=6.0667 computed=6.0667"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 PZA/lung_acidic",
+      "detail": "C=6.0667 computed=6.0667"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 PZA/lung_dormant",
+      "detail": "C=6.0667 computed=6.0667"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 EMB/lung_standard",
+      "detail": "C=2.3000 computed=2.3000"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 EMB/lung_acidic",
+      "detail": "C=0.5735 computed=0.5735"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 EMB/lung_dormant",
+      "detail": "C=2.3000 computed=2.3000"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 BDQ/lung_standard",
+      "detail": "C=7.0400 computed=7.0400"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 BDQ/lung_acidic",
+      "detail": "C=3.1940 computed=3.1940"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 BDQ/lung_dormant",
+      "detail": "C=1.5032 computed=1.5032"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 LZD/lung_standard",
+      "detail": "C=10.0000 computed=10.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 LZD/lung_acidic",
+      "detail": "C=3.3257 computed=3.3257"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 LZD/lung_dormant",
+      "detail": "C=1.1077 computed=1.1077"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 PMD/lung_standard",
+      "detail": "C=7.2500 computed=7.2500"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 PMD/lung_acidic",
+      "detail": "C=7.2500 computed=7.2500"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 PMD/lung_dormant",
+      "detail": "C=2.8940 computed=2.8940"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 CAR/bone_cortical",
+      "detail": "C=10.0597 computed=10.0597"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 RIF/bone_cortical",
+      "detail": "C=8.3688 computed=8.3688"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 VAN/bone_cortical",
+      "detail": "C=10.0086 computed=10.0086"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 LZD/bone_cortical",
+      "detail": "C=17.1177 computed=17.1177"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 DAP/bone_cortical",
+      "detail": "C=16.8550 computed=16.8550"
+    },
+    {
+      "status": "PASS",
+      "name": "V3 CLI/bone_cortical",
+      "detail": "C=10.2585 computed=10.2585"
+    },
+    {
+      "status": "PASS",
+      "name": "V4 CAR",
+      "detail": "K_bio=2.107 expected=2.107 MBEC=128 MIC=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V4 RIF",
+      "detail": "K_bio=1.796 expected=1.796 MBEC=0.5 MIC=0.008"
+    },
+    {
+      "status": "PASS",
+      "name": "V4 VAN",
+      "detail": "K_bio=2.709 expected=2.709 MBEC=512 MIC=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V4 LZD",
+      "detail": "K_bio=2.107 expected=2.107 MBEC=256 MIC=2.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V4 DAP",
+      "detail": "K_bio=1.806 expected=1.806 MBEC=32 MIC=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V4 CLI",
+      "detail": "K_bio=2.408 expected=2.408 MBEC=64 MIC=0.25"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 DTG/cns",
+      "detail": "\u03c4=5.39417689784843"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 DTG/cns",
+      "detail": "K=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 DTG/cns",
+      "detail": "R=0.01"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 DTG/cns",
+      "detail": "MIC=0.51"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 DTG/cns",
+      "detail": "AUC=126400"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 DTG/lymph_node",
+      "detail": "\u03c4=5.39417689784843"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 DTG/lymph_node",
+      "detail": "K=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 DTG/lymph_node",
+      "detail": "R=0.48"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 DTG/lymph_node",
+      "detail": "MIC=0.51"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 DTG/lymph_node",
+      "detail": "AUC=126400"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 DTG/galt",
+      "detail": "\u03c4=5.39417689784843"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 DTG/galt",
+      "detail": "K=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 DTG/galt",
+      "detail": "R=0.35"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 DTG/galt",
+      "detail": "MIC=0.51"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 DTG/galt",
+      "detail": "AUC=126400"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 DTG/genital_tract",
+      "detail": "\u03c4=5.39417689784843"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 DTG/genital_tract",
+      "detail": "K=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 DTG/genital_tract",
+      "detail": "R=0.07"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 DTG/genital_tract",
+      "detail": "MIC=0.51"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 DTG/genital_tract",
+      "detail": "AUC=126400"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 DTG/bone_marrow",
+      "detail": "\u03c4=5.39417689784843"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 DTG/bone_marrow",
+      "detail": "K=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 DTG/bone_marrow",
+      "detail": "R=0.4"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 DTG/bone_marrow",
+      "detail": "MIC=0.51"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 DTG/bone_marrow",
+      "detail": "AUC=126400"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 TFV/cns",
+      "detail": "\u03c4=2.1835545336188615"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 TFV/cns",
+      "detail": "K=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 TFV/cns",
+      "detail": "R=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 TFV/cns",
+      "detail": "MIC=50.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 TFV/cns",
+      "detail": "AUC=7630"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 TFV/lymph_node",
+      "detail": "\u03c4=2.1835545336188615"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 TFV/lymph_node",
+      "detail": "K=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 TFV/lymph_node",
+      "detail": "R=0.33"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 TFV/lymph_node",
+      "detail": "MIC=50.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 TFV/lymph_node",
+      "detail": "AUC=7630"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 TFV/galt",
+      "detail": "\u03c4=2.1835545336188615"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 TFV/galt",
+      "detail": "K=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 TFV/galt",
+      "detail": "R=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 TFV/galt",
+      "detail": "MIC=50.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 TFV/galt",
+      "detail": "AUC=7630"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 TFV/genital_tract",
+      "detail": "\u03c4=2.1835545336188615"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 TFV/genital_tract",
+      "detail": "K=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 TFV/genital_tract",
+      "detail": "R=3.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 TFV/genital_tract",
+      "detail": "MIC=50.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 TFV/genital_tract",
+      "detail": "AUC=7630"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 TFV/bone_marrow",
+      "detail": "\u03c4=2.1835545336188615"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 TFV/bone_marrow",
+      "detail": "K=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 TFV/bone_marrow",
+      "detail": "R=0.3"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 TFV/bone_marrow",
+      "detail": "MIC=50.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 TFV/bone_marrow",
+      "detail": "AUC=7630"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 FTC/cns",
+      "detail": "\u03c4=3.6989700043360187"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 FTC/cns",
+      "detail": "K=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 FTC/cns",
+      "detail": "R=0.03"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 FTC/cns",
+      "detail": "MIC=8.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 FTC/cns",
+      "detail": "AUC=40000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 FTC/lymph_node",
+      "detail": "\u03c4=3.6989700043360187"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 FTC/lymph_node",
+      "detail": "K=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 FTC/lymph_node",
+      "detail": "R=0.4"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 FTC/lymph_node",
+      "detail": "MIC=8.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 FTC/lymph_node",
+      "detail": "AUC=40000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 FTC/galt",
+      "detail": "\u03c4=3.6989700043360187"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 FTC/galt",
+      "detail": "K=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 FTC/galt",
+      "detail": "R=0.55"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 FTC/galt",
+      "detail": "MIC=8.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 FTC/galt",
+      "detail": "AUC=40000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 FTC/genital_tract",
+      "detail": "\u03c4=3.6989700043360187"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 FTC/genital_tract",
+      "detail": "K=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 FTC/genital_tract",
+      "detail": "R=1.8"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 FTC/genital_tract",
+      "detail": "MIC=8.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 FTC/genital_tract",
+      "detail": "AUC=40000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 FTC/bone_marrow",
+      "detail": "\u03c4=3.6989700043360187"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 FTC/bone_marrow",
+      "detail": "K=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 FTC/bone_marrow",
+      "detail": "R=0.35"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 FTC/bone_marrow",
+      "detail": "MIC=8.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 FTC/bone_marrow",
+      "detail": "AUC=40000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 DRV/cns",
+      "detail": "\u03c4=5.151267675330649"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 DRV/cns",
+      "detail": "K=0.1"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 DRV/cns",
+      "detail": "R=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 DRV/cns",
+      "detail": "MIC=1.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 DRV/cns",
+      "detail": "AUC=170000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 DRV/lymph_node",
+      "detail": "\u03c4=5.151267675330649"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 DRV/lymph_node",
+      "detail": "K=0.1"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 DRV/lymph_node",
+      "detail": "R=0.7"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 DRV/lymph_node",
+      "detail": "MIC=1.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 DRV/lymph_node",
+      "detail": "AUC=170000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 DRV/galt",
+      "detail": "\u03c4=5.151267675330649"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 DRV/galt",
+      "detail": "K=0.1"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 DRV/galt",
+      "detail": "R=0.45"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 DRV/galt",
+      "detail": "MIC=1.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 DRV/galt",
+      "detail": "AUC=170000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 DRV/genital_tract",
+      "detail": "\u03c4=5.151267675330649"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 DRV/genital_tract",
+      "detail": "K=0.1"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 DRV/genital_tract",
+      "detail": "R=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 DRV/genital_tract",
+      "detail": "MIC=1.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 DRV/genital_tract",
+      "detail": "AUC=170000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 DRV/bone_marrow",
+      "detail": "\u03c4=5.151267675330649"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 DRV/bone_marrow",
+      "detail": "K=0.1"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 DRV/bone_marrow",
+      "detail": "R=0.35"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 DRV/bone_marrow",
+      "detail": "MIC=1.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 DRV/bone_marrow",
+      "detail": "AUC=170000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 EFV/cns",
+      "detail": "\u03c4=5.264817823009537"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 EFV/cns",
+      "detail": "K=0.08"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 EFV/cns",
+      "detail": "R=0.005"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 EFV/cns",
+      "detail": "MIC=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 EFV/cns",
+      "detail": "AUC=184000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 EFV/lymph_node",
+      "detail": "\u03c4=5.264817823009537"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 EFV/lymph_node",
+      "detail": "K=0.08"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 EFV/lymph_node",
+      "detail": "R=0.55"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 EFV/lymph_node",
+      "detail": "MIC=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 EFV/lymph_node",
+      "detail": "AUC=184000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 EFV/galt",
+      "detail": "\u03c4=5.264817823009537"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 EFV/galt",
+      "detail": "K=0.08"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 EFV/galt",
+      "detail": "R=0.4"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 EFV/galt",
+      "detail": "MIC=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 EFV/galt",
+      "detail": "AUC=184000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 EFV/genital_tract",
+      "detail": "\u03c4=5.264817823009537"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 EFV/genital_tract",
+      "detail": "K=0.08"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 EFV/genital_tract",
+      "detail": "R=0.02"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 EFV/genital_tract",
+      "detail": "MIC=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 EFV/genital_tract",
+      "detail": "AUC=184000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 EFV/bone_marrow",
+      "detail": "\u03c4=5.264817823009537"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 EFV/bone_marrow",
+      "detail": "K=0.08"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 EFV/bone_marrow",
+      "detail": "R=0.3"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 EFV/bone_marrow",
+      "detail": "MIC=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 EFV/bone_marrow",
+      "detail": "AUC=184000"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 CRO/csf_uninflamed",
+      "detail": "\u03c4=4.823908740944319"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 CRO/csf_uninflamed",
+      "detail": "K=0.3"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 CRO/csf_uninflamed",
+      "detail": "R=0.01"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 CRO/csf_uninflamed",
+      "detail": "MIC=0.015"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 CRO/csf_uninflamed",
+      "detail": "AUC=1000.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 CRO/csf_inflamed",
+      "detail": "\u03c4=4.823908740944319"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 CRO/csf_inflamed",
+      "detail": "K=0.3"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 CRO/csf_inflamed",
+      "detail": "R=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 CRO/csf_inflamed",
+      "detail": "MIC=0.015"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 CRO/csf_inflamed",
+      "detail": "AUC=1000.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 VAN/csf_uninflamed",
+      "detail": "\u03c4=2.6020599913279625"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 VAN/csf_uninflamed",
+      "detail": "K=0.35"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 VAN/csf_uninflamed",
+      "detail": "R=0.01"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 VAN/csf_uninflamed",
+      "detail": "MIC=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 VAN/csf_uninflamed",
+      "detail": "AUC=400.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 VAN/csf_inflamed",
+      "detail": "\u03c4=2.6020599913279625"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 VAN/csf_inflamed",
+      "detail": "K=0.35"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 VAN/csf_inflamed",
+      "detail": "R=0.18"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 VAN/csf_inflamed",
+      "detail": "MIC=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 VAN/csf_inflamed",
+      "detail": "AUC=400.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 RIF/csf_uninflamed",
+      "detail": "\u03c4=2.0791812460476247"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 RIF/csf_uninflamed",
+      "detail": "K=0.25"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 RIF/csf_uninflamed",
+      "detail": "R=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 RIF/csf_uninflamed",
+      "detail": "MIC=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 RIF/csf_uninflamed",
+      "detail": "AUC=60.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 RIF/csf_inflamed",
+      "detail": "\u03c4=2.0791812460476247"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 RIF/csf_inflamed",
+      "detail": "K=0.25"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 RIF/csf_inflamed",
+      "detail": "R=0.4"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 RIF/csf_inflamed",
+      "detail": "MIC=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 RIF/csf_inflamed",
+      "detail": "AUC=60.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 LZD/csf_uninflamed",
+      "detail": "\u03c4=2.0969100130080562"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 LZD/csf_uninflamed",
+      "detail": "K=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 LZD/csf_uninflamed",
+      "detail": "R=0.4"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 LZD/csf_uninflamed",
+      "detail": "MIC=2.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 LZD/csf_uninflamed",
+      "detail": "AUC=250.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 LZD/csf_inflamed",
+      "detail": "\u03c4=2.0969100130080562"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 LZD/csf_inflamed",
+      "detail": "K=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 LZD/csf_inflamed",
+      "detail": "R=0.7"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 LZD/csf_inflamed",
+      "detail": "MIC=2.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 AUC>0 LZD/csf_inflamed",
+      "detail": "AUC=250.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 INH/lung_standard",
+      "detail": "\u03c4=1.97"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 INH/lung_standard",
+      "detail": "K=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 INH/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 INH/lung_standard",
+      "detail": "MIC=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 INH/lung_acidic",
+      "detail": "\u03c4=1.97"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 INH/lung_acidic",
+      "detail": "K=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 INH/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 INH/lung_acidic",
+      "detail": "MIC=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 INH/lung_dormant",
+      "detail": "\u03c4=1.97"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 INH/lung_dormant",
+      "detail": "K=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 INH/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 INH/lung_dormant",
+      "detail": "MIC=50.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 RIF/lung_standard",
+      "detail": "\u03c4=1.66"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 RIF/lung_standard",
+      "detail": "K=0.3"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 RIF/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 RIF/lung_standard",
+      "detail": "MIC=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 RIF/lung_acidic",
+      "detail": "\u03c4=1.66"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 RIF/lung_acidic",
+      "detail": "K=0.3"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 RIF/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 RIF/lung_acidic",
+      "detail": "MIC=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 RIF/lung_dormant",
+      "detail": "\u03c4=1.66"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 RIF/lung_dormant",
+      "detail": "K=0.3"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 RIF/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 RIF/lung_dormant",
+      "detail": "MIC=2.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 PZA/lung_standard",
+      "detail": "\u03c4=0.91"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 PZA/lung_standard",
+      "detail": "K=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 PZA/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 PZA/lung_acidic",
+      "detail": "\u03c4=0.91"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 PZA/lung_acidic",
+      "detail": "K=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 PZA/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 PZA/lung_acidic",
+      "detail": "MIC=16.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 PZA/lung_dormant",
+      "detail": "\u03c4=0.91"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 PZA/lung_dormant",
+      "detail": "K=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 PZA/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 PZA/lung_dormant",
+      "detail": "MIC=50.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 EMB/lung_standard",
+      "detail": "\u03c4=0.46"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 EMB/lung_standard",
+      "detail": "K=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 EMB/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 EMB/lung_standard",
+      "detail": "MIC=2.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 EMB/lung_acidic",
+      "detail": "\u03c4=0.46"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 EMB/lung_acidic",
+      "detail": "K=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 EMB/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 EMB/lung_acidic",
+      "detail": "MIC=8.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 EMB/lung_dormant",
+      "detail": "\u03c4=0.46"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 EMB/lung_dormant",
+      "detail": "K=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 EMB/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 BDQ/lung_standard",
+      "detail": "\u03c4=1.76"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 BDQ/lung_standard",
+      "detail": "K=0.25"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 BDQ/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 BDQ/lung_standard",
+      "detail": "MIC=0.03"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 BDQ/lung_acidic",
+      "detail": "\u03c4=1.76"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 BDQ/lung_acidic",
+      "detail": "K=0.25"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 BDQ/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 BDQ/lung_acidic",
+      "detail": "MIC=0.06"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 BDQ/lung_dormant",
+      "detail": "\u03c4=1.76"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 BDQ/lung_dormant",
+      "detail": "K=0.25"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 BDQ/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 BDQ/lung_dormant",
+      "detail": "MIC=0.25"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 LZD/lung_standard",
+      "detail": "\u03c4=1.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 LZD/lung_standard",
+      "detail": "K=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 LZD/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 LZD/lung_standard",
+      "detail": "MIC=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 LZD/lung_acidic",
+      "detail": "\u03c4=1.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 LZD/lung_acidic",
+      "detail": "K=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 LZD/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 LZD/lung_acidic",
+      "detail": "MIC=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 LZD/lung_dormant",
+      "detail": "\u03c4=1.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 LZD/lung_dormant",
+      "detail": "K=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 LZD/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 LZD/lung_dormant",
+      "detail": "MIC=8.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 PMD/lung_standard",
+      "detail": "\u03c4=1.45"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 PMD/lung_standard",
+      "detail": "K=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 PMD/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 PMD/lung_standard",
+      "detail": "MIC=0.06"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 PMD/lung_acidic",
+      "detail": "\u03c4=1.45"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 PMD/lung_acidic",
+      "detail": "K=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 PMD/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 PMD/lung_acidic",
+      "detail": "MIC=0.03"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 PMD/lung_dormant",
+      "detail": "\u03c4=1.45"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 PMD/lung_dormant",
+      "detail": "K=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 PMD/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 PMD/lung_dormant",
+      "detail": "MIC=0.12"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 CAR/bone_cortical",
+      "detail": "\u03c4=12.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 CAR/bone_cortical",
+      "detail": "K=0.67"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 CAR/bone_cortical",
+      "detail": "R=0.3"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 CAR/bone_cortical",
+      "detail": "MIC=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 RIF/bone_cortical",
+      "detail": "\u03c4=8.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 RIF/bone_cortical",
+      "detail": "K=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 RIF/bone_cortical",
+      "detail": "R=0.35"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 RIF/bone_cortical",
+      "detail": "MIC=0.008"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 VAN/bone_cortical",
+      "detail": "\u03c4=12.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 VAN/bone_cortical",
+      "detail": "K=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 VAN/bone_cortical",
+      "detail": "R=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 VAN/bone_cortical",
+      "detail": "MIC=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 LZD/bone_cortical",
+      "detail": "\u03c4=12.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 LZD/bone_cortical",
+      "detail": "K=0.4"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 LZD/bone_cortical",
+      "detail": "R=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 LZD/bone_cortical",
+      "detail": "MIC=2.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 DAP/bone_cortical",
+      "detail": "\u03c4=24.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 DAP/bone_cortical",
+      "detail": "K=0.6"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 DAP/bone_cortical",
+      "detail": "R=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 DAP/bone_cortical",
+      "detail": "MIC=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 \u03c4\u22650 CLI/bone_cortical",
+      "detail": "\u03c4=8.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 K_admet\u22650 CLI/bone_cortical",
+      "detail": "K=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 R>0 CLI/bone_cortical",
+      "detail": "R=0.525"
+    },
+    {
+      "status": "PASS",
+      "name": "V5 MIC>0 CLI/bone_cortical",
+      "detail": "MIC=0.25"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 DTG/cns",
+      "detail": "R=0.01"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 DTG/lymph_node",
+      "detail": "R=0.48"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 DTG/galt",
+      "detail": "R=0.35"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 DTG/genital_tract",
+      "detail": "R=0.07"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 DTG/bone_marrow",
+      "detail": "R=0.4"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 TFV/cns",
+      "detail": "R=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 TFV/lymph_node",
+      "detail": "R=0.33"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 TFV/galt",
+      "detail": "R=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 TFV/genital_tract",
+      "detail": "R=3.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 TFV/bone_marrow",
+      "detail": "R=0.3"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 FTC/cns",
+      "detail": "R=0.03"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 FTC/lymph_node",
+      "detail": "R=0.4"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 FTC/galt",
+      "detail": "R=0.55"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 FTC/genital_tract",
+      "detail": "R=1.8"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 FTC/bone_marrow",
+      "detail": "R=0.35"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 DRV/cns",
+      "detail": "R=0.05"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 DRV/lymph_node",
+      "detail": "R=0.7"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 DRV/galt",
+      "detail": "R=0.45"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 DRV/genital_tract",
+      "detail": "R=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 DRV/bone_marrow",
+      "detail": "R=0.35"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 EFV/cns",
+      "detail": "R=0.005"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 EFV/lymph_node",
+      "detail": "R=0.55"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 EFV/galt",
+      "detail": "R=0.4"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 EFV/genital_tract",
+      "detail": "R=0.02"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 EFV/bone_marrow",
+      "detail": "R=0.3"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 CRO/csf_uninflamed",
+      "detail": "R=0.01"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 CRO/csf_inflamed",
+      "detail": "R=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 VAN/csf_uninflamed",
+      "detail": "R=0.01"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 VAN/csf_inflamed",
+      "detail": "R=0.18"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 RIF/csf_uninflamed",
+      "detail": "R=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 RIF/csf_inflamed",
+      "detail": "R=0.4"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 LZD/csf_uninflamed",
+      "detail": "R=0.4"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 LZD/csf_inflamed",
+      "detail": "R=0.7"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 INH/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 INH/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 INH/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 RIF/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 RIF/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 RIF/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 PZA/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 PZA/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 PZA/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 EMB/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 EMB/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 EMB/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 BDQ/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 BDQ/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 BDQ/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 LZD/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 LZD/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 LZD/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 PMD/lung_standard",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 PMD/lung_acidic",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 PMD/lung_dormant",
+      "detail": "R=1.0"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 CAR/bone_cortical",
+      "detail": "R=0.3"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 RIF/bone_cortical",
+      "detail": "R=0.35"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 VAN/bone_cortical",
+      "detail": "R=0.2"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 LZD/bone_cortical",
+      "detail": "R=0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 DAP/bone_cortical",
+      "detail": "R=0.15"
+    },
+    {
+      "status": "PASS",
+      "name": "V6 CLI/bone_cortical",
+      "detail": "R=0.525"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 DTG/hiv",
+      "detail": "\u03c4 values across compartments: {5.394177}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 TFV/hiv",
+      "detail": "\u03c4 values across compartments: {2.183555}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 FTC/hiv",
+      "detail": "\u03c4 values across compartments: {3.69897}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 DRV/hiv",
+      "detail": "\u03c4 values across compartments: {5.151268}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 EFV/hiv",
+      "detail": "\u03c4 values across compartments: {5.264818}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 CRO/meningitis",
+      "detail": "\u03c4 values across compartments: {4.823909}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 VAN/meningitis",
+      "detail": "\u03c4 values across compartments: {2.60206}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 RIF/meningitis",
+      "detail": "\u03c4 values across compartments: {2.079181}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 LZD/meningitis",
+      "detail": "\u03c4 values across compartments: {2.09691}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 INH/tb",
+      "detail": "\u03c4 values across compartments: {1.97}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 RIF/tb",
+      "detail": "\u03c4 values across compartments: {1.66}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 PZA/tb",
+      "detail": "\u03c4 values across compartments: {0.91}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 EMB/tb",
+      "detail": "\u03c4 values across compartments: {0.46}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 BDQ/tb",
+      "detail": "\u03c4 values across compartments: {1.76}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 LZD/tb",
+      "detail": "\u03c4 values across compartments: {1.5}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 PMD/tb",
+      "detail": "\u03c4 values across compartments: {1.45}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 CAR/mrsa",
+      "detail": "\u03c4 values across compartments: {12.0}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 RIF/mrsa",
+      "detail": "\u03c4 values across compartments: {8.0}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 VAN/mrsa",
+      "detail": "\u03c4 values across compartments: {12.0}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 LZD/mrsa",
+      "detail": "\u03c4 values across compartments: {12.0}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 DAP/mrsa",
+      "detail": "\u03c4 values across compartments: {24.0}"
+    },
+    {
+      "status": "PASS",
+      "name": "V7 CLI/mrsa",
+      "detail": "\u03c4 values across compartments: {8.0}"
+    },
+    {
+      "status": "PASS",
+      "name": "V8 VAN cross-disease",
+      "detail": "meningitis:\u03c4=2.60, mrsa:\u03c4=12.00 \u2014 different organisms, different MIC targets"
+    },
+    {
+      "status": "PASS",
+      "name": "V8 RIF cross-disease",
+      "detail": "meningitis:\u03c4=2.08, tb:\u03c4=1.66, mrsa:\u03c4=8.00 \u2014 different organisms, different MIC targets"
+    },
+    {
+      "status": "PASS",
+      "name": "V8 LZD cross-disease",
+      "detail": "meningitis:\u03c4=2.10, tb:\u03c4=1.50, mrsa:\u03c4=12.00 \u2014 different organisms, different MIC targets"
+    },
+    {
+      "status": "PASS",
+      "name": "V9 CRO K(uninflamed) > K(inflamed)",
+      "detail": "K_uninfl=2.300 > K_infl=1.124"
+    },
+    {
+      "status": "PASS",
+      "name": "V9 VAN K(uninflamed) > K(inflamed)",
+      "detail": "K_uninfl=2.350 > K_infl=1.095"
+    },
+    {
+      "status": "PASS",
+      "name": "V9 RIF K(uninflamed) > K(inflamed)",
+      "detail": "K_uninfl=1.074 > K_infl=0.648"
+    },
+    {
+      "status": "PASS",
+      "name": "V9 LZD K(uninflamed) > K(inflamed)",
+      "detail": "K_uninfl=0.598 > K_infl=0.355"
+    },
+    {
+      "status": "PASS",
+      "name": "V9 DTG K(cns) > K(lymph)",
+      "detail": "K_cns=2.050 > K_lymph=0.369"
+    },
+    {
+      "status": "PASS",
+      "name": "V9 TFV K(cns) > K(lymph)",
+      "detail": "K_cns=1.451 > K_lymph=0.631"
+    },
+    {
+      "status": "PASS",
+      "name": "V9 FTC K(cns) > K(lymph)",
+      "detail": "K_cns=1.573 > K_lymph=0.448"
+    },
+    {
+      "status": "PASS",
+      "name": "V9 DRV K(cns) > K(lymph)",
+      "detail": "K_cns=1.401 > K_lymph=0.255"
+    },
+    {
+      "status": "PASS",
+      "name": "V9 EFV K(cns) > K(lymph)",
+      "detail": "K_cns=2.381 > K_lymph=0.340"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 TDF/FTC/DTG drug 1",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 TDF/FTC/DTG drug 2",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 TDF/FTC/DTG drug 3",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 TDF/FTC/DRV drug 1",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 TDF/FTC/DRV drug 2",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 TDF/FTC/DRV drug 4",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 TDF/FTC/EFV drug 1",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 TDF/FTC/EFV drug 2",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 TDF/FTC/EFV drug 5",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 CRO+VAN drug 10",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 CRO+VAN drug 11",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 RIPE drug 20",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 RIPE drug 21",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 RIPE drug 22",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 RIPE drug 23",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 BPaL drug 24",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 BPaL drug 25",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 BPaL drug 26",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 CAR+RIF drug 30",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 CAR+RIF drug 31",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 VAN+RIF drug 32",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V10 VAN+RIF drug 31",
+      "detail": "exists in database: True"
+    },
+    {
+      "status": "PASS",
+      "name": "V11 hiv",
+      "detail": "FAILING(0.0) < MARGINAL(0.5) < EFFECTIVE(1.0)"
+    },
+    {
+      "status": "PASS",
+      "name": "V11 meningitis",
+      "detail": "FAILING(0.0) < MARGINAL(0.25) < EFFECTIVE(0.5)"
+    },
+    {
+      "status": "PASS",
+      "name": "V11 tb",
+      "detail": "FAILING(0.0) < MARGINAL(5.0) < EFFECTIVE(9.5)"
+    },
+    {
+      "status": "PASS",
+      "name": "V11 mrsa",
+      "detail": "FAILING(0.0) < MARGINAL(3.0) < EFFECTIVE(5.0)"
+    },
+    {
+      "status": "PASS",
+      "name": "V12 hiv",
+      "detail": "input={'Fletcher 2014'} \u2229 ground_truth={'SINGLE trial', 'Walmsley 2013', 'ACTG A5257', 'STARTMRK'} = \u2205"
+    },
+    {
+      "status": "PASS",
+      "name": "V12 meningitis",
+      "detail": "input={'Nau 2010'} \u2229 ground_truth={'Tunkel 2004', 'van de Beek 2006', 'IDSA 2004'} = \u2205"
+    },
+    {
+      "status": "PASS",
+      "name": "V12 tb",
+      "detail": "input={'Peloquin 1997'} \u2229 ground_truth={'TBTC Study 28', 'ZeNix', 'TBTC Study 31', 'TB-PRACTECAL', 'REMoxTB', 'OFLOTUB'} = \u2205"
+    },
+    {
+      "status": "PASS",
+      "name": "V12 mrsa",
+      "detail": "input={'IDSA 2011'} \u2229 ground_truth={'Osmon IDSA 2013', 'Keske 2019'} = \u2205"
+    },
+    {
+      "status": "PASS",
+      "name": "V13 VAN K_admet (meningitis)",
+      "detail": "\u03ba=0.2500 conf=0.8000 values=[0.35, 0.5]"
+    },
+    {
+      "status": "PASS",
+      "name": "V13 RIF AUC24 (meningitis)",
+      "detail": "\u03ba=0.2500 conf=0.8000 values=[50.0, 60.0]"
+    },
+    {
+      "status": "PASS",
+      "name": "V13 LZD AUC24 (meningitis)",
+      "detail": "\u03ba=0.2500 conf=0.8000 values=[200.0, 250.0]"
+    },
+    {
+      "status": "PASS",
+      "name": "V13 LZD MIC (meningitis)",
+      "detail": "\u03ba=0.2500 conf=0.8000 values=[1.0, 2.0]"
+    },
+    {
+      "status": "PASS",
+      "name": "V13 VAN AUC24 (hiv vs MRSA)",
+      "detail": "\u03ba=0.0000 conf=1.0000 values=[400.0]"
+    },
+    {
+      "status": "PASS",
+      "name": "V13 CRO MIC (meningitis)",
+      "detail": "\u03ba=0.0000 conf=1.0000 values=[0.015]"
+    },
+    {
+      "status": "PASS",
+      "name": "V14 VAN K_admet (meningitis)",
+      "detail": "conf=0.8000 \u2265 0.80"
+    },
+    {
+      "status": "PASS",
+      "name": "V14 RIF AUC24 (meningitis)",
+      "detail": "conf=0.8000 \u2265 0.80"
+    },
+    {
+      "status": "PASS",
+      "name": "V14 LZD AUC24 (meningitis)",
+      "detail": "conf=0.8000 \u2265 0.80"
+    },
+    {
+      "status": "PASS",
+      "name": "V14 LZD MIC (meningitis)",
+      "detail": "conf=0.8000 \u2265 0.80"
+    },
+    {
+      "status": "PASS",
+      "name": "V14 VAN AUC24 (hiv vs MRSA)",
+      "detail": "conf=1.0000 \u2265 0.80"
+    },
+    {
+      "status": "PASS",
+      "name": "V14 CRO MIC (meningitis)",
+      "detail": "conf=1.0000 \u2265 0.80"
+    },
+    {
+      "status": "PASS",
+      "name": "V15 DTG+TFV+FTC @ cns",
+      "detail": "C_combo=6.4879"
+    },
+    {
+      "status": "PASS",
+      "name": "V15 DTG+TFV+FTC @ lymph_node",
+      "detail": "C_combo=26.3435"
+    },
+    {
+      "status": "PASS",
+      "name": "V15 DTG+TFV+FTC @ galt",
+      "detail": "C_combo=27.4493"
+    },
+    {
+      "status": "PASS",
+      "name": "V15 DTG+TFV+FTC @ genital_tract",
+      "detail": "C_combo=93.0133"
+    },
+    {
+      "status": "PASS",
+      "name": "V15 DTG+TFV+FTC @ bone_marrow",
+      "detail": "C_combo=22.5985"
+    },
+    {
+      "status": "PASS",
+      "name": "V15 CRO+VAN @ csf_inflamed",
+      "detail": "C_combo=6.6690 \u2265 0.5"
+    },
+    {
+      "status": "PASS",
+      "name": "V16 RIPE \u03a3\u03c4",
+      "detail": "\u03a3\u03c4=5.00 expected\u22485.00"
+    },
+    {
+      "status": "PASS",
+      "name": "V16 RIPE C_lesion",
+      "detail": "C_lesion = 1.2\u00b2 \u00d7 5.00 \u00d7 20.0000 = 144.0000"
+    },
+    {
+      "status": "PASS",
+      "name": "V16 BPaL C_lesion",
+      "detail": "C_lesion = 1.25\u00b2 \u00d7 4.71 \u00d7 15.6667 = 115.2969"
+    },
+    {
+      "status": "PASS",
+      "name": "V17 RIPE",
+      "detail": "C_decoupled=144.0000 \u2265 C_coupled=23.7500"
+    },
+    {
+      "status": "PASS",
+      "name": "V17 BPaL",
+      "detail": "C_decoupled=115.2969 \u2265 C_coupled=24.2900"
+    },
+    {
+      "status": "PASS",
+      "name": "V17 HIV DTG+TFV+FTC @ lymph_node",
+      "detail": "C_decoupled=73.6121 \u2265 C_coupled=26.3435"
+    },
+    {
+      "status": "PASS",
+      "name": "V17 HIV DTG+TFV+FTC @ galt",
+      "detail": "C_decoupled=83.7101 \u2265 C_coupled=27.4493"
+    }
+  ],
+  "section_count": 60,
+  "diseases": [
+    "hiv",
+    "mrsa",
+    "tb",
+    "meningitis"
+  ],
+  "drugs": [
+    "DTG",
+    "VAN",
+    "EFV",
+    "CRO",
+    "EMB",
+    "RIF",
+    "PZA",
+    "BDQ",
+    "DAP",
+    "TFV",
+    "LZD",
+    "CLI",
+    "PMD",
+    "CAR",
+    "INH",
+    "FTC",
+    "DRV"
+  ]
+}
