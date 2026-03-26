@@ -1086,6 +1086,75 @@ export default function MiradorSite() {
         </section>
       </FadeIn>
 
+      {/* ============ GIGI DATABASE ============ */}
+      <section id="gigi" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 900, margin: "0 auto" }}>
+        <FadeIn>
+          <div style={{ fontSize: 11, fontFamily: FM, color: "#f59e0b", letterSpacing: 3, marginBottom: 12 }}>DATA ENGINE</div>
+          <h2 style={{ fontSize: 32, fontFamily: F, fontWeight: 400, margin: "0 0 12px 0" }}>
+            GIGI — Geometric Intelligence Graph Interface
+          </h2>
+          <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.7, maxWidth: 700 }}>
+            Every number in MIRADOR lives in <span style={{ color: "#f59e0b", fontFamily: FM, fontSize: 13 }}>GIGI</span> — a fiber bundle database built for geometric data.
+            Not a traditional SQL store. GIGI models data as sections of fiber bundles, with native support for curvature queries, spectral analysis, and consistency checks across manifolds.
+          </p>
+        </FadeIn>
+
+        <FadeIn delay={0.1}>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", margin: "32px 0" }}>
+            <div style={{ flex: "1 1 200px", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "20px 24px", borderTop: "3px solid #f59e0b" }}>
+              <div style={{ fontSize: 36, fontWeight: 700, fontFamily: FM, color: "#f59e0b", lineHeight: 1 }}>1,357</div>
+              <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: FS, marginTop: 6 }}>Validated PK/PD records from EUCAST, CLSI, WHO CC, and published clinical trials</div>
+            </div>
+            <div style={{ flex: "1 1 200px", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "20px 24px", borderTop: "3px solid #3b82f6" }}>
+              <div style={{ fontSize: 36, fontWeight: 700, fontFamily: FM, color: "#3b82f6", lineHeight: 1 }}>10</div>
+              <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: FS, marginTop: 6 }}>Disease domains — HIV, TB, MRSA, meningitis, gram-neg sepsis, fungal, endocarditis, UTI, CAP, bone & joint</div>
+            </div>
+            <div style={{ flex: "1 1 200px", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "20px 24px", borderTop: "3px solid #22c55e" }}>
+              <div style={{ fontSize: 36, fontWeight: 700, fontFamily: FM, color: "#22c55e", lineHeight: 1 }}>34</div>
+              <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: FS, marginTop: 6 }}>Organisms — from HIV-1 to C. auris, M. tuberculosis to A. baumannii, with breakpoints and resistance mechanisms</div>
+            </div>
+          </div>
+        </FadeIn>
+
+        <FadeIn delay={0.15}>
+          <div style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 12, padding: mob ? "20px 16px" : "28px 32px", marginBottom: 32 }}>
+            <div style={{ fontSize: 11, fontFamily: FM, color: "#64748b", letterSpacing: 2, marginBottom: 16 }}>WHAT MAKES GIGI DIFFERENT</div>
+            <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+              <div style={{ flex: "1 1 220px" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", fontFamily: FS, marginBottom: 4 }}>Fiber bundle native</div>
+                <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7 }}>Data is stored as sections of fiber bundles — not rows in a table. Each record has base fields (the manifold) and fiber fields (the measurement). Curvature and spectral queries are first-class operations.</div>
+              </div>
+              <div style={{ flex: "1 1 220px" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#3b82f6", fontFamily: FS, marginBottom: 4 }}>GQL query language</div>
+                <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7 }}>A geometric query language: <span style={{ fontFamily: FM, color: "#e2e8f0", fontSize: 11 }}>COVER ALL ON mirador_drugs WHERE disease = tb</span> — cover the bundle, filter by base coordinates, return sections. Plus <span style={{ fontFamily: FM, color: "#e2e8f0", fontSize: 11 }}>CURVATURE</span>, <span style={{ fontFamily: FM, color: "#e2e8f0", fontSize: 11 }}>SPECTRAL</span>, <span style={{ fontFamily: FM, color: "#e2e8f0", fontSize: 11 }}>CONSISTENCY</span>.</div>
+              </div>
+              <div style={{ flex: "1 1 220px" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#22c55e", fontFamily: FS, marginBottom: 4 }}>Rust + persistent</div>
+                <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7 }}>Written in Rust with Axum. Sub-millisecond queries. Persistent volumes on Fly.io. The same engine backing MIRADOR's 80+ drug × 34 organism × multiple compartment calculations.</div>
+              </div>
+            </div>
+          </div>
+        </FadeIn>
+
+        <FadeIn delay={0.2}>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
+            <a href="#explorer" style={{ display: "inline-block", padding: "14px 36px", background: "#f59e0b", color: "#08080f", borderRadius: 8, fontFamily: FM, fontSize: 12, fontWeight: 700, letterSpacing: 2, textDecoration: "none", cursor: "pointer" }}
+              onMouseEnter={e => e.currentTarget.style.background = "#fbbf24"}
+              onMouseLeave={e => e.currentTarget.style.background = "#f59e0b"}>
+              OPEN EXPLORER →
+            </a>
+            <a href="https://davisgeometric.com/gigi" target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", padding: "14px 36px", background: "transparent", color: "#f59e0b", border: "1px solid #f59e0b", borderRadius: 8, fontFamily: FM, fontSize: 12, fontWeight: 700, letterSpacing: 2, textDecoration: "none", cursor: "pointer" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#f59e0b22"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
+              GIGI PROJECT →
+            </a>
+          </div>
+          <div style={{ textAlign: "center", fontSize: 10, color: "#64748b", fontFamily: FM, marginTop: 10 }}>
+            Explorer queries live GIGI on Fly.io · 1,357 records · No API key required
+          </div>
+        </FadeIn>
+      </section>
+
       {/* ============ RESEARCHER ============ */}
       <section id="researcher" style={{ padding: mob ? "40px 16px" : "100px 24px 80px", maxWidth: 900, margin: "0 auto" }}>
         <FadeIn>
