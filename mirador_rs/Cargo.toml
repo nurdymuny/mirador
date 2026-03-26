@@ -25,6 +25,8 @@ members = [
     "crates/mirador-hiv-reservoir",
     "crates/mirador-hiv-wasm",
     "crates/mirador-tb-wasm",
+    "crates/mirador-meningitis",
+    "crates/mirador-meningitis-wasm",
 ]
 resolver = "2"
 

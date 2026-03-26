@@ -7,6 +7,8 @@ import KeskeApp from './KeskeApp.jsx'
 import KeskeVisualizations from './KeskeVisualizations.jsx'
 import TbApp from './TbApp.jsx'
 const HivApp = lazy(() => import('./HivApp.jsx?v=4'));
+const MeningitisApp = lazy(() => import('./MeningitisApp.jsx'));
+const SciencePage = lazy(() => import('./SciencePage.jsx'));
 
 const FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 
@@ -30,6 +32,8 @@ const TABS = [
   { key: 'keske',  label: 'KESKE METHOD',  hash: '#keske',  color: '#f97316' },
   { key: 'tb',     label: 'TB MODULE',     hash: '#tb',     color: '#22c55e', isNew: true },
   { key: 'hiv',    label: 'HIV RESERVOIR', hash: '#hiv',    color: '#ef4444', isNew: true },
+  { key: 'meningitis', label: 'MENINGITIS', hash: '#meningitis', color: '#f59e0b', isNew: true },
+  { key: 'science', label: 'THE SCIENCE', hash: '#pkpd', color: '#a78bfa' },
 ];
 
 function TabBar({ page }) {
@@ -57,6 +61,8 @@ function getPage() {
   if (window.location.hash === '#visuals') return 'visuals';
   if (window.location.hash === '#tb') return 'tb';
   if (window.location.hash === '#hiv') return 'hiv';
+  if (window.location.hash === '#meningitis') return 'meningitis';
+  if (window.location.hash === '#pkpd') return 'science';
   return 'home';
 }
 
@@ -69,12 +75,14 @@ function App() {
   }, []);
 
   const goDemo = () => { window.location.hash = 'demo'; };
-  const showTabBar = ['demo', 'keske', 'tb', 'hiv'].includes(page);
+  const showTabBar = ['demo', 'keske', 'tb', 'hiv', 'meningitis', 'science'].includes(page);
 
   if (page === 'demo') return <><TabBar page={page} /><MiradorApp /></>;
   if (page === 'keske') return <><TabBar page={page} /><KeskeApp /></>;
   if (page === 'tb') return <><TabBar page={page} /><TbApp /></>;
   if (page === 'hiv') return <><TabBar page={page} /><ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading HIV module…</div>}><HivApp /></Suspense></ErrorBoundary></>;
+  if (page === 'meningitis') return <><TabBar page={page} /><ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading Meningitis module…</div>}><MeningitisApp /></Suspense></ErrorBoundary></>;
+  if (page === 'science') return <><TabBar page={page} /><ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading Science page…</div>}><SciencePage /></Suspense></ErrorBoundary></>;
   if (page === 'visuals') return <KeskeVisualizations />;
   return <MiradorSite onLaunchDemo={goDemo} />;
 }

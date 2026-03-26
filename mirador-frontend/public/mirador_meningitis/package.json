@@ -1,0 +1,16 @@
+{
+  "name": "mirador-meningitis-wasm",
+  "type": "module",
+  "description": "WASM bridge — exposes meningitis BBB math to the frontend",
+  "version": "0.1.0",
+  "files": [
+    "mirador_meningitis_wasm_bg.wasm",
+    "mirador_meningitis_wasm.js",
+    "mirador_meningitis_wasm.d.ts"
+  ],
+  "main": "mirador_meningitis_wasm.js",
+  "types": "mirador_meningitis_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
