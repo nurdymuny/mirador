@@ -336,15 +336,15 @@ export default function MiradorSite() {
             {[
               { title: "MRSA BONE", color: "#3b82f6", hash: "#demo", lines: ["Derived FDA dose from geometry.", "Predicted 3 resistance mutations confirmed by crystal structure."], stat: "161 tests" },
               { title: "TUBERCULOSIS", color: "#22c55e", hash: "#tb", lines: ["Derived the 4-drug regimen.", "Detected which drug removal causes the largest C drop."], stat: "52 tests" },
-              { title: "MENINGITIS", color: "#f59e0b", hash: "#demo", lines: ["Computed the exact day steroids lock antibiotics out of the brain.", "Matches published survival data."], stat: "8+ tests" },
+              { title: "MENINGITIS", color: "#f59e0b", hash: null, lines: ["Computed the exact day steroids lock antibiotics out of the brain.", "Matches published survival data."], stat: "COMING SOON" },
               { title: "HIV RESERVOIRS", color: "#ef4444", hash: "#hiv", lines: ["Proved ART cannot cure from first principles.", "Identified one reservoir already clearable."], stat: "83 tests" },
             ].map(d => (
-              <a key={d.title} href={d.hash} style={{ display: "block", padding: "20px 24px", background: "#0c0c18", border: `1px solid ${d.color}22`, borderTop: `3px solid ${d.color}`, borderRadius: 8, textDecoration: "none" }}
+              <a key={d.title} href={d.hash || undefined} style={{ display: "block", padding: "20px 24px", background: "#0c0c18", border: `1px solid ${d.color}22`, borderTop: `3px solid ${d.color}`, borderRadius: 8, textDecoration: "none", opacity: d.hash ? 1 : 0.7, cursor: d.hash ? "pointer" : "default" }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = d.color}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = d.color + "22"; e.currentTarget.style.borderTopColor = d.color; }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: d.color, fontFamily: FM, letterSpacing: 2, marginBottom: 8 }}>{d.title}</div>
                 {d.lines.map((l, i) => <div key={i} style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6, fontFamily: FS }}>{l}</div>)}
-                <div style={{ fontSize: 10, fontFamily: FM, color: "#475569", marginTop: 10, letterSpacing: 1 }}>{d.stat} · <span style={{ color: d.color }}>SEE DEMO →</span></div>
+                <div style={{ fontSize: 10, fontFamily: FM, color: "#475569", marginTop: 10, letterSpacing: 1 }}>{d.stat}{d.hash && <> · <span style={{ color: d.color }}>SEE DEMO →</span></>}</div>
               </a>
             ))}
           </div>
@@ -741,7 +741,7 @@ export default function MiradorSite() {
               {[
                 { key: "mrsa", label: "MRSA BONE", color: "#3b82f6", hash: "#demo" },
                 { key: "tb", label: "TB", color: "#22c55e", hash: "#tb" },
-                { key: "meningitis", label: "MENINGITIS", color: "#f59e0b", hash: "#demo" },
+                { key: "meningitis", label: "MENINGITIS ⏳", color: "#f59e0b", hash: null },
                 { key: "hiv", label: "HIV RESERVOIRS", color: "#ef4444", hash: "#hiv" },
               ].map(d => (
                 <button key={d.key} onClick={() => setDemoDisease(d.key)} style={{
@@ -757,15 +757,22 @@ export default function MiradorSite() {
             <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 20, lineHeight: 1.7 }}>
               {demoDisease === "mrsa" && "The demo uses real PBP2a crystal structures (PDB 1VQQ, 3ZG0, 4BL2, 4BL3), published kinetics (Kd = 20 ± 4 μM), and the FDA ceftaroline label. Every number is sourced and cited inline."}
               {demoDisease === "tb" && "Four-drug regimen derivation across Mitchison subpopulations. See how pyrazinamide inverts from worst serum drug to best caseum drug — geometry reveals what blood levels hide."}
-              {demoDisease === "meningitis" && "Time-varying BBB barrier model. Watch ceftriaxone CSF concentration drop below MIC as dexamethasone restores BBB integrity. The Dex paradox computed in real time."}
+              {demoDisease === "meningitis" && "Coming soon — Time-varying BBB barrier model. Ceftriaxone CSF concentration vs dexamethasone BBB restoration. The Dex paradox will be computed in real time."}
               {demoDisease === "hiv" && "Five anatomical reservoirs, three-drug ART, latency-reversing agent modeling. See why cure is mathematically impossible — and which reservoir clears first."}
             </div>
 
-            <a href={demoDisease === "tb" ? "#tb" : demoDisease === "hiv" ? "#hiv" : "#demo"} style={{
-              display: "inline-block", padding: "12px 40px", background: "#22c55e", color: "#08080f",
-              borderRadius: 6, fontFamily: FS, fontSize: 13, fontWeight: 700, letterSpacing: 1,
-              textDecoration: "none",
-            }}>LAUNCH DEMO →</a>
+            {demoDisease === "meningitis" ? (
+              <span style={{
+                display: "inline-block", padding: "12px 40px", background: "#2a2a3e", color: "#64748b",
+                borderRadius: 6, fontFamily: FS, fontSize: 13, fontWeight: 700, letterSpacing: 1,
+              }}>COMING SOON</span>
+            ) : (
+              <a href={demoDisease === "tb" ? "#tb" : demoDisease === "hiv" ? "#hiv" : "#demo"} style={{
+                display: "inline-block", padding: "12px 40px", background: "#22c55e", color: "#08080f",
+                borderRadius: 6, fontFamily: FS, fontSize: 13, fontWeight: 700, letterSpacing: 1,
+                textDecoration: "none",
+              }}>LAUNCH DEMO →</a>
+            )}
           </div>
         </FadeIn>
 
@@ -895,7 +902,7 @@ export default function MiradorSite() {
             "52 Rust tests · Generalized compartment engine v1.3",
           ]} />
         </FadeIn>        <FadeIn delay={0.14}>
-          <RoadmapItem phase="1d" title="Meningitis Module" status="LIVE" color="#f59e0b" items={[
+          <RoadmapItem phase="1d" title="Meningitis Module" status="IN DEV" color="#f59e0b" items={[
             "Dynamic BBB barrier: K_barrier as time-varying function of dexamethasone",
             "Dex paradox: Day 0.98 failure point — steroids restore BBB, lock antibiotics out",
             "Monotherapy derivation: ceftriaxone C ≥ 1.0 through tightening BBB — until critical crossover",
