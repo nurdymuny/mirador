@@ -287,18 +287,24 @@ export default function MiradorSite() {
         <div style={{ position: "absolute", top: "20%", left: "50%", transform: "translateX(-50%)", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, #3b82f608 0%, transparent 70%)", pointerEvents: "none" }} />
 
         <FadeIn>
-          <div style={{ fontSize: 11, fontFamily: FM, color: "#3b82f6", letterSpacing: 3, marginBottom: 20 }}>BRANCH XI · THERAPEUTIC GEOMETRY</div>
+          <div style={{ fontSize: 11, fontFamily: FM, color: "#3b82f6", letterSpacing: 3, marginBottom: 20 }}>BRANCH XI · COMPARTMENT PK/PD</div>
         </FadeIn>
 
         <FadeIn delay={0.1}>
           <h1 style={{ fontSize: "clamp(32px, 5vw, 56px)", fontFamily: F, fontWeight: 400, lineHeight: 1.15, maxWidth: 720, margin: "0 0 20px 0" }}>
-            One equation predicted MRSA's next three resistance mutations.
+            The first computationally accurate terrain map for drug efficacy.
           </h1>
         </FadeIn>
 
+        <FadeIn delay={0.15}>
+          <p style={{ fontSize: 18, color: "#cbd5e1", maxWidth: 580, lineHeight: 1.7, margin: "0 0 6px 0" }}>
+            Validated across four diseases.
+          </p>
+        </FadeIn>
+
         <FadeIn delay={0.2}>
-          <p style={{ fontSize: 16, color: "#94a3b8", maxWidth: 540, lineHeight: 1.7, margin: "0 0 12px 0" }}>
-            All three confirmed by independent crystal structures. The dose it derived matches the FDA label. No training data. No lookup tables. Geometry.
+          <p style={{ fontSize: 14, color: "#94a3b8", maxWidth: 560, lineHeight: 1.7, margin: "0 0 12px 0" }}>
+            Published tissue ratios in. Site-specific drug rankings out. No training data. No fitted parameters. Accurate enough to derive FDA dosing and predict resistance mutations from geometry alone.
           </p>
         </FadeIn>
 
@@ -323,10 +329,26 @@ export default function MiradorSite() {
           }}>BRING YOUR DATA</a>
         </FadeIn>
 
-        <FadeIn delay={0.6} style={{ display: "flex", gap: 40, marginTop: 60, flexWrap: "wrap", justifyContent: "center" }}>
-          <Stat number="3/3" label="ESCAPE MUTATIONS PREDICTED" color="#22c55e" />
-          <Stat number="400mg" label="FDA DOSE DERIVED FROM GEOMETRY" color="#3b82f6" delay={0.1} />
-          <Stat number="6wk" label="AHEAD OF LATEST RESISTANCE PAPER" color="#f59e0b" delay={0.2} />
+        <FadeIn delay={0.6} style={{ marginTop: 60, maxWidth: 900, width: "100%" }}>
+          <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: 16 }}>
+            {[
+              { title: "MRSA BONE", color: "#3b82f6", hash: "#demo", lines: ["Derived FDA dose from geometry.", "Predicted 3 resistance mutations confirmed by crystal structure."], stat: "161 tests" },
+              { title: "TUBERCULOSIS", color: "#22c55e", hash: "#tb", lines: ["Derived the 4-drug regimen.", "Detected which drug removal causes the largest C drop."], stat: "52 tests" },
+              { title: "MENINGITIS", color: "#f59e0b", hash: "#demo", lines: ["Computed the exact day steroids lock antibiotics out of the brain.", "Matches published survival data."], stat: "8+ tests" },
+              { title: "HIV RESERVOIRS", color: "#ef4444", hash: "#hiv", lines: ["Proved ART cannot cure from first principles.", "Identified one reservoir already clearable."], stat: "83 tests" },
+            ].map(d => (
+              <a key={d.title} href={d.hash} style={{ display: "block", padding: "20px 24px", background: "#0c0c18", border: `1px solid ${d.color}22`, borderTop: `3px solid ${d.color}`, borderRadius: 8, textDecoration: "none" }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = d.color}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = d.color + "22"; e.currentTarget.style.borderTopColor = d.color; }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: d.color, fontFamily: FM, letterSpacing: 2, marginBottom: 8 }}>{d.title}</div>
+                {d.lines.map((l, i) => <div key={i} style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6, fontFamily: FS }}>{l}</div>)}
+                <div style={{ fontSize: 10, fontFamily: FM, color: "#475569", marginTop: 10, letterSpacing: 1 }}>{d.stat} · <span style={{ color: d.color }}>SEE DEMO →</span></div>
+              </a>
+            ))}
+          </div>
+          <div style={{ textAlign: "center", marginTop: 20, fontSize: 13, fontFamily: FM, color: "#64748b", letterSpacing: 2 }}>
+            4 diseases · 37+ independent tests · 0 fitted parameters
+          </div>
         </FadeIn>
       </section>
 
