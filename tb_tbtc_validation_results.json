@@ -1,0 +1,739 @@
+{
+  "validation": "MIRADOR TB Module — TBTC / REMoxTB / Historical",
+  "spec": "MIRADOR_TB_SPEC.md §Governing Equation",
+  "governing_eq": "C_lesion = tau_combo / K_combo",
+  "threshold_analysis": {
+    "week8_80pct": {
+      "optimal_threshold": 10.0,
+      "youden_j": 0.875,
+      "accuracy": 0.9333
+    },
+    "relapse_7pct": {
+      "optimal_threshold": 2.0,
+      "youden_j": 0.5
+    },
+    "composite_conv75_relapse8": {
+      "optimal_threshold": 5.0,
+      "youden_j": 0.8
+    }
+  },
+  "pearson_r_conversion": 0.8068,
+  "r_squared_conversion": 0.651,
+  "spearman_rho_conversion": 0.8031,
+  "pearson_r_relapse": -0.5571,
+  "n_arms": 15,
+  "total_patients": 6188,
+  "arms": [
+    {
+      "arm": "TBTC-28: Standard RIPE (6mo)",
+      "drugs": [
+        "rifampin",
+        "isoniazid",
+        "pyrazinamide",
+        "ethambutol"
+      ],
+      "n": 217,
+      "phase_months": 6,
+      "cavitary_pct": 47,
+      "week8_conversion_pct": 76,
+      "relapse_pct": 3.5,
+      "c_lesion_cavitary": 9.555,
+      "c_lesion_noncavitary": 9.356,
+      "k_combo_cav": 0.6279,
+      "tau_combo_cav": 6.0,
+      "per_drug_cav": {
+        "rifampin": {
+          "k_admet": 0.3,
+          "k_phen": 0.5592,
+          "k_gran": 9.25,
+          "k_res": 0.8908,
+          "k_pathway": 10.9999,
+          "tau": 1.66
+        },
+        "isoniazid": {
+          "k_admet": 0.2,
+          "k_phen": 1.6,
+          "k_gran": 1.5625,
+          "k_res": 0.595,
+          "k_pathway": 3.9575,
+          "tau": 1.97
+        },
+        "pyrazinamide": {
+          "k_admet": 0.15,
+          "k_phen": 0.7377,
+          "k_gran": 0.8601,
+          "k_res": 0.45,
+          "k_pathway": 2.1979,
+          "tau": 0.91
+        },
+        "ethambutol": {
+          "k_admet": 0.2,
+          "k_phen": 1.3204,
+          "k_gran": 0.075,
+          "k_res": 0.2965,
+          "k_pathway": 1.8919,
+          "tau": 0.46
+        }
+      },
+      "source": "Dorman et al. NEJM 2009; Table 2",
+      "notes": ""
+    },
+    {
+      "arm": "TBTC-28: MRIPE (MXF replaces EMB, 6mo)",
+      "drugs": [
+        "rifampin",
+        "isoniazid",
+        "pyrazinamide",
+        "moxifloxacin"
+      ],
+      "n": 216,
+      "phase_months": 6,
+      "cavitary_pct": 44,
+      "week8_conversion_pct": 80,
+      "relapse_pct": 3.0,
+      "c_lesion_cavitary": 18.817,
+      "c_lesion_noncavitary": 18.944,
+      "k_combo_cav": 0.3916,
+      "tau_combo_cav": 7.368,
+      "per_drug_cav": {
+        "rifampin": {
+          "k_admet": 0.3,
+          "k_phen": 0.5592,
+          "k_gran": 9.25,
+          "k_res": 0.8908,
+          "k_pathway": 10.9999,
+          "tau": 1.66
+        },
+        "isoniazid": {
+          "k_admet": 0.2,
+          "k_phen": 1.6,
+          "k_gran": 1.5625,
+          "k_res": 0.595,
+          "k_pathway": 3.9575,
+          "tau": 1.97
+        },
+        "pyrazinamide": {
+          "k_admet": 0.15,
+          "k_phen": 0.7377,
+          "k_gran": 0.8601,
+          "k_res": 0.45,
+          "k_pathway": 2.1979,
+          "tau": 0.91
+        },
+        "moxifloxacin": {
+          "k_admet": 0.15,
+          "k_phen": 0.6021,
+          "k_gran": 0.0,
+          "k_res": 0.0,
+          "k_pathway": 0.7521,
+          "tau": 1.6
+        }
+      },
+      "source": "Dorman et al. NEJM 2009; Table 2",
+      "notes": ""
+    },
+    {
+      "arm": "TBTC-31/A5349: Standard RIPE control (6mo)",
+      "drugs": [
+        "rifampin",
+        "isoniazid",
+        "pyrazinamide",
+        "ethambutol"
+      ],
+      "n": 681,
+      "phase_months": 6,
+      "cavitary_pct": 45,
+      "week8_conversion_pct": 78,
+      "relapse_pct": 3.9,
+      "c_lesion_cavitary": 9.555,
+      "c_lesion_noncavitary": 9.356,
+      "k_combo_cav": 0.6279,
+      "tau_combo_cav": 6.0,
+      "per_drug_cav": {
+        "rifampin": {
+          "k_admet": 0.3,
+          "k_phen": 0.5592,
+          "k_gran": 9.25,
+          "k_res": 0.8908,
+          "k_pathway": 10.9999,
+          "tau": 1.66
+        },
+        "isoniazid": {
+          "k_admet": 0.2,
+          "k_phen": 1.6,
+          "k_gran": 1.5625,
+          "k_res": 0.595,
+          "k_pathway": 3.9575,
+          "tau": 1.97
+        },
+        "pyrazinamide": {
+          "k_admet": 0.15,
+          "k_phen": 0.7377,
+          "k_gran": 0.8601,
+          "k_res": 0.45,
+          "k_pathway": 2.1979,
+          "tau": 0.91
+        },
+        "ethambutol": {
+          "k_admet": 0.2,
+          "k_phen": 1.3204,
+          "k_gran": 0.075,
+          "k_res": 0.2965,
+          "k_pathway": 1.8919,
+          "tau": 0.46
+        }
+      },
+      "source": "Dorman et al. NEJM 2021; TBTC Study 31/ACTG A5349 control",
+      "notes": ""
+    },
+    {
+      "arm": "TBTC-31: RPT+MXF (4mo)",
+      "drugs": [
+        "rifapentine",
+        "isoniazid",
+        "pyrazinamide",
+        "moxifloxacin"
+      ],
+      "n": 674,
+      "phase_months": 4,
+      "cavitary_pct": 44,
+      "week8_conversion_pct": 82,
+      "relapse_pct": 15.5,
+      "c_lesion_cavitary": 19.409,
+      "c_lesion_noncavitary": 19.537,
+      "k_combo_cav": 0.3883,
+      "tau_combo_cav": 7.536,
+      "per_drug_cav": {
+        "rifapentine": {
+          "k_admet": 0.25,
+          "k_phen": 0.5592,
+          "k_gran": 7.5028,
+          "k_res": 0.8673,
+          "k_pathway": 9.1793,
+          "tau": 1.8
+        },
+        "isoniazid": {
+          "k_admet": 0.2,
+          "k_phen": 1.6,
+          "k_gran": 1.5625,
+          "k_res": 0.595,
+          "k_pathway": 3.9575,
+          "tau": 1.97
+        },
+        "pyrazinamide": {
+          "k_admet": 0.15,
+          "k_phen": 0.7377,
+          "k_gran": 0.8601,
+          "k_res": 0.45,
+          "k_pathway": 2.1979,
+          "tau": 0.91
+        },
+        "moxifloxacin": {
+          "k_admet": 0.15,
+          "k_phen": 0.6021,
+          "k_gran": 0.0,
+          "k_res": 0.0,
+          "k_pathway": 0.7521,
+          "tau": 1.6
+        }
+      },
+      "source": "Dorman et al. NEJM 2021; TBTC Study 31 experimental arm",
+      "notes": "Noninferiority NOT met for 4-month in cavitary/high-burden"
+    },
+    {
+      "arm": "REMoxTB: Control RIPE (6mo)",
+      "drugs": [
+        "rifampin",
+        "isoniazid",
+        "pyrazinamide",
+        "ethambutol"
+      ],
+      "n": 639,
+      "phase_months": 6,
+      "cavitary_pct": 50,
+      "week8_conversion_pct": 78,
+      "relapse_pct": 1.7,
+      "c_lesion_cavitary": 9.555,
+      "c_lesion_noncavitary": 9.356,
+      "k_combo_cav": 0.6279,
+      "tau_combo_cav": 6.0,
+      "per_drug_cav": {
+        "rifampin": {
+          "k_admet": 0.3,
+          "k_phen": 0.5592,
+          "k_gran": 9.25,
+          "k_res": 0.8908,
+          "k_pathway": 10.9999,
+          "tau": 1.66
+        },
+        "isoniazid": {
+          "k_admet": 0.2,
+          "k_phen": 1.6,
+          "k_gran": 1.5625,
+          "k_res": 0.595,
+          "k_pathway": 3.9575,
+          "tau": 1.97
+        },
+        "pyrazinamide": {
+          "k_admet": 0.15,
+          "k_phen": 0.7377,
+          "k_gran": 0.8601,
+          "k_res": 0.45,
+          "k_pathway": 2.1979,
+          "tau": 0.91
+        },
+        "ethambutol": {
+          "k_admet": 0.2,
+          "k_phen": 1.3204,
+          "k_gran": 0.075,
+          "k_res": 0.2965,
+          "k_pathway": 1.8919,
+          "tau": 0.46
+        }
+      },
+      "source": "Gillespie et al. NEJM 2014; Table 2",
+      "notes": ""
+    },
+    {
+      "arm": "REMoxTB: Isoniazid arm (MXF+INH+RIF+PZA, 4mo)",
+      "drugs": [
+        "rifampin",
+        "isoniazid",
+        "pyrazinamide",
+        "moxifloxacin"
+      ],
+      "n": 655,
+      "phase_months": 4,
+      "cavitary_pct": 50,
+      "week8_conversion_pct": 82,
+      "relapse_pct": 5.6,
+      "c_lesion_cavitary": 18.817,
+      "c_lesion_noncavitary": 18.944,
+      "k_combo_cav": 0.3916,
+      "tau_combo_cav": 7.368,
+      "per_drug_cav": {
+        "rifampin": {
+          "k_admet": 0.3,
+          "k_phen": 0.5592,
+          "k_gran": 9.25,
+          "k_res": 0.8908,
+          "k_pathway": 10.9999,
+          "tau": 1.66
+        },
+        "isoniazid": {
+          "k_admet": 0.2,
+          "k_phen": 1.6,
+          "k_gran": 1.5625,
+          "k_res": 0.595,
+          "k_pathway": 3.9575,
+          "tau": 1.97
+        },
+        "pyrazinamide": {
+          "k_admet": 0.15,
+          "k_phen": 0.7377,
+          "k_gran": 0.8601,
+          "k_res": 0.45,
+          "k_pathway": 2.1979,
+          "tau": 0.91
+        },
+        "moxifloxacin": {
+          "k_admet": 0.15,
+          "k_phen": 0.6021,
+          "k_gran": 0.0,
+          "k_res": 0.0,
+          "k_pathway": 0.7521,
+          "tau": 1.6
+        }
+      },
+      "source": "Gillespie et al. NEJM 2014; Table 2, isoniazid arm",
+      "notes": "MXF replaces EMB; 4-month total — failed noninferiority"
+    },
+    {
+      "arm": "REMoxTB: Ethambutol arm (MXF+EMB+RIF+PZA, 4mo)",
+      "drugs": [
+        "rifampin",
+        "ethambutol",
+        "pyrazinamide",
+        "moxifloxacin"
+      ],
+      "n": 636,
+      "phase_months": 4,
+      "cavitary_pct": 50,
+      "week8_conversion_pct": 80,
+      "relapse_pct": 7.7,
+      "c_lesion_cavitary": 16.028,
+      "c_lesion_noncavitary": 15.718,
+      "k_combo_cav": 0.3466,
+      "tau_combo_cav": 5.556,
+      "per_drug_cav": {
+        "rifampin": {
+          "k_admet": 0.3,
+          "k_phen": 0.5592,
+          "k_gran": 9.25,
+          "k_res": 0.8908,
+          "k_pathway": 10.9999,
+          "tau": 1.66
+        },
+        "ethambutol": {
+          "k_admet": 0.2,
+          "k_phen": 1.3204,
+          "k_gran": 0.075,
+          "k_res": 0.2965,
+          "k_pathway": 1.8919,
+          "tau": 0.46
+        },
+        "pyrazinamide": {
+          "k_admet": 0.15,
+          "k_phen": 0.7377,
+          "k_gran": 0.8601,
+          "k_res": 0.45,
+          "k_pathway": 2.1979,
+          "tau": 0.91
+        },
+        "moxifloxacin": {
+          "k_admet": 0.15,
+          "k_phen": 0.6021,
+          "k_gran": 0.0,
+          "k_res": 0.0,
+          "k_pathway": 0.7521,
+          "tau": 1.6
+        }
+      },
+      "source": "Gillespie et al. NEJM 2014; Table 2, ethambutol arm",
+      "notes": "MXF replaces INH; 4-month — failed noninferiority"
+    },
+    {
+      "arm": "OFLOTUB: Control RIPE (6mo)",
+      "drugs": [
+        "rifampin",
+        "isoniazid",
+        "pyrazinamide",
+        "ethambutol"
+      ],
+      "n": 771,
+      "phase_months": 6,
+      "cavitary_pct": 38,
+      "week8_conversion_pct": 80,
+      "relapse_pct": 3.0,
+      "c_lesion_cavitary": 9.555,
+      "c_lesion_noncavitary": 9.356,
+      "k_combo_cav": 0.6279,
+      "tau_combo_cav": 6.0,
+      "per_drug_cav": {
+        "rifampin": {
+          "k_admet": 0.3,
+          "k_phen": 0.5592,
+          "k_gran": 9.25,
+          "k_res": 0.8908,
+          "k_pathway": 10.9999,
+          "tau": 1.66
+        },
+        "isoniazid": {
+          "k_admet": 0.2,
+          "k_phen": 1.6,
+          "k_gran": 1.5625,
+          "k_res": 0.595,
+          "k_pathway": 3.9575,
+          "tau": 1.97
+        },
+        "pyrazinamide": {
+          "k_admet": 0.15,
+          "k_phen": 0.7377,
+          "k_gran": 0.8601,
+          "k_res": 0.45,
+          "k_pathway": 2.1979,
+          "tau": 0.91
+        },
+        "ethambutol": {
+          "k_admet": 0.2,
+          "k_phen": 1.3204,
+          "k_gran": 0.075,
+          "k_res": 0.2965,
+          "k_pathway": 1.8919,
+          "tau": 0.46
+        }
+      },
+      "source": "Merle et al. JAMA 2014 (OFLOTUB)",
+      "notes": ""
+    },
+    {
+      "arm": "OFLOTUB: Gatifloxacin 4mo (GFX replaces EMB)",
+      "drugs": [
+        "rifampin",
+        "isoniazid",
+        "pyrazinamide",
+        "gatifloxacin"
+      ],
+      "n": 764,
+      "phase_months": 4,
+      "cavitary_pct": 38,
+      "week8_conversion_pct": 83,
+      "relapse_pct": 7.1,
+      "c_lesion_cavitary": 18.51,
+      "c_lesion_noncavitary": 18.635,
+      "k_combo_cav": 0.3916,
+      "tau_combo_cav": 7.248,
+      "per_drug_cav": {
+        "rifampin": {
+          "k_admet": 0.3,
+          "k_phen": 0.5592,
+          "k_gran": 9.25,
+          "k_res": 0.8908,
+          "k_pathway": 10.9999,
+          "tau": 1.66
+        },
+        "isoniazid": {
+          "k_admet": 0.2,
+          "k_phen": 1.6,
+          "k_gran": 1.5625,
+          "k_res": 0.595,
+          "k_pathway": 3.9575,
+          "tau": 1.97
+        },
+        "pyrazinamide": {
+          "k_admet": 0.15,
+          "k_phen": 0.7377,
+          "k_gran": 0.8601,
+          "k_res": 0.45,
+          "k_pathway": 2.1979,
+          "tau": 0.91
+        },
+        "gatifloxacin": {
+          "k_admet": 0.15,
+          "k_phen": 0.6021,
+          "k_gran": 0.0,
+          "k_res": 0.0,
+          "k_pathway": 0.7521,
+          "tau": 1.5
+        }
+      },
+      "source": "Merle et al. JAMA 2014 (OFLOTUB gatifloxacin arm)",
+      "notes": "4-month — failed noninferiority margin"
+    },
+    {
+      "arm": "TB-PRACTECAL: BPaL (6mo, MDR-TB)",
+      "drugs": [
+        "bedaquiline",
+        "pretomanid",
+        "linezolid"
+      ],
+      "n": 90,
+      "phase_months": 6,
+      "cavitary_pct": 55,
+      "week8_conversion_pct": 89,
+      "relapse_pct": 2.7,
+      "c_lesion_cavitary": 14.525,
+      "c_lesion_noncavitary": 13.911,
+      "k_combo_cav": 0.3729,
+      "tau_combo_cav": 5.4165,
+      "per_drug_cav": {
+        "bedaquiline": {
+          "k_admet": 0.25,
+          "k_phen": 0.4887,
+          "k_gran": 0.0,
+          "k_res": 0.3493,
+          "k_pathway": 1.088,
+          "tau": 1.76
+        },
+        "pretomanid": {
+          "k_admet": 0.2,
+          "k_phen": 0.6021,
+          "k_gran": 0.325,
+          "k_res": 0.314,
+          "k_pathway": 1.4411,
+          "tau": 1.45
+        },
+        "linezolid": {
+          "k_admet": 0.15,
+          "k_phen": 0.6021,
+          "k_gran": 0.325,
+          "k_res": 0.314,
+          "k_pathway": 1.3911,
+          "tau": 1.5
+        }
+      },
+      "source": "Nyang'wa et al. NEJM 2022 (TB-PRACTECAL)",
+      "notes": "BPaL for RR/MDR-TB; dramatically shorter than 18-24mo SOC"
+    },
+    {
+      "arm": "ZeNix: BPaL 1200mg LZD (MDR-TB)",
+      "drugs": [
+        "bedaquiline",
+        "pretomanid",
+        "linezolid"
+      ],
+      "n": 45,
+      "phase_months": 6,
+      "cavitary_pct": 48,
+      "week8_conversion_pct": 92,
+      "relapse_pct": 2.0,
+      "c_lesion_cavitary": 14.525,
+      "c_lesion_noncavitary": 13.911,
+      "k_combo_cav": 0.3729,
+      "tau_combo_cav": 5.4165,
+      "per_drug_cav": {
+        "bedaquiline": {
+          "k_admet": 0.25,
+          "k_phen": 0.4887,
+          "k_gran": 0.0,
+          "k_res": 0.3493,
+          "k_pathway": 1.088,
+          "tau": 1.76
+        },
+        "pretomanid": {
+          "k_admet": 0.2,
+          "k_phen": 0.6021,
+          "k_gran": 0.325,
+          "k_res": 0.314,
+          "k_pathway": 1.4411,
+          "tau": 1.45
+        },
+        "linezolid": {
+          "k_admet": 0.15,
+          "k_phen": 0.6021,
+          "k_gran": 0.325,
+          "k_res": 0.314,
+          "k_pathway": 1.3911,
+          "tau": 1.5
+        }
+      },
+      "source": "Conradie et al. NEJM 2022 (ZeNix, 1200mg LZD arm)",
+      "notes": ""
+    },
+    {
+      "arm": "Historical: HR + EMB (9mo, no PZA)",
+      "drugs": [
+        "rifampin",
+        "isoniazid",
+        "ethambutol"
+      ],
+      "n": 350,
+      "phase_months": 9,
+      "cavitary_pct": 40,
+      "week8_conversion_pct": 62,
+      "relapse_pct": 6.0,
+      "c_lesion_cavitary": 4.718,
+      "c_lesion_noncavitary": 4.567,
+      "k_combo_cav": 0.997,
+      "tau_combo_cav": 4.7035,
+      "per_drug_cav": {
+        "rifampin": {
+          "k_admet": 0.3,
+          "k_phen": 0.5592,
+          "k_gran": 9.25,
+          "k_res": 0.8908,
+          "k_pathway": 10.9999,
+          "tau": 1.66
+        },
+        "isoniazid": {
+          "k_admet": 0.2,
+          "k_phen": 1.6,
+          "k_gran": 1.5625,
+          "k_res": 0.595,
+          "k_pathway": 3.9575,
+          "tau": 1.97
+        },
+        "ethambutol": {
+          "k_admet": 0.2,
+          "k_phen": 1.3204,
+          "k_gran": 0.075,
+          "k_res": 0.2965,
+          "k_pathway": 1.8919,
+          "tau": 0.46
+        }
+      },
+      "source": "Fox et al. 1999 (BTS/MRC meta); WHO 2010 guidelines",
+      "notes": "CAT II regimen without PZA; week-8 conversion much lower"
+    },
+    {
+      "arm": "Historical: INH monotherapy (12mo)",
+      "drugs": [
+        "isoniazid"
+      ],
+      "n": 200,
+      "phase_months": 12,
+      "cavitary_pct": 50,
+      "week8_conversion_pct": 35,
+      "relapse_pct": 25.0,
+      "c_lesion_cavitary": 0.498,
+      "c_lesion_noncavitary": 0.535,
+      "k_combo_cav": 3.9575,
+      "tau_combo_cav": 1.97,
+      "per_drug_cav": {
+        "isoniazid": {
+          "k_admet": 0.2,
+          "k_phen": 1.6,
+          "k_gran": 1.5625,
+          "k_res": 0.595,
+          "k_pathway": 3.9575,
+          "tau": 1.97
+        }
+      },
+      "source": "Mitchison 1965; Fox et al. IJTLD 1999",
+      "notes": "Historical monotherapy — inadequate; resistance emerges rapidly"
+    },
+    {
+      "arm": "Historical: RIF monotherapy (12mo)",
+      "drugs": [
+        "rifampin"
+      ],
+      "n": 150,
+      "phase_months": 12,
+      "cavitary_pct": 50,
+      "week8_conversion_pct": 55,
+      "relapse_pct": 18.0,
+      "c_lesion_cavitary": 0.151,
+      "c_lesion_noncavitary": 0.143,
+      "k_combo_cav": 10.9999,
+      "tau_combo_cav": 1.66,
+      "per_drug_cav": {
+        "rifampin": {
+          "k_admet": 0.3,
+          "k_phen": 0.5592,
+          "k_gran": 9.25,
+          "k_res": 0.8908,
+          "k_pathway": 10.9999,
+          "tau": 1.66
+        }
+      },
+      "source": "Mitchison ATS 1986; Fox 1999 meta-analysis estimates",
+      "notes": "Monotherapy inadequate; slower culture conversion than INH but better sterilizing"
+    },
+    {
+      "arm": "MDR-TB: PZA + EMB only",
+      "drugs": [
+        "pyrazinamide",
+        "ethambutol"
+      ],
+      "n": 100,
+      "phase_months": 24,
+      "cavitary_pct": 60,
+      "week8_conversion_pct": 20,
+      "relapse_pct": 50.0,
+      "c_lesion_cavitary": 1.347,
+      "c_lesion_noncavitary": 1.29,
+      "k_combo_cav": 1.0167,
+      "tau_combo_cav": 1.37,
+      "per_drug_cav": {
+        "pyrazinamide": {
+          "k_admet": 0.15,
+          "k_phen": 0.7377,
+          "k_gran": 0.8601,
+          "k_res": 0.45,
+          "k_pathway": 2.1979,
+          "tau": 0.91
+        },
+        "ethambutol": {
+          "k_admet": 0.2,
+          "k_phen": 1.3204,
+          "k_gran": 0.075,
+          "k_res": 0.2965,
+          "k_pathway": 1.8919,
+          "tau": 0.46
+        }
+      },
+      "source": "WHO MDR-TB guidelines 2019; estimated from cohort mortality/failure rates",
+      "notes": "Catastrophic — C_lesion predicted to be far below threshold"
+    }
+  ]
+}

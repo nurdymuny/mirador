@@ -1,0 +1,17 @@
+[package]
+name = "mirador-tb-wasm"
+version = "0.1.0"
+edition = "2021"
+description = "WASM bridge — exposes TB math crates to the frontend"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+mirador-tb-combo      = { path = "../mirador-tb-combo" }
+mirador-tb-phenotype  = { path = "../mirador-tb-phenotype" }
+mirador-tb-reservoir  = { path = "../mirador-tb-reservoir" }
+mirador-granuloma     = { path = "../mirador-granuloma" }

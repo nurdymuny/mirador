@@ -30,8 +30,13 @@ pub struct TbReservoirProfile {
     pub r_extracellular: f64,
     /// Penetration into macrophage intracellular space
     pub r_macrophage: f64,
-    /// Penetration into caseum (avascular necrotic core)
+    /// Total drug concentration ratio in caseum (avascular necrotic core).
+    /// NOTE: Only the free (unbound) fraction reaches bacteria — use fu_caseum.
     pub r_caseum: f64,
+    /// Fraction of drug unbound (free) in caseum. 1.0 = fully free (hydrophilic drugs).
+    /// Lipophilic drugs (BDQ, CLO) bind caseum lipids → fu < 0.01 → drug barely reaches bacteria.
+    /// R_eff = r_caseum × fu_caseum. Source: Sarathy 2016, Table 3.
+    pub fu_caseum: f64,
     /// Penetration into open cavity caseum surface
     pub r_cavity: f64,
 }
@@ -87,12 +92,16 @@ impl TbReservoirProfile {
         r_extracellular: f64,
         r_macrophage: f64,
         r_caseum: f64,
+        fu_caseum: f64,
         r_cavity: f64,
     ) -> Result<Self, ReservoirError> {
         for r in &[r_extracellular, r_macrophage, r_caseum, r_cavity] {
             if *r <= 0.0 { return Err(ReservoirError::InvalidRatio(*r)); }
         }
-        Ok(Self { drug_name: drug_name.into(), r_extracellular, r_macrophage, r_caseum, r_cavity })
+        if !(fu_caseum > 0.0 && fu_caseum <= 1.0) {
+            return Err(ReservoirError::InvalidRatio(fu_caseum));
+        }
+        Ok(Self { drug_name: drug_name.into(), r_extracellular, r_macrophage, r_caseum, fu_caseum, r_cavity })
     }
 
     fn k_res_component(r: f64, w: f64) -> f64 {
@@ -100,17 +109,21 @@ impl TbReservoirProfile {
         ((1.0 - r) * w).max(0.0)
     }
 
-    /// K_reservoir = sum of all four reservoir curvature components
+    /// K_reservoir = sum of all four reservoir curvature components.
+    /// Caseum uses fu-corrected formula; others use total penetration ratio.
     pub fn k_reservoir(&self, weights: &ReservoirWeights) -> f64 {
         Self::k_res_component(self.r_extracellular, weights.w_extracellular)
             + Self::k_res_component(self.r_macrophage, weights.w_macrophage)
-            + Self::k_res_component(self.r_caseum, weights.w_caseum)
+            + self.k_res_caseum(weights.w_caseum)
             + Self::k_res_component(self.r_cavity, weights.w_cavity)
     }
 
-    /// K_res for specific caseum component only
+    /// K_res for the caseum compartment — uses fu-corrected effective penetration.
+    /// R_eff = r_caseum × fu_caseum; K = (1 - R_eff) × w_caseum.
+    /// v2.2 fix: previously used total R without fu correction → BDQ K was 0 (wrong).
     pub fn k_res_caseum(&self, w_caseum: f64) -> f64 {
-        Self::k_res_component(self.r_caseum, w_caseum)
+        let r_eff = self.r_caseum * self.fu_caseum;
+        ((1.0 - r_eff) * w_caseum).max(0.0)
     }
 }
 
@@ -119,38 +132,43 @@ impl TbReservoirProfile {
 // ---------------------------------------------------------------------------
 
 pub fn isoniazid_reservoir() -> TbReservoirProfile {
-    // INH penetrates well extracellularly, moderate macrophage, poor caseum
-    TbReservoirProfile::new("isoniazid", 0.60, 0.40, 0.30, 0.40).unwrap()
+    // INH: hydrophilic → fu_caseum ≈ 1.0 (no lipid binding)
+    TbReservoirProfile::new("isoniazid", 0.60, 0.40, 0.30, 1.00, 0.40).unwrap()
 }
 
 pub fn rifampin_reservoir() -> TbReservoirProfile {
-    // RIF: moderate everywhere, very poor caseum (R=0.05)
-    TbReservoirProfile::new("rifampin", 0.20, 0.15, 0.05, 0.15).unwrap()
+    // RIF: fu_caseum = 0.10 (Sarathy 2016 — binds caseum lipoproteins)
+    // R_eff = 0.05 × 0.10 = 0.005 → K_res_caseum ≈ 0.995 × w (RIF fails in caseum)
+    TbReservoirProfile::new("rifampin", 0.20, 0.15, 0.05, 0.10, 0.15).unwrap()
 }
 
 pub fn pyrazinamide_reservoir() -> TbReservoirProfile {
-    // PZA: good caseum access (R=0.40), good macrophage (accumulates at low pH)
-    TbReservoirProfile::new("pyrazinamide", 0.70, 0.60, 0.40, 0.60).unwrap()
+    // PZA: hydrophilic → fu_caseum ≈ 1.0; good caseum diffusion
+    TbReservoirProfile::new("pyrazinamide", 0.70, 0.60, 0.40, 1.00, 0.60).unwrap()
 }
 
 pub fn ethambutol_reservoir() -> TbReservoirProfile {
-    // EMB: concentrates extracellularly, poor caseum
-    TbReservoirProfile::new("ethambutol", 1.50, 0.80, 0.30, 1.00).unwrap()
+    // EMB: fu_caseum ≈ 0.70 (moderate binding)
+    TbReservoirProfile::new("ethambutol", 1.50, 0.80, 0.30, 0.70, 1.00).unwrap()
 }
 
 pub fn moxifloxacin_reservoir() -> TbReservoirProfile {
-    // MXF: excellent tissue penetration, good caseum
-    TbReservoirProfile::new("moxifloxacin", 2.50, 2.00, 1.50, 2.00).unwrap()
+    // MXF: fu_caseum = 0.70 (Sarathy 2016)
+    TbReservoirProfile::new("moxifloxacin", 2.50, 2.00, 1.50, 0.70, 2.00).unwrap()
 }
 
 pub fn bedaquiline_reservoir() -> TbReservoirProfile {
-    // BDQ: accumulates in macrophage lipid bodies (R_macro=3.0 at steady state)
-    // NOTE: these are steady-state values (~week 8). Day-1 values are much lower.
-    TbReservoirProfile::new("bedaquiline", 4.00, 3.00, 2.00, 3.00).unwrap()
+    // BDQ: accumulates in macrophage lipid bodies (R_macro = 3.0 at steady state, ~week 8)
+    // CRITICAL — fu_caseum = 0.001 (Sarathy 2016, Table 3):
+    //   BDQ is >99.9% bound to caseum lipids — only 0.1% reaches free bacteria.
+    //   R_eff = 2.0 × 0.001 = 0.002 → K_res_caseum ≈ 0.998 × w (catastrophic barrier).
+    // v2.2 fix: previously used r_caseum: 2.00 without fu correction → K = 0 (WRONG).
+    TbReservoirProfile::new("bedaquiline", 4.00, 3.00, 2.00, 0.001, 3.00).unwrap()
 }
 
 pub fn linezolid_reservoir() -> TbReservoirProfile {
-    TbReservoirProfile::new("linezolid", 1.00, 0.80, 0.60, 0.80).unwrap()
+    // LZD: fu_caseum = 0.60 (Sarathy 2016)
+    TbReservoirProfile::new("linezolid", 1.00, 0.80, 0.60, 0.60, 0.80).unwrap()
 }
 
 // ---------------------------------------------------------------------------
@@ -162,13 +180,14 @@ mod tests {
     use super::*;
     use approx::assert_relative_eq;
 
-    // T4-1: K_reservoir computed correctly for each drug × reservoir component
+    // T4-1: K_reservoir formula with fu-corrected caseum component
+    // v2.2: k_res_caseum = (1 - R_total × fu_caseum) × w
     #[test]
     fn test_k_reservoir_formula() {
         let rif = rifampin_reservoir();
         let w = ReservoirWeights::noncavitary_sputum_positive();
-        // K_res_caseum = (1 - 0.05) * 0.50 = 0.475
-        assert_relative_eq!(rif.k_res_caseum(0.50), 0.475, epsilon = 1e-9);
+        // RIF: R_eff = 0.05 × 0.10 = 0.005 → K_res_caseum = (1 - 0.005) × 0.50 = 0.4975
+        assert_relative_eq!(rif.k_res_caseum(0.50), 0.4975, epsilon = 1e-9);
         let total = rif.k_reservoir(&w);
         assert!(total > 0.0 && total < 1.0);
     }
@@ -242,5 +261,29 @@ mod tests {
     fn test_invalid_reservoir_weights() {
         assert!(ReservoirWeights::new(0.3, 0.3, 0.3, 0.3).is_err()); // sum = 1.2
         assert!(ReservoirWeights::new(0.25, 0.25, 0.25, 0.25).is_ok()); // sum = 1.0
+    }
+
+    // T4-9: BDQ caseum barrier is catastrophic due to fu_caseum = 0.001
+    // This was Bug 3: previously r_caseum: 2.00 without fu correction gave K = 0
+    // (drug appeared to penetrate perfectly). Correct: K ≈ 0.998 × w (total barrier).
+    #[test]
+    fn test_bdq_caseum_barrier_catastrophic() {
+        let bdq = bedaquiline_reservoir();
+        // w_caseum = 0.35 (cavitary patient)
+        // R_eff = 2.0 × 0.001 = 0.002 → K = (1 - 0.002) × 0.35 = 0.3493
+        let k = bdq.k_res_caseum(0.35);
+        assert!(
+            k > 0.30,
+            "BDQ K_res_caseum = {k:.4} must be > 0.30; fu=0.001 means drug is bound in caseum"
+        );
+        assert_relative_eq!(k, (1.0 - 2.0 * 0.001) * 0.35, epsilon = 1e-9);
+    }
+
+    // T4-10: fu_caseum must be in (0, 1] — zero or negative rejected
+    #[test]
+    fn test_invalid_fu_caseum_rejected() {
+        assert!(TbReservoirProfile::new("test", 1.0, 1.0, 1.0, 0.0, 1.0).is_err()); // fu=0
+        assert!(TbReservoirProfile::new("test", 1.0, 1.0, 1.0, 1.1, 1.0).is_err()); // fu>1
+        assert!(TbReservoirProfile::new("test", 1.0, 1.0, 1.0, 0.001, 1.0).is_ok()); // BDQ-like
     }
 }

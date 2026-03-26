@@ -28,6 +28,8 @@ pub enum ComboError {
     EmptyRegimen,
     #[error("Drug {0}: K_pathway must be positive")]
     InvalidPathway(String),
+    #[error("Drug {0}: tau (AUC/MIC index) must be positive")]
+    InvalidTau(String),
     #[error("Synergy factor must be ≥ 1.0, got {0}")]
     InvalidSynergy(f64),
 }
@@ -38,15 +40,18 @@ pub struct DrugPathway {
     pub drug_name: String,
     /// Total curvature from ADMET + granuloma + phenotype + reservoir layers
     pub k_pathway: f64,
+    /// AUC/MIC-derived PK index for this drug (log10 scale, normalised to RIPE calibration).
+    /// Controls how much this drug contributes to tau_combo when present in the regimen.
+    /// Removing a high-tau drug reduces tau_combo more than removing a low-tau drug.
+    pub tau: f64,
 }
 
 impl DrugPathway {
-    pub fn new(drug_name: impl Into<String>, k_pathway: f64) -> Result<Self, ComboError> {
+    pub fn new(drug_name: impl Into<String>, k_pathway: f64, tau: f64) -> Result<Self, ComboError> {
         let name = drug_name.into();
-        if k_pathway <= 0.0 {
-            return Err(ComboError::InvalidPathway(name));
-        }
-        Ok(Self { drug_name: name, k_pathway })
+        if k_pathway <= 0.0 { return Err(ComboError::InvalidPathway(name)); }
+        if tau <= 0.0 { return Err(ComboError::InvalidTau(name)); }
+        Ok(Self { drug_name: name, k_pathway, tau })
     }
 }
 
@@ -56,19 +61,27 @@ pub struct TbComboEngine {
     pub drugs: Vec<DrugPathway>,
     /// Synergy multiplier ≥ 1.0 (1.0 = additive, >1 = synergistic)
     pub synergy: f64,
-    /// Tau = tau_combo (time constant of bacterial clearance, months)
-    pub tau_combo: f64,
+    // tau_combo removed — computed from per-drug tau values via tau_combo()
 }
 
 impl TbComboEngine {
     pub fn new(
         drugs: Vec<DrugPathway>,
         synergy: f64,
-        tau_combo: f64,
     ) -> Result<Self, ComboError> {
         if drugs.is_empty() { return Err(ComboError::EmptyRegimen); }
         if synergy < 1.0 { return Err(ComboError::InvalidSynergy(synergy)); }
-        Ok(Self { drugs, synergy, tau_combo })
+        Ok(Self { drugs, synergy })
+    }
+
+    /// tau_combo = synergy × Σ(drug.tau)
+    ///
+    /// v2.2 fix: was a single global field (6.00 for all regimens).
+    /// Now computed from per-drug AUC/MIC indices — removing a high-tau drug
+    /// (e.g. INH τ=1.97) reduces tau_combo more than removing a low-tau drug (EMB τ=0.46).
+    /// RIPE calibration: Σ τᵢ = 5.00, synergy=1.20 → tau_combo = 6.00 ✓
+    pub fn tau_combo(&self) -> f64 {
+        self.synergy * self.drugs.iter().map(|d| d.tau).sum::<f64>()
     }
 
     /// 1 / K_combo = synergy × Σ_i (1 / K_pathway_i)
@@ -81,9 +94,9 @@ impl TbComboEngine {
         1.0 / (self.synergy * sum_inv)
     }
 
-    /// C_lesion = tau_combo / K_combo
+    /// C_lesion = tau_combo() / K_combo
     pub fn c_lesion(&self) -> f64 {
-        self.tau_combo / self.k_combo()
+        self.tau_combo() / self.k_combo()
     }
 
     /// Estimated treatment duration in days
@@ -103,6 +116,16 @@ impl TbComboEngine {
         let sum_inv: f64 = remaining.iter().map(|d| 1.0 / d.k_pathway).sum();
         Some(1.0 / (self.synergy * sum_inv))
     }
+
+    /// Compute tau_combo with one drug removed by name
+    pub fn tau_combo_minus(&self, drug_name: &str) -> Option<f64> {
+        let remaining: Vec<&DrugPathway> = self.drugs.iter()
+            .filter(|d| d.drug_name != drug_name)
+            .collect();
+        if remaining.is_empty() { return None; }
+        let sum_tau: f64 = remaining.iter().map(|d| d.tau).sum();
+        Some(self.synergy * sum_tau)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -110,16 +133,17 @@ impl TbComboEngine {
 // ---------------------------------------------------------------------------
 
 /// RIPE standard (Rifampin + Isoniazid + Pyrazinamide + Ethambutol) for drug-sensitive TB.
+/// tau values: normalised log10(AUC/MIC) so Σ τ_RIPE = 5.00, synergy=1.20 → tau_combo = 6.00.
 /// K_pathway = total geometric barrier (ADMET + granuloma + phenotype + reservoir).
-/// Sensitive TB: K_pathway 3.5-5.0 range → K_combo ≈ 0.87 → C_lesion ≈ 6.9 → cure ✓
+/// Calibration: K_combo ≈ 0.870 → C_lesion ≈ 6.90 → cure ✓
 pub fn ripe_standard() -> TbComboEngine {
     use DrugPathway as DP;
     TbComboEngine::new(vec![
-        DP::new("rifampin", 4.00).unwrap(),
-        DP::new("isoniazid", 3.50).unwrap(),
-        DP::new("pyrazinamide", 4.50).unwrap(),
-        DP::new("ethambutol", 5.00).unwrap(),
-    ], 1.20, 6.00).unwrap()
+        DP::new("rifampin",     4.00, 1.66).unwrap(), // log10(350)×0.653
+        DP::new("isoniazid",   3.50, 1.97).unwrap(), // log10(1040)×0.653
+        DP::new("pyrazinamide",4.50, 0.91).unwrap(), // log10(25, acidic MIC)×0.653
+        DP::new("ethambutol",  5.00, 0.46).unwrap(), // log10(5)×0.653
+    ], 1.20).unwrap() // Σ τ = 5.00 × 1.20 = 6.00
 }
 
 /// MDR-TB with FQ resistance: no INH, no FQ.
@@ -128,10 +152,10 @@ pub fn ripe_standard() -> TbComboEngine {
 pub fn mdr_fq_resistant() -> TbComboEngine {
     use DrugPathway as DP;
     TbComboEngine::new(vec![
-        DP::new("bedaquiline", 7.00).unwrap(),
-        DP::new("linezolid", 8.00).unwrap(),
-        DP::new("clofazimine", 10.00).unwrap(),
-    ], 1.10, 6.00).unwrap()
+        DP::new("bedaquiline", 7.00, 1.76).unwrap(), // log10(500)×0.653
+        DP::new("linezolid",   8.00, 1.50).unwrap(), // log10(200)×0.653
+        DP::new("clofazimine",10.00, 1.96).unwrap(), // log10(1000)×0.653
+    ], 1.10).unwrap() // Σ τ = 5.22 × 1.10 = 5.74
 }
 
 /// BPaL: Bedaquiline + Pretomanid + Linezolid (ZeNix regimen for XDR-TB).
@@ -140,10 +164,10 @@ pub fn mdr_fq_resistant() -> TbComboEngine {
 pub fn bpal_regimen() -> TbComboEngine {
     use DrugPathway as DP;
     TbComboEngine::new(vec![
-        DP::new("bedaquiline", 4.00).unwrap(),
-        DP::new("pretomanid", 4.50).unwrap(),
-        DP::new("linezolid", 4.00).unwrap(),
-    ], 1.30, 6.00).unwrap()
+        DP::new("bedaquiline", 4.00, 1.76).unwrap(), // log10(500)×0.653
+        DP::new("pretomanid",  4.50, 1.45).unwrap(), // log10(167)×0.653
+        DP::new("linezolid",   4.00, 1.50).unwrap(), // log10(200)×0.653
+    ], 1.30).unwrap() // Σ τ = 4.71 × 1.30 = 6.12
 }
 
 /// Exported constants for public API
@@ -234,31 +258,35 @@ mod tests {
         assert!(d > 100.0 && d < 300.0, "RIPE duration {:.0} days out of range", d);
     }
 
-    // T5-8: Synergy factor > 1.0 REDUCES K_combo (better treatment outcome)
+    // T5-8: Synergy factor > 1.0 REDUCES K_combo AND INCREASES tau_combo
     // 1/K_combo = synergy × sum_inv → higher synergy → smaller K_combo → higher C_lesion
+    // tau_combo = synergy × Σ τᵢ → higher synergy → larger tau_combo → higher C_lesion
     #[test]
     fn test_synergy_reduces_k_combo() {
         let base = TbComboEngine::new(vec![
-            DrugPathway::new("rifampin", 2.0).unwrap(),
-            DrugPathway::new("isoniazid", 2.0).unwrap(),
-        ], 1.0, 6.0).unwrap();
+            DrugPathway::new("rifampin",  2.0, 1.0).unwrap(),
+            DrugPathway::new("isoniazid", 2.0, 1.0).unwrap(),
+        ], 1.0).unwrap();
         let synergistic = TbComboEngine::new(vec![
-            DrugPathway::new("rifampin", 2.0).unwrap(),
-            DrugPathway::new("isoniazid", 2.0).unwrap(),
-        ], 2.0, 6.0).unwrap();
+            DrugPathway::new("rifampin",  2.0, 1.0).unwrap(),
+            DrugPathway::new("isoniazid", 2.0, 1.0).unwrap(),
+        ], 2.0).unwrap();
         assert!(synergistic.k_combo() < base.k_combo(),
                 "synergy should reduce K_combo: got {:.4} vs {:.4}",
                 synergistic.k_combo(), base.k_combo());
+        assert!(synergistic.tau_combo() > base.tau_combo(),
+                "synergy should increase tau_combo: {:.2} vs {:.2}",
+                synergistic.tau_combo(), base.tau_combo());
     }
 
     // T5-9: Parallel resistor formula satisfied (1/K = sum(1/K_i)/synergy)
     #[test]
     fn test_parallel_formula_identity() {
         let drugs = vec![
-            DrugPathway::new("drug_a", 4.0).unwrap(),
-            DrugPathway::new("drug_b", 4.0).unwrap(),
+            DrugPathway::new("drug_a", 4.0, 1.0).unwrap(),
+            DrugPathway::new("drug_b", 4.0, 1.0).unwrap(),
         ];
-        let engine = TbComboEngine::new(drugs, 1.0, 4.0).unwrap();
+        let engine = TbComboEngine::new(drugs, 1.0).unwrap();
         // 1/K = (1/4 + 1/4)/1 = 0.5 → K = 2.0
         assert_relative_eq!(engine.k_combo(), 2.0, epsilon = 1e-9);
     }
@@ -268,22 +296,60 @@ mod tests {
     #[test]
     fn test_single_drug_is_own_pathway() {
         let engine = TbComboEngine::new(vec![
-            DrugPathway::new("rifampin", 3.0).unwrap(),
-        ], 1.5, 6.0).unwrap();
+            DrugPathway::new("rifampin", 3.0, 1.0).unwrap(),
+        ], 1.5).unwrap();
         assert_relative_eq!(engine.k_combo(), 3.0 / 1.5, epsilon = 1e-9);
     }
 
     // T5-11: Empty regimen returns error
     #[test]
     fn test_empty_regimen_error() {
-        assert!(TbComboEngine::new(vec![], 1.0, 6.0).is_err());
+        assert!(TbComboEngine::new(vec![], 1.0).is_err());
     }
 
     // T5-12: Invalid synergy (< 1.0) returns error
     #[test]
     fn test_invalid_synergy_error() {
         assert!(TbComboEngine::new(vec![
-            DrugPathway::new("rifampin", 2.0).unwrap()
-        ], 0.5, 6.0).is_err());
+            DrugPathway::new("rifampin", 2.0, 1.0).unwrap()
+        ], 0.5).is_err());
+    }
+
+    // T5-13: RIPE tau_combo computes to exactly 6.0 (calibration check)
+    // Σ τ = 1.66+1.97+0.91+0.46 = 5.00; synergy=1.20 → 6.00
+    #[test]
+    fn test_ripe_tau_combo_equals_six() {
+        let engine = ripe_standard();
+        use approx::assert_relative_eq;
+        assert_relative_eq!(engine.tau_combo(), 6.00, epsilon = 1e-6);
+    }
+
+    // T5-14: Per-drug tau affects tau_combo when drugs are removed
+    // Removing INH (τ=1.97) reduces tau_combo more than removing EMB (τ=0.46)
+    #[test]
+    fn test_removing_high_tau_drug_reduces_tau_combo_more() {
+        let engine = ripe_standard();
+        let tau_full = engine.tau_combo();
+        let tau_minus_inh = engine.tau_combo_minus("isoniazid").unwrap();
+        let tau_minus_emb = engine.tau_combo_minus("ethambutol").unwrap();
+        assert!(tau_full - tau_minus_inh > tau_full - tau_minus_emb,
+            "INH (τ=1.97) should reduce tau_combo more than EMB (τ=0.46)");
+    }
+
+    // T5-15: tau_combo_minus returns None for last remaining drug
+    #[test]
+    fn test_tau_combo_minus_single_drug_none() {
+        let engine = TbComboEngine::new(vec![
+            DrugPathway::new("rifampin", 4.0, 1.66).unwrap(),
+        ], 1.0).unwrap();
+        assert!(engine.tau_combo_minus("rifampin").is_none());
+    }
+
+    // T5-16: InvalidTau error when tau <= 0
+    #[test]
+    fn test_invalid_tau_error() {
+        assert!(DrugPathway::new("rifampin", 4.0, 0.0).is_err());
+        assert!(DrugPathway::new("rifampin", 4.0, -1.0).is_err());
+        assert!(DrugPathway::new("rifampin", 4.0, 0.01).is_ok());
     }
 }

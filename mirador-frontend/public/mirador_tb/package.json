@@ -1,0 +1,16 @@
+{
+  "name": "mirador-tb-wasm",
+  "type": "module",
+  "description": "WASM bridge — exposes TB math crates to the frontend",
+  "version": "0.1.0",
+  "files": [
+    "mirador_tb_wasm_bg.wasm",
+    "mirador_tb_wasm.js",
+    "mirador_tb_wasm.d.ts"
+  ],
+  "main": "mirador_tb_wasm.js",
+  "types": "mirador_tb_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

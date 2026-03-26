@@ -1,0 +1,14 @@
+[package]
+name = "mirador-hiv-wasm"
+version = "0.1.0"
+edition = "2021"
+description = "WASM bridge — exposes HIV reservoir math to the frontend"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+mirador-hiv-reservoir = { path = "../mirador-hiv-reservoir" }

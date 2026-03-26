@@ -36,6 +36,11 @@ credentials.json
 # Generated report outputs (reproducible from scripts)
 MIRADOR_Report.pdf
 MIRADOR_Report.json
+MIRADOR_HIV_Report.pdf
+MIRADOR_HIV_Report.json
+
+# Debug / temp scripts
+mirador-frontend/_check*
 
 # OS
 .DS_Store
