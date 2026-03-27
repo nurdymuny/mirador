@@ -107,6 +107,8 @@ export function buildUniverse(drugs, thresholds, regimens) {
       mic: drug.mic,
       r_penetration: drug.r_penetration,
       k_admet: drug.k_admet,
+      k_barrier: drug.k_barrier || 0,
+      k_biofilm: drug.k_biofilm || 0,
     });
   }
 
@@ -190,6 +192,131 @@ export function combineDrugs(universe, drugNames, tissue, synergyFactor = 1.0) {
   };
 }
 
+// ── DECOMPOSE — full impedance breakdown ───────────────────────────
+
+/**
+ * DECOMPOSE: returns the full impedance stack for a single drug at a tissue.
+ * Used by AI agents to understand WHY a drug fails or succeeds at a site.
+ */
+export function decompose(universe, { drug, tissue }) {
+  const record = universe.find(r =>
+    r.drug.toLowerCase() === drug.toLowerCase() &&
+    r.tissue.toLowerCase() === tissue.toLowerCase()
+  );
+  if (!record) return null;
+
+  const k_admet = record.k_admet || 0;
+  const k_barrier = record.k_barrier || 0;
+  const k_biofilm = record.k_biofilm || 0;
+  const K_total = +(k_admet + k_barrier + k_biofilm).toFixed(4);
+
+  // Find dominant barrier
+  const barriers = { k_admet, k_barrier, k_biofilm };
+  const dominant_barrier = Object.entries(barriers).sort((a, b) => b[1] - a[1])[0][0];
+
+  const threshold = 5.0;
+
+  return {
+    drug: record.drug,
+    tissue: record.tissue,
+    tau: record.tau,
+    C: record.C,
+    decomposition: { k_admet, k_barrier, k_biofilm, K_total },
+    dominant_barrier,
+    geometric_verdict: record.C >= threshold ? 'meets_threshold' : 'fails_threshold',
+    threshold,
+    raw: {
+      auc_24: record.auc_24,
+      mic: record.mic,
+      r_penetration: record.r_penetration,
+    },
+  };
+}
+
+// ── COMPARE — head-to-head drug comparison ─────────────────────────
+
+/**
+ * compareDrugs: rank multiple drugs at the same tissue by coherence.
+ * Returns a comparison object with winner, advantage, and per-barrier wins.
+ */
+export function compareDrugs(universe, drugNames, tissue) {
+  if (!drugNames || drugNames.length === 0) return null;
+
+  const matched = drugNames.map(name =>
+    universe.find(r =>
+      r.drug.toLowerCase() === name.toLowerCase() &&
+      r.tissue.toLowerCase() === tissue.toLowerCase()
+    )
+  ).filter(Boolean);
+
+  if (matched.length === 0) return null;
+
+  // Build entries with full impedance info
+  const entries = matched.map(r => ({
+    drug: r.drug,
+    C: r.C,
+    tau: r.tau,
+    k_admet: r.k_admet || 0,
+    k_barrier: r.k_barrier || 0,
+    k_biofilm: r.k_biofilm || 0,
+  }));
+
+  // Sort by C descending, assign rank
+  entries.sort((a, b) => b.C - a.C);
+  entries.forEach((e, i) => { e.rank = i + 1; });
+
+  const winner = entries[0].drug;
+
+  // Advantage description
+  const advantage = entries.length >= 2
+    ? `${(entries[0].C / entries[1].C).toFixed(2)}× higher coherence`
+    : 'single drug';
+
+  // Per-barrier wins: for each barrier, which drug leads
+  const barrierKeys = ['tau', 'k_admet', 'k_barrier', 'k_biofilm'];
+  const per_barrier_wins = {};
+  for (const key of barrierKeys) {
+    // For tau, higher is better; for k_* lower impedance is better
+    const best = key === 'tau'
+      ? entries.reduce((a, b) => a.tau >= b.tau ? a : b)
+      : entries.reduce((a, b) => a[key] <= b[key] ? a : b);
+    per_barrier_wins[key] = best.drug;
+  }
+
+  return { drugs: entries, winner, advantage, per_barrier_wins };
+}
+
+// ── BATCH — multi-query execution ──────────────────────────────────
+
+/**
+ * batchGQL: execute an array of {id, query} objects against an executor function.
+ * Supports fail_strategy: 'continue' (default) or 'stop'.
+ */
+export function batchGQL(queries, executor, failStrategy = 'continue') {
+  if (queries.length > 20) {
+    return { status: 'error', message: 'Batch limited to 20 queries' };
+  }
+
+  const start = Date.now();
+  const results = [];
+
+  for (const q of queries) {
+    const result = executor(q.query);
+    if (result && result.error) {
+      results.push({ id: q.id, status: 'error', error: result.error });
+      if (failStrategy === 'stop') break;
+    } else {
+      results.push({ id: q.id, status: 'ok', data: result });
+    }
+  }
+
+  return {
+    status: 'ok',
+    results,
+    total_time_ms: Date.now() - start,
+  };
+}
+
 // ── Extended demo GQL parser ───────────────────────────────────────
 
 /**
@@ -244,6 +371,42 @@ export function universeGQL(query, universe) {
     const result = combineDrugs(filtered.length > 0 ? filtered : universe, [drug1, drug2], tissue, synergy);
     if (!result) return { error: `Could not find drugs '${drug1}' and '${drug2}' at tissue '${tissue}'` };
     return { count: 1, rows: [result], meta: { source: 'mirador_universe', mode: 'combination', synergy } };
+  }
+
+  // DECOMPOSE mirador_universe ON drug = 'X' AND tissue = 'Y'
+  if ((m = q.match(/^DECOMPOSE\s+mirador_universe\s+ON\s+(.+)$/i))) {
+    const filterStr = m[1];
+    const filters = {};
+    const conditions = filterStr.split(/\s+AND\s+/i);
+    for (const cond of conditions) {
+      const cm = cond.trim().match(/^(\w+)\s*=\s*'([^']+)'$/);
+      if (cm) filters[cm[1]] = cm[2];
+    }
+    const drug = filters.drug;
+    const tissue = filters.tissue;
+    if (!drug || !tissue) return { error: 'DECOMPOSE requires drug and tissue' };
+    const result = decompose(universe, { drug, tissue });
+    if (!result) return { error: `Drug '${drug}' not found at tissue '${tissue}'` };
+    return result;
+  }
+
+  // COMPARE ['drug1', 'drug2'] ON mirador_universe WHERE tissue = 'Y'
+  if ((m = q.match(/^COMPARE\s+\[([^\]]+)\]\s+ON\s+mirador_universe\s+WHERE\s+(.+)$/i))) {
+    const drugListStr = m[1];
+    const filterStr = m[2];
+    // Parse drug names from ['VAN', 'RIF'] format
+    const drugNames = drugListStr.match(/'([^']+)'/g)?.map(s => s.replace(/'/g, '')) || [];
+    // Parse tissue from WHERE clause
+    const filters = {};
+    const conditions = filterStr.split(/\s+AND\s+/i);
+    for (const cond of conditions) {
+      const cm = cond.trim().match(/^(\w+)\s*=\s*'([^']+)'$/);
+      if (cm) filters[cm[1]] = cm[2];
+    }
+    const tissue = filters.tissue || '';
+    const result = compareDrugs(universe, drugNames, tissue);
+    if (!result) return { error: `No matching drugs found at tissue '${tissue}'` };
+    return result;
   }
 
   return null; // Not a universe query — fall through to base engine

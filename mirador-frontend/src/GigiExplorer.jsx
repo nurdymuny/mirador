@@ -119,6 +119,19 @@ function demoGQL(q) {
     const rows = m[2] ? t.slice(0, parseInt(m[2])) : t;
     return {count:rows.length,rows};
   }
+  // COVER <b> ON <f1> = '<v1>' AND <f2> = '<v2>' ... [FIRST n]
+  if ((m = s.match(/^COVER\s+(\w+)\s+ON\s+(.+?)(?:\s+FIRST\s+(\d+))?$/i)) && m[2].toUpperCase().includes('AND')) {
+    const t = DEMO_DB[m[1]]; if (!t) return _noBundleMsg(m[1]);
+    const conds = m[2].split(/\s+AND\s+/i);
+    const filters = [];
+    for (const c of conds) {
+      const cm = c.trim().match(/^(\w+)\s*=\s*'([^']+)'$/);
+      if (cm) filters.push([cm[1], cm[2]]);
+    }
+    let rows = t.filter(r => filters.every(([k,v]) => String(r[k]).toLowerCase() === v.toLowerCase()));
+    if (m[3]) rows = rows.slice(0, parseInt(m[3]));
+    return {count:rows.length,rows};
+  }
   // COVER <b> ON <f> = '<v>' [FIRST n]
   if ((m = s.match(/^COVER\s+(\w+)\s+ON\s+(\w+)\s*=\s*'([^']+)'(?:\s+FIRST\s+(\d+))?$/i))) {
     const t = DEMO_DB[m[1]]; if (!t) return _noBundleMsg(m[1]);
@@ -190,7 +203,7 @@ function demoGQL(q) {
   const uResult = universeGQL(s, DEMO_DB.mirador_universe);
   if (uResult) return uResult;
 
-  return {error:`Could not parse: "${s}"\n\nDemo mode supports:\n  SHOW BUNDLES\n  DESCRIBE <bundle>\n  COVER <bundle> ALL [FIRST n]\n  COVER <bundle> ON <field> = '<value>'\n  COVER <bundle> WHERE <field> > <num>\n  COVER <bundle> DISTINCT <field>\n  SECTION <bundle> AT key=val\n  CURVATURE <bundle>\n  SPECTRAL <bundle>\n  CONSISTENCY <bundle>\n  INTEGRATE <bundle> OVER <f> MEASURE avg(col), count(*)\n  COVER ON mirador_universe WHERE ... EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE\n  COVER ON mirador_universe WHERE ... COMBINE 'A','B' MODE COUPLED SYNERGY n EVALUATE coherence WITH CONFIDENCE, PROVENANCE`};
+  return {error:`Could not parse: "${s}"\n\nDemo mode supports:\n  SHOW BUNDLES\n  DESCRIBE <bundle>\n  COVER <bundle> ALL [FIRST n]\n  COVER <bundle> ON <field> = '<value>' [AND ...]\n  COVER <bundle> WHERE <field> > <num>\n  COVER <bundle> DISTINCT <field>\n  SECTION <bundle> AT key=val\n  CURVATURE <bundle>\n  SPECTRAL <bundle>\n  CONSISTENCY <bundle>\n  INTEGRATE <bundle> OVER <f> MEASURE avg(col), count(*)\n  COVER ON mirador_universe WHERE ... EVALUATE coherence ...\n  COMBINE ... MODE COUPLED SYNERGY n ...\n  DECOMPOSE mirador_universe ON drug = 'X' AND tissue = 'Y'\n  COMPARE ['A','B'] ON mirador_universe WHERE tissue = 'Y'`};
 }
 
 // ── Preset queries ─────────────────────────────────────────────────

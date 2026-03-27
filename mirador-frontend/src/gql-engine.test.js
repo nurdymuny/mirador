@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   tau, kBarrier, confidence, coherence, combinePotency,
   buildUniverse, coverEvaluate, combineDrugs, universeGQL,
+  decompose, compareDrugs, batchGQL,
 } from './gql-engine';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -287,5 +288,297 @@ describe('universeGQL()', () => {
     for (let i = 1; i < result.rows.length; i++) {
       expect(result.rows[i - 1].C).toBeGreaterThanOrEqual(result.rows[i].C);
     }
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// §7  DECOMPOSE — impedance breakdown
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('decompose()', () => {
+  const universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+
+  it('returns full impedance stack for a known drug+tissue', () => {
+    const result = decompose(universe, { drug: 'VAN', tissue: 'bone' });
+    expect(result).not.toBeNull();
+    expect(result.drug).toBe('VAN');
+    expect(result.tissue).toBe('bone');
+    expect(result.tau).toBeCloseTo(2.602, 2);
+    expect(result.C).toBeCloseTo(0.2602, 2);
+  });
+
+  it('includes decomposition with k_admet, k_barrier, k_biofilm', () => {
+    const result = decompose(universe, { drug: 'VAN', tissue: 'bone' });
+    expect(result.decomposition).toHaveProperty('k_admet');
+    expect(result.decomposition).toHaveProperty('k_barrier');
+    expect(result.decomposition).toHaveProperty('k_biofilm');
+    expect(result.decomposition).toHaveProperty('K_total');
+    expect(result.decomposition.K_total).toBeCloseTo(
+      result.decomposition.k_admet + result.decomposition.k_barrier + result.decomposition.k_biofilm, 2
+    );
+  });
+
+  it('identifies the dominant barrier', () => {
+    const result = decompose(universe, { drug: 'VAN', tissue: 'bone' });
+    expect(result.dominant_barrier).toBe('k_biofilm'); // VAN has k_biofilm=2.709
+  });
+
+  it('includes geometric_verdict (not clinical verdict)', () => {
+    const result = decompose(universe, { drug: 'VAN', tissue: 'bone' });
+    expect(result.geometric_verdict).toBe('fails_threshold');
+  });
+
+  it('returns null for unknown drug', () => {
+    const result = decompose(universe, { drug: 'FAKE', tissue: 'bone' });
+    expect(result).toBeNull();
+  });
+
+  it('returns null for unknown tissue', () => {
+    const result = decompose(universe, { drug: 'VAN', tissue: 'moon' });
+    expect(result).toBeNull();
+  });
+
+  it('includes raw PK values', () => {
+    const result = decompose(universe, { drug: 'VAN', tissue: 'bone' });
+    expect(result.raw).toHaveProperty('auc_24');
+    expect(result.raw).toHaveProperty('mic');
+    expect(result.raw).toHaveProperty('r_penetration');
+  });
+
+  it('threshold is 5.0', () => {
+    const result = decompose(universe, { drug: 'VAN', tissue: 'bone' });
+    expect(result.threshold).toBe(5.0);
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// §8  COMPARE — head-to-head drug comparison
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('compareDrugs()', () => {
+  const universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+
+  it('compares multiple drugs at same tissue', () => {
+    const result = compareDrugs(universe, ['VAN', 'RIF', 'CAR'], 'bone');
+    expect(result).not.toBeNull();
+    expect(result.drugs).toHaveLength(3);
+  });
+
+  it('ranks by coherence descending', () => {
+    const result = compareDrugs(universe, ['VAN', 'RIF', 'CAR'], 'bone');
+    expect(result.drugs[0].rank).toBe(1);
+    expect(result.drugs[1].rank).toBe(2);
+    expect(result.drugs[2].rank).toBe(3);
+    for (let i = 1; i < result.drugs.length; i++) {
+      expect(result.drugs[i - 1].C).toBeGreaterThanOrEqual(result.drugs[i].C);
+    }
+  });
+
+  it('identifies the winner', () => {
+    const result = compareDrugs(universe, ['VAN', 'RIF'], 'bone');
+    expect(result.winner).toBe('RIF'); // RIF has higher coherence
+  });
+
+  it('computes advantage ratio', () => {
+    const result = compareDrugs(universe, ['VAN', 'RIF'], 'bone');
+    expect(result.advantage).toMatch(/higher coherence/);
+  });
+
+  it('reports per-barrier wins', () => {
+    const result = compareDrugs(universe, ['VAN', 'RIF'], 'bone');
+    expect(result.per_barrier_wins).toHaveProperty('tau');
+    expect(result.per_barrier_wins).toHaveProperty('k_admet');
+    expect(result.per_barrier_wins).toHaveProperty('k_barrier');
+    expect(result.per_barrier_wins).toHaveProperty('k_biofilm');
+  });
+
+  it('returns null for empty drug list', () => {
+    const result = compareDrugs(universe, [], 'bone');
+    expect(result).toBeNull();
+  });
+
+  it('skips drugs not found at tissue', () => {
+    const result = compareDrugs(universe, ['VAN', 'FAKE'], 'bone');
+    expect(result.drugs).toHaveLength(1);
+    expect(result.drugs[0].drug).toBe('VAN');
+  });
+
+  it('returns null when zero drugs match', () => {
+    const result = compareDrugs(universe, ['FAKE1', 'FAKE2'], 'bone');
+    expect(result).toBeNull();
+  });
+
+  it('each drug entry has C, tau, k_admet, k_barrier, k_biofilm, rank', () => {
+    const result = compareDrugs(universe, ['VAN', 'RIF'], 'bone');
+    const fields = ['drug', 'C', 'tau', 'k_admet', 'k_barrier', 'k_biofilm', 'rank'];
+    for (const d of result.drugs) {
+      for (const f of fields) {
+        expect(d).toHaveProperty(f);
+      }
+    }
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// §9  BATCH — multi-query execution
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('batchGQL()', () => {
+  it('executes multiple queries and returns results array', () => {
+    const queries = [
+      { id: 'q1', query: 'SHOW BUNDLES;' },
+      { id: 'q2', query: 'DESCRIBE mirador_drugs;' },
+    ];
+    const result = batchGQL(queries, q => {
+      if (q.toUpperCase().includes('SHOW BUNDLES')) return { bundles: [{ name: 'test' }] };
+      if (q.toUpperCase().includes('DESCRIBE')) return { record_count: 5 };
+      return { error: 'unknown' };
+    });
+    expect(result.results).toHaveLength(2);
+    expect(result.results[0].id).toBe('q1');
+    expect(result.results[0].status).toBe('ok');
+    expect(result.results[1].id).toBe('q2');
+    expect(result.results[1].status).toBe('ok');
+  });
+
+  it('reports per-query errors with continue strategy', () => {
+    const queries = [
+      { id: 'q1', query: 'SHOW BUNDLES;' },
+      { id: 'q2', query: 'INVALID QUERY;' },
+      { id: 'q3', query: 'DESCRIBE mirador_drugs;' },
+    ];
+    const result = batchGQL(queries, q => {
+      if (q.toUpperCase().includes('SHOW BUNDLES')) return { bundles: [] };
+      if (q.toUpperCase().includes('DESCRIBE')) return { record_count: 5 };
+      return { error: 'parse error' };
+    }, 'continue');
+    expect(result.results).toHaveLength(3);
+    expect(result.results[0].status).toBe('ok');
+    expect(result.results[1].status).toBe('error');
+    expect(result.results[2].status).toBe('ok');
+  });
+
+  it('stops on first error with stop strategy', () => {
+    const queries = [
+      { id: 'q1', query: 'SHOW BUNDLES;' },
+      { id: 'q2', query: 'INVALID;' },
+      { id: 'q3', query: 'DESCRIBE mirador_drugs;' },
+    ];
+    const result = batchGQL(queries, q => {
+      if (q.toUpperCase().includes('SHOW BUNDLES')) return { bundles: [] };
+      return { error: 'fail' };
+    }, 'stop');
+    expect(result.results).toHaveLength(2);
+    expect(result.results[0].status).toBe('ok');
+    expect(result.results[1].status).toBe('error');
+    // q3 never executed
+  });
+
+  it('returns total_time_ms', () => {
+    const result = batchGQL([{ id: 'q1', query: 'SHOW BUNDLES;' }], () => ({ bundles: [] }));
+    expect(result).toHaveProperty('total_time_ms');
+    expect(typeof result.total_time_ms).toBe('number');
+  });
+
+  it('enforces max 20 queries', () => {
+    const queries = Array.from({ length: 21 }, (_, i) => ({ id: `q${i}`, query: 'SHOW BUNDLES;' }));
+    const result = batchGQL(queries, () => ({ bundles: [] }));
+    expect(result.status).toBe('error');
+    expect(result.message).toMatch(/20/);
+  });
+
+  it('handles empty batch', () => {
+    const result = batchGQL([], () => ({}));
+    expect(result.results).toHaveLength(0);
+    expect(result.status).toBe('ok');
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// §10  Multi-condition AND parser (edge cases)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('coverEvaluate() edge cases', () => {
+  // Universe with mixed diseases & tissues
+  const MULTI_DRUGS = [
+    { compound_id: 100, drug_name: 'DTG', drug_class: 'INSTI', disease: 'hiv', compartment: 'cns',
+      auc_24: 126400, mic: 0.51, tau: 5.3945, k_admet: 0.05, r_penetration: 0.01, k_barrier: 2.0, k_biofilm: 0 },
+    { compound_id: 101, drug_name: 'DTG', drug_class: 'INSTI', disease: 'hiv', compartment: 'galt',
+      auc_24: 126400, mic: 0.51, tau: 5.3945, k_admet: 0.05, r_penetration: 0.35, k_barrier: 0.4559, k_biofilm: 0 },
+    { compound_id: 300, drug_name: 'VAN', drug_class: 'antibiotic', disease: 'mrsa', compartment: 'bone',
+      auc_24: 400, mic: 1.0, tau: 2.602, k_admet: 0.50, r_penetration: 0.20, k_barrier: 0.699, k_biofilm: 2.709 },
+    { compound_id: 301, drug_name: 'VAN', drug_class: 'antibiotic', disease: 'mrsa', compartment: 'planktonic',
+      auc_24: 400, mic: 1.0, tau: 2.602, k_admet: 0.50, r_penetration: 1.0, k_barrier: 0, k_biofilm: 2.709 },
+  ];
+  const universe = buildUniverse(MULTI_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+
+  it('filters by disease AND compartment correctly', () => {
+    const results = coverEvaluate(universe, { disease: 'hiv', tissue: 'cns' });
+    expect(results).toHaveLength(1);
+    expect(results[0].drug).toBe('DTG');
+  });
+
+  it('filters by disease only returns multiple compartments', () => {
+    const results = coverEvaluate(universe, { disease: 'hiv' });
+    expect(results).toHaveLength(2);
+  });
+
+  it('empty filter returns all records', () => {
+    const results = coverEvaluate(universe, {});
+    expect(results).toHaveLength(4);
+  });
+
+  it('case-insensitive filter matching', () => {
+    const results = coverEvaluate(universe, { disease: 'HIV' });
+    expect(results).toHaveLength(2);
+  });
+
+  it('ASC ranking reverses order', () => {
+    const results = coverEvaluate(universe, { disease: 'hiv' }, { rankDir: 'ASC' });
+    expect(results[0].C).toBeLessThanOrEqual(results[1].C);
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// §11  GQL parser — DECOMPOSE, COMPARE via text
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('universeGQL() — new verbs', () => {
+  const universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+
+  it('parses DECOMPOSE query', () => {
+    const q = "DECOMPOSE mirador_universe ON drug = 'VAN' AND tissue = 'bone';";
+    const result = universeGQL(q, universe);
+    expect(result).not.toBeNull();
+    expect(result.drug).toBe('VAN');
+    expect(result.decomposition).toHaveProperty('k_admet');
+    expect(result.dominant_barrier).toBeTruthy();
+  });
+
+  it('DECOMPOSE returns error for unknown drug', () => {
+    const q = "DECOMPOSE mirador_universe ON drug = 'NOPE' AND tissue = 'bone';";
+    const result = universeGQL(q, universe);
+    expect(result).toHaveProperty('error');
+  });
+
+  it('parses COMPARE query', () => {
+    const q = "COMPARE ['VAN', 'RIF'] ON mirador_universe WHERE tissue = 'bone';";
+    const result = universeGQL(q, universe);
+    expect(result).not.toBeNull();
+    expect(result.drugs).toHaveLength(2);
+    expect(result.winner).toBeTruthy();
+  });
+
+  it('COMPARE with single drug still works', () => {
+    const q = "COMPARE ['VAN'] ON mirador_universe WHERE tissue = 'bone';";
+    const result = universeGQL(q, universe);
+    expect(result).not.toBeNull();
+    expect(result.drugs).toHaveLength(1);
+  });
+
+  it('COMPARE returns error when zero drugs match', () => {
+    const q = "COMPARE ['NOPE'] ON mirador_universe WHERE tissue = 'bone';";
+    const result = universeGQL(q, universe);
+    expect(result).toHaveProperty('error');
   });
 });
