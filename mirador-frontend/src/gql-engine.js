@@ -510,13 +510,13 @@ function classifyIntent(q) {
     return 'predict_unmeasured';
   if (/\bvs\.?\b|\bversus\b|\bcompare\b|\bbetter\s+than\b/.test(l))
     return 'comparison';
-  if (/\bcombination\b|\bcombo\b|\bplus\b|\bcombine\b|\badd(ing)?\s+\w/.test(l))
+  if (/\bcombination\b|\bcombo\b|\bplus\b|\bcombine\b|\btogether\b|\badd(ing)?\s+\w/.test(l))
     return 'combination_query';
   if (/\bbest\b|\brank\b|\bwhich\s+drug|\btop\b|\bmost\s+(effective|potent)/.test(l) || /what\s+(kills|works|treats|reaches|penetrates)/.test(l))
     return 'drug_ranking';
   if (/\bcan\s+\w+\s+(reach|treat|work|penetrate)\b/.test(l) || /\bdoes\s+\w+\s+work/.test(l) || /\bhow\s+(well|much|effective)/.test(l))
     return 'single_drug_check';
-  if (/\breliable\b|\bstudies\s+agree\b|\bconsistency\b|\bconfidence\b|\bagree\b/.test(l))
+  if (/\breliable\b|\bstudies\s+agree\b|\bconsistency\b|\bconfidence\b|\bagree\b|\bdata\s+quality\b/.test(l))
     return 'data_quality';
   if (/\bcure\b|\bcurable\b|\beradicate\b/.test(l))
     return 'cure_feasibility';

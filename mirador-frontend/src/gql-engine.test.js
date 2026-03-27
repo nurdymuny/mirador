@@ -562,6 +562,19 @@ describe('translateNL() – Stage 1-3 (no execution)', () => {
     expect(r.generated_gql).toMatch(/COMBINE.*VAN.*RIF/);
   });
 
+  it('classifies "together" as combination_query', () => {
+    const r = translateNL('can linezolid and rifampin work together on MRSA');
+    expect(r.status).toBe('ok');
+    expect(r.intent).toBe('combination_query');
+    expect(r.generated_gql).toMatch(/COMBINE.*LZD.*RIF/);
+  });
+
+  it('classifies "data quality" as data_quality intent', () => {
+    const r = translateNL('what is data quality for tedizolid on MRSA');
+    expect(r.status).toBe('ok');
+    expect(r.intent).toBe('data_quality');
+  });
+
   it('extracts multi-word tissue phrases', () => {
     const r = translateNL('Can DTG cross the blood-brain barrier for HIV?');
     expect(r.status).toBe('ok');
