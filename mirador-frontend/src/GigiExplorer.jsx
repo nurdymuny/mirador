@@ -207,14 +207,14 @@ const PRESETS_CLINICAL = [
   { label: '📈 High τ drugs',        gql: 'COVER mirador_drugs ON tau > 4;' },
 ];
 const PRESETS_CHEMBL = [
-  { label: '📋 Describe compounds',  gql: 'DESCRIBE chembl_compounds;' },
-  { label: '💎 Approved drugs',      gql: 'COVER chembl_compounds ON max_phase = 4 FIRST 50;' },
-  { label: '🎯 Protein targets',     gql: "COVER chembl_targets ON target_type = 'SINGLE PROTEIN' FIRST 50;" },
-  { label: '🔬 Human targets',       gql: "COVER chembl_drug_target ON organism = 'Homo sapiens' FIRST 50;" },
-  { label: '⚗️ Potent hits',         gql: "COVER chembl_activities ON potency_class = 'potent' FIRST 50;" },
-  { label: '🧪 Drug-target fibers',  gql: 'COVER chembl_drug_target ALL FIRST 50;' },
-  { label: '📐 τ by potency',        gql: 'INTEGRATE chembl_activities OVER potency_class MEASURE avg(tau), count(*);' },
-  { label: '📊 Curvature κ(acts)',   gql: 'CURVATURE chembl_activities;' },
+  { label: '📋 Describe activities',  gql: 'DESCRIBE chembl_activities;' },
+  { label: '⚗️ Potent hits',          gql: "COVER chembl_activities ON potency_class = 'potent' FIRST 50;" },
+  { label: '📊 EC50 measurements',    gql: "COVER chembl_activities ON standard_type = 'EC50' FIRST 50;" },
+  { label: '🔬 Human targets',        gql: "COVER chembl_drug_target ON organism = 'Homo sapiens' FIRST 50;" },
+  { label: '🧪 Drug-target fibers',   gql: 'COVER chembl_drug_target ALL FIRST 50;' },
+  { label: '📋 Describe drug-target',  gql: 'DESCRIBE chembl_drug_target;' },
+  { label: '📐 τ by potency',         gql: 'INTEGRATE chembl_activities OVER potency_class MEASURE avg(tau), count(*);' },
+  { label: '📊 Curvature κ(acts)',    gql: 'CURVATURE chembl_activities;' },
 ];
 const PRESETS_UNIVERSE = [
   { label: '🌐 All universe records', gql: 'COVER mirador_universe ALL FIRST 20;' },
@@ -478,7 +478,7 @@ export default function GigiExplorer() {
 
           <div style={{ fontSize: 9, color: demoMode ? '#5a4f8a' : '#a78bfa', letterSpacing: 2, marginTop: 16, marginBottom: 6, fontWeight: 700 }}>CHEMBL BIOACTIVITY {demoMode && <span style={{ fontSize: 7, color: '#475569' }}>🔒 LIVE</span>}</div>
           <div style={{ fontSize: 8, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
-            2.3M+ bioactivity records from ChEMBL v36 — compounds, targets, assays & drug-target fibers
+            4.9M activities + 690K drug-target fibers from ChEMBL v36
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, opacity: demoMode ? 0.45 : 1 }}>
             {PRESETS_CHEMBL.map((p, i) => (
