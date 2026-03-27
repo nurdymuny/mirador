@@ -419,6 +419,15 @@ function ResultTable({ data }) {
       return <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
         style={{ color: '#22d3ee', textDecoration: 'underline', textUnderlineOffset: 2 }}>{fmt(val)}</a>;
     }
+    if (col === 'drug_name' || col === 'drugs') {
+      const names = String(val).split(',').map(s => s.trim()).filter(Boolean);
+      return names.map((n, i) => {
+        const generic = DRUG_NAMES[n] || n.toLowerCase();
+        const url = `https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=${encodeURIComponent(generic)}`;
+        return <span key={i}>{i > 0 && ', '}<a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+          style={{ color: '#22d3ee', textDecoration: 'underline', textUnderlineOffset: 2 }}>{n}</a></span>;
+      });
+    }
     return fmt(val);
   };
 
@@ -467,7 +476,7 @@ function ResultTable({ data }) {
                     const v = row[c];
                     return (
                       <td key={c} style={{ padding: '5px 10px', color: numColor(c, v), borderBottom: isExp ? 'none' : '1px solid #1a1a2e',
-                        whiteSpace: ['reference','guideline','trial'].includes(c) ? 'normal' : 'nowrap', fontVariantNumeric: typeof v === 'number' ? 'tabular-nums' : undefined }}>
+                        whiteSpace: ['reference','guideline','trial','indication'].includes(c) ? 'normal' : 'nowrap', fontVariantNumeric: typeof v === 'number' ? 'tabular-nums' : undefined }}>
                         {renderCell(c, v, row)}
                       </td>
                     );
