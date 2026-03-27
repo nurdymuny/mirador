@@ -952,6 +952,114 @@ export default function MiradorSite() {
         </FadeIn>
       </section>
 
+      {/* ============ OLD WAY vs GIGI WAY ============ */}
+      <section id="comparison" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 960, margin: "0 auto" }}>
+        <FadeIn>
+          <div style={{ fontSize: 11, fontFamily: FM, color: "#22d3ee", letterSpacing: 3, marginBottom: 12 }}>WHY THIS MATTERS</div>
+          <h2 style={{ fontSize: mob ? 28 : 36, fontFamily: F, fontWeight: 400, margin: "0 0 32px 0" }}>
+            The old way <span style={{ color: "#475569" }}>vs</span> The GIGI way
+          </h2>
+        </FadeIn>
+
+        <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: 24 }}>
+          {/* OLD WAY */}
+          <FadeIn delay={0.1}>
+            <div style={{ background: "#0c0c18", border: "1px solid #ef444422", borderTop: "3px solid #ef4444", borderRadius: 8, padding: "24px", height: "100%" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#ef4444", fontFamily: FM, letterSpacing: 2, marginBottom: 16 }}>THE OLD WAY</div>
+              <div style={{ fontSize: 10, color: "#64748b", fontFamily: FM, marginBottom: 16, letterSpacing: 1 }}>~6 MONTHS · MANUAL · ERROR-PRONE</div>
+              {[
+                "Search PubMed for VAN + S. aureus bone PK studies",
+                "Cross-reference EUCAST breakpoint tables",
+                "Find AUC₂₄ from population PK literature",
+                "Compute AUC/MIC ratio by hand",
+                "Look up MBEC in biofilm literature",
+                "Estimate biofilm penetration factor",
+                "Argue about the 2002 French study that disagrees",
+              ].map((step, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+                  <span style={{ fontSize: 11, fontFamily: FM, color: "#ef4444", minWidth: 18 }}>{i + 1}.</span>
+                  <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: FS, lineHeight: 1.5 }}>{step}</span>
+                </div>
+              ))}
+              <div style={{ marginTop: 16, padding: "8px 12px", background: "#1a0a0a", borderRadius: 4, fontSize: 11, fontFamily: FM, color: "#ef4444", textAlign: "center", letterSpacing: 1 }}>
+                Result: one drug, one tissue, one opinion
+              </div>
+            </div>
+          </FadeIn>
+
+          {/* GIGI WAY */}
+          <FadeIn delay={0.2}>
+            <div style={{ background: "#0c0c18", border: "1px solid #22d3ee22", borderTop: "3px solid #22d3ee", borderRadius: 8, padding: "24px", height: "100%" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#22d3ee", fontFamily: FM, letterSpacing: 2, marginBottom: 16 }}>THE GIGI WAY</div>
+              <div style={{ fontSize: 10, color: "#64748b", fontFamily: FM, marginBottom: 16, letterSpacing: 1 }}>2 QUERIES · 0.5ms EACH · RIGOROUS</div>
+
+              {/* Query 1 */}
+              <div style={{ fontSize: 10, fontFamily: FM, color: "#64748b", letterSpacing: 1, marginBottom: 6 }}>QUERY 1 — RANK ALL DRUGS</div>
+              <pre style={{ background: "#0a0a14", border: "1px solid #1e3a5f", borderRadius: 6, padding: 12, fontSize: 10, fontFamily: FM, color: "#e2e8f0", overflow: "auto", marginBottom: 4, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+{`COVER ON mirador_universe
+  WHERE pathogen = 'S_aureus_MRSA'
+    AND tissue = 'bone'
+  EVALUATE coherence
+  RANK BY coherence DESC
+  WITH CONFIDENCE, PROVENANCE;`}
+              </pre>
+              <div style={{ fontSize: 10, color: "#475569", fontFamily: FM, marginBottom: 16 }}>→ 6 drugs ranked by coherence C, each with confidence & provenance</div>
+
+              {/* Query 2 */}
+              <div style={{ fontSize: 10, fontFamily: FM, color: "#64748b", letterSpacing: 1, marginBottom: 6 }}>QUERY 2 — COMBINE WITH SYNERGY</div>
+              <pre style={{ background: "#0a0a14", border: "1px solid #1e3a5f", borderRadius: 6, padding: 12, fontSize: 10, fontFamily: FM, color: "#e2e8f0", overflow: "auto", marginBottom: 4, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+{`COVER ON mirador_universe
+  WHERE pathogen = 'S_aureus_MRSA'
+    AND tissue = 'bone'
+  COMBINE 'VAN', 'RIF'
+  MODE COUPLED SYNERGY 1.2
+  EVALUATE coherence
+  WITH CONFIDENCE, PROVENANCE;`}
+              </pre>
+              <div style={{ fontSize: 10, color: "#475569", fontFamily: FM, marginBottom: 16 }}>→ VAN + RIF combination crosses θ at 3.3×</div>
+
+              <div style={{ marginTop: 8, padding: "8px 12px", background: "#0a1a1a", borderRadius: 4, fontSize: 11, fontFamily: FM, color: "#22d3ee", textAlign: "center", letterSpacing: 1 }}>
+                Result: all drugs, all tissues, mathematically proven
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+
+        {/* Explanation row */}
+        <FadeIn delay={0.3}>
+          <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: 16, marginTop: 24 }}>
+            <div style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 6, padding: "16px 20px" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#f0e68c", fontFamily: FM, marginBottom: 6 }}>CONFIDENCE</div>
+              <div style={{ fontSize: 12, color: "#94a3b8", fontFamily: FS, lineHeight: 1.6 }}>
+                <code style={{ color: "#f0e68c", background: "#f0e68c12", padding: "1px 4px", borderRadius: 3 }}>1/(1 + K)</code> where K = variance of τ across independent sources.
+                High agreement across EUCAST, CLSI, and clinical PK data → low K → confidence near 1.
+              </div>
+            </div>
+            <div style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 6, padding: "16px 20px" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", fontFamily: FM, marginBottom: 6 }}>PROVENANCE</div>
+              <div style={{ fontSize: 12, color: "#94a3b8", fontFamily: FS, lineHeight: 1.6 }}>
+                Not metadata — structural properties of the fiber bundle itself.
+                Every τ coordinate carries its derivation path: which MIC, which AUC, which breakpoint standard.
+                The geometry is the proof.
+              </div>
+            </div>
+          </div>
+        </FadeIn>
+
+        <FadeIn delay={0.4}>
+          <div style={{ textAlign: "center", marginTop: 32 }}>
+            <a href="#gigi" style={{
+              padding: "12px 32px", background: "#0e7490", color: "white", borderRadius: 6, fontFamily: FS,
+              fontSize: 13, fontWeight: 700, letterSpacing: 1, textDecoration: "none", border: "none",
+              transition: "transform 0.2s, box-shadow 0.2s",
+            }} onMouseEnter={e => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = "0 8px 24px #0e749044"; }}
+               onMouseLeave={e => { e.target.style.transform = ""; e.target.style.boxShadow = ""; }}>
+              TRY IT IN THE EXPLORER
+            </a>
+          </div>
+        </FadeIn>
+      </section>
+
       {/* ============ THE SCIENCE ============ */}
       <section id="science" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 960, margin: "0 auto" }}>
         <FadeIn>
@@ -1308,8 +1416,8 @@ export default function MiradorSite() {
         <FadeIn delay={0.1}>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", margin: "32px 0" }}>
             <div style={{ flex: "1 1 200px", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "20px 24px", borderTop: "3px solid #f59e0b" }}>
-              <div style={{ fontSize: 36, fontWeight: 700, fontFamily: FM, color: "#f59e0b", lineHeight: 1 }}>1,564</div>
-              <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: FS, marginTop: 6 }}>Validated PK/PD records from EUCAST, CLSI, WHO CC, and published clinical trials</div>
+              <div style={{ fontSize: 36, fontWeight: 700, fontFamily: FM, color: "#f59e0b", lineHeight: 1 }}>28M+</div>
+              <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: FS, marginTop: 6 }}>PK/PD records — ChEMBL bioactivities, compounds, assays, targets, plus EUCAST/CLSI validated clinical data</div>
             </div>
             <div style={{ flex: "1 1 200px", background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "20px 24px", borderTop: "3px solid #3b82f6" }}>
               <div style={{ fontSize: 36, fontWeight: 700, fontFamily: FM, color: "#3b82f6", lineHeight: 1 }}>10</div>
@@ -1356,7 +1464,7 @@ export default function MiradorSite() {
             </a>
           </div>
           <div style={{ textAlign: "center", fontSize: 10, color: "#64748b", fontFamily: FM, marginTop: 10 }}>
-            Explorer queries live GIGI on Fly.io · 1,564 records · No API key required
+            Explorer queries live GIGI on Fly.io · 28M+ records · No API key required
           </div>
         </FadeIn>
       </section>

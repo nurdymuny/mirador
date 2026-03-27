@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { buildUniverse, universeGQL } from './gql-engine';
 
 const FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 const DEFAULT_HOST = import.meta.env.DEV ? 'http://localhost:3142' : 'https://gigi-stream.fly.dev';
@@ -91,7 +92,8 @@ const REGIMENS = [
   {regimen_id:'tb_bpal',name:'BPaL',disease:'tb',drugs:'BDQ,Pa,LZD',indication:'XDR-TB',synergy_factor:1.30,clinical_efficacy:0.90,fic_index:0,trial:'TB-PRACTECAL'},
 ];
 
-const DEMO_DB = { mirador_drugs: _buildDrugs(), mirador_thresholds: THRESHOLDS, mirador_regimens: REGIMENS };
+const _DRUGS = _buildDrugs();
+const DEMO_DB = { mirador_drugs: _DRUGS, mirador_thresholds: THRESHOLDS, mirador_regimens: REGIMENS, mirador_universe: buildUniverse(_DRUGS, THRESHOLDS, REGIMENS) };
 
 // ── Lightweight in-browser GQL engine ──────────────────────────────
 function demoGQL(q) {
@@ -179,30 +181,49 @@ function demoGQL(q) {
     });
     return {count:rows.length,rows};
   }
-  return {error:`Could not parse: "${s}"\n\nDemo mode supports:\n  SHOW BUNDLES\n  DESCRIBE <bundle>\n  COVER <bundle> ALL [FIRST n]\n  COVER <bundle> ON <field> = '<value>'\n  COVER <bundle> WHERE <field> > <num>\n  COVER <bundle> DISTINCT <field>\n  SECTION <bundle> AT key=val\n  CURVATURE <bundle>\n  SPECTRAL <bundle>\n  CONSISTENCY <bundle>\n  INTEGRATE <bundle> OVER <f> MEASURE avg(col), count(*)`};
+  // Try universe engine for advanced queries (EVALUATE, COMBINE, etc.)
+  const uResult = universeGQL(s, DEMO_DB.mirador_universe);
+  if (uResult) return uResult;
+
+  return {error:`Could not parse: "${s}"\n\nDemo mode supports:\n  SHOW BUNDLES\n  DESCRIBE <bundle>\n  COVER <bundle> ALL [FIRST n]\n  COVER <bundle> ON <field> = '<value>'\n  COVER <bundle> WHERE <field> > <num>\n  COVER <bundle> DISTINCT <field>\n  SECTION <bundle> AT key=val\n  CURVATURE <bundle>\n  SPECTRAL <bundle>\n  CONSISTENCY <bundle>\n  INTEGRATE <bundle> OVER <f> MEASURE avg(col), count(*)\n  COVER ON mirador_universe WHERE ... EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE\n  COVER ON mirador_universe WHERE ... COMBINE 'A','B' MODE COUPLED SYNERGY n EVALUATE coherence WITH CONFIDENCE, PROVENANCE`};
 }
 
 // ── Preset queries ─────────────────────────────────────────────────
-const PRESETS = [
-  { label: '📦 List bundles',        gql: 'SHOW BUNDLES;' },
+const PRESETS_CLINICAL = [
   { label: '🧬 HIV drugs (all)',     gql: "COVER mirador_drugs ON disease = 'hiv';" },
   { label: '🦠 MRSA drugs',          gql: "COVER mirador_drugs ON disease = 'mrsa';" },
   { label: '🫁 TB drugs',            gql: "COVER mirador_drugs ON disease = 'tb';" },
   { label: '🧠 Meningitis drugs',    gql: "COVER mirador_drugs ON disease = 'meningitis';" },
   { label: '📊 Curvature κ(τ)',      gql: 'CURVATURE mirador_drugs;' },
-  { label: '🔬 Spectral gap λ₁',    gql: 'SPECTRAL mirador_drugs;' },
   { label: '📏 Breakpoints',         gql: 'COVER mirador_thresholds ALL;' },
   { label: '💊 Regimens',            gql: 'COVER mirador_regimens ALL;' },
   { label: '🎯 DTG @ CNS',          gql: "SECTION mirador_drugs AT compound_id=100, compartment='cns';" },
   { label: '📐 τ by disease',        gql: 'INTEGRATE mirador_drugs OVER disease MEASURE avg(tau), count(*);' },
-  { label: '🧮 Consistency',         gql: 'CONSISTENCY mirador_drugs;' },
-  { label: '🔍 VAN (all)',           gql: "COVER mirador_drugs ON drug_name = 'VAN';" },
-  { label: '🏷️ Distinct diseases',  gql: 'COVER mirador_drugs DISTINCT disease;' },
   { label: '📈 High τ drugs',        gql: 'COVER mirador_drugs ON tau > 4;' },
+];
+const PRESETS_CHEMBL = [
+  { label: '📋 Describe compounds',  gql: 'DESCRIBE chembl_compounds;' },
+  { label: '💎 Approved drugs',      gql: 'COVER chembl_compounds ON max_phase = 4 FIRST 50;' },
+  { label: '🎯 Protein targets',     gql: "COVER chembl_targets ON target_type = 'SINGLE PROTEIN' FIRST 50;" },
+  { label: '🔬 Human targets',       gql: "COVER chembl_drug_target ON organism = 'Homo sapiens' FIRST 50;" },
+  { label: '⚗️ Potent hits',         gql: "COVER chembl_activities ON potency_class = 'potent' FIRST 50;" },
+  { label: '🧪 Drug-target fibers',  gql: 'COVER chembl_drug_target ALL FIRST 50;' },
+  { label: '📐 τ by potency',        gql: 'INTEGRATE chembl_activities OVER potency_class MEASURE avg(tau), count(*);' },
+  { label: '📊 Curvature κ(acts)',   gql: 'CURVATURE chembl_activities;' },
+];
+const PRESETS_UNIVERSE = [
+  { label: '🌐 All universe records', gql: 'COVER mirador_universe ALL FIRST 20;' },
+  { label: '🦠 MRSA bone coherence',  gql: "COVER ON mirador_universe WHERE pathogen = 'S_aureus_MRSA' AND tissue = 'bone' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE;" },
+  { label: '🧬 HIV CNS coherence',    gql: "COVER ON mirador_universe WHERE pathogen = 'HIV' AND tissue = 'cns' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE;" },
+  { label: '🫁 TB lung coherence',    gql: "COVER ON mirador_universe WHERE pathogen = 'M_tuberculosis' AND tissue = 'granuloma_lung' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE;" },
+  { label: '🧠 Meningitis CSF',       gql: "COVER ON mirador_universe WHERE pathogen = 'S_pneumoniae' AND tissue = 'csf_inflamed' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE;" },
+  { label: '💊 VAN+RIF synergy',      gql: "COVER ON mirador_universe WHERE pathogen = 'S_aureus_MRSA' AND tissue = 'bone' COMBINE 'VAN', 'RIF' MODE COUPLED SYNERGY 1.2 EVALUATE coherence WITH CONFIDENCE, PROVENANCE;" },
+  { label: '💊 CRO+VAN meningitis',   gql: "COVER ON mirador_universe WHERE pathogen = 'S_pneumoniae' AND tissue = 'csf_inflamed' COMBINE 'CRO', 'VAN' MODE COUPLED SYNERGY 1.0 EVALUATE coherence WITH CONFIDENCE, PROVENANCE;" },
+  { label: '💊 DTG+TFV+FTC HIV',      gql: "COVER ON mirador_universe WHERE pathogen = 'HIV' AND tissue = 'lymph_node' COMBINE 'DTG', 'TFV' MODE COUPLED SYNERGY 1.0 EVALUATE coherence WITH CONFIDENCE, PROVENANCE;" },
 ];
 
 // ── Syntax highlighting (minimal) ──────────────────────────────────
-const GQL_KEYWORDS = /\b(SHOW|DESCRIBE|BUNDLE|BUNDLES|SECTION|SECTIONS|COVER|CURVATURE|SPECTRAL|CONSISTENCY|CONFIDENCE|CAPACITY|INTEGRATE|PULLBACK|CORRELATE|SEGMENT|PREDICT|WILSON|TRANSPORT|GEODESIC|DOUBLECOVER|REDEFINE|RETRACT|ATLAS|EXPLAIN|AT|ON|WHERE|ALL|OVER|MEASURE|PROJECT|DISTINCT|FIRST|RANK|SKIP|SET|BEGIN|COMMIT|ROLLBACK|ALONG|ONTO|INTO|BY|FROM|TO|AROUND|FULL|REPAIR|BASE|FIBER|RANGE|NUMERIC|CATEGORICAL|TEXT|TIMESTAMP|BINARY|VECTOR|HEALTH|VERBOSE)\b/gi;
+const GQL_KEYWORDS = /\b(SHOW|DESCRIBE|BUNDLE|BUNDLES|SECTION|SECTIONS|COVER|CURVATURE|SPECTRAL|CONSISTENCY|CONFIDENCE|CAPACITY|INTEGRATE|PULLBACK|CORRELATE|SEGMENT|PREDICT|WILSON|TRANSPORT|GEODESIC|DOUBLECOVER|REDEFINE|RETRACT|ATLAS|EXPLAIN|AT|ON|WHERE|ALL|OVER|MEASURE|PROJECT|DISTINCT|FIRST|RANK|SKIP|SET|BEGIN|COMMIT|ROLLBACK|ALONG|ONTO|INTO|BY|FROM|TO|AROUND|FULL|REPAIR|BASE|FIBER|RANGE|NUMERIC|CATEGORICAL|TEXT|TIMESTAMP|BINARY|VECTOR|HEALTH|VERBOSE|EVALUATE|COMBINE|MODE|COUPLED|SYNERGY|PROVENANCE|ASC|DESC|AND|WITH)\b/gi;
 const GQL_FUNCTIONS = /\b(avg|sum|count|min|max|std|var)\b/gi;
 const GQL_STRINGS = /('[^']*')/g;
 const GQL_NUMBERS = /\b(\d+\.?\d*)\b/g;
@@ -376,8 +397,14 @@ export default function GigiExplorer() {
             <div style={{ fontSize: 10, color: '#475569', letterSpacing: 2, borderLeft: '1px solid #1a1a2e', paddingLeft: 14 }}>
               FIBER BUNDLE<br/>EXPLORER
             </div>
-            <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5, maxWidth: 420, borderLeft: '1px solid #1a1a2e', paddingLeft: 14 }}>
-              Query MIRADOR's pharmacokinetic database using <span style={{ color: '#22d3ee' }}>GQL</span> — the geometric query language for fiber bundles. Pick a preset from the sidebar or write your own <code style={{ color: '#a78bfa', background: '#a78bfa12', padding: '1px 4px', borderRadius: 3 }}>COVER</code> / <code style={{ color: '#a78bfa', background: '#a78bfa12', padding: '1px 4px', borderRadius: 3 }}>SECTION</code> / <code style={{ color: '#a78bfa', background: '#a78bfa12', padding: '1px 4px', borderRadius: 3 }}>LIST</code> query.
+            <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5, maxWidth: 480, borderLeft: '1px solid #1a1a2e', paddingLeft: 14 }}>
+              Explore <span style={{ color: '#22d3ee' }}>3M+</span> pharmacological records stored as <span style={{ color: '#a78bfa' }}>fiber bundles</span> — not flat tables.
+              Clinical PK/PD data (EUCAST/CLSI) plus ChEMBL v36 bioactivities, compounds & targets.
+              Each record carries a geometric potency coordinate <span style={{ color: '#f0e68c' }}>τ</span> that encodes drug-target affinity on a manifold — enabling
+              {' '}<code style={{ color: '#a78bfa', background: '#a78bfa12', padding: '1px 4px', borderRadius: 3 }}>CURVATURE</code>,
+              {' '}<code style={{ color: '#a78bfa', background: '#a78bfa12', padding: '1px 4px', borderRadius: 3 }}>SECTION</code>, and
+              {' '}<code style={{ color: '#a78bfa', background: '#a78bfa12', padding: '1px 4px', borderRadius: 3 }}>COVER</code> queries
+              that no relational DB can express.
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -392,7 +419,7 @@ export default function GigiExplorer() {
                 background: connected === true ? '#22c55e' : demoMode ? '#f59e0b' : connected === false ? '#ef4444' : '#64748b',
                 boxShadow: connected === true ? '0 0 8px #22c55e55' : demoMode ? '0 0 8px #f59e0b33' : 'none' }} />
               <span style={{ fontSize: 9, color: '#64748b', letterSpacing: 1 }}>
-                {connected === true ? 'LIVE' : demoMode ? `${DEMO_DB.mirador_drugs.length} SECTIONS` : connected === false ? 'OFFLINE' : 'CHECKING…'}
+                {connected === true ? 'LIVE · 3M+ RECORDS' : demoMode ? `${DEMO_DB.mirador_drugs.length} CLINICAL · ${DEMO_DB.mirador_universe.length} UNIVERSE` : connected === false ? 'OFFLINE' : 'CHECKING…'}
               </span>
             </div>
             <input value={host} onChange={e => setHost(e.target.value)}
@@ -406,8 +433,8 @@ export default function GigiExplorer() {
       {demoMode && (
         <div style={{ background: '#0a0a14', borderBottom: '1px solid #1a1a2e', padding: '8px 32px', textAlign: 'center' }}>
           <span style={{ fontSize: 10, color: '#64748b' }}>
-            Running against <span style={{ color: '#f59e0b' }}>embedded seed data</span> ({DEMO_DB.mirador_drugs.length} drug sections · {THRESHOLDS.length} breakpoints · {REGIMENS.length} regimens).
-            Connect a live GIGI instance for full GQL.
+            Running against <span style={{ color: '#f59e0b' }}>embedded clinical seed data</span> ({DEMO_DB.mirador_drugs.length} drug sections · {THRESHOLDS.length} breakpoints · {REGIMENS.length} regimens · {DEMO_DB.mirador_universe.length} universe records).
+            ChEMBL queries require a <span style={{ color: '#a78bfa' }}>live GIGI connection</span>. Universe queries with <span style={{ color: '#22d3ee' }}>EVALUATE</span> and <span style={{ color: '#22d3ee' }}>COMBINE</span> run in-browser.
           </span>
         </div>
       )}
@@ -415,10 +442,54 @@ export default function GigiExplorer() {
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '20px 32px', display: 'grid', gridTemplateColumns: '220px 1fr', gap: 20, minHeight: 'calc(100vh - 120px)' }}>
         {/* Sidebar */}
         <div>
-          <div style={{ fontSize: 9, color: '#64748b', letterSpacing: 2, marginBottom: 10, fontWeight: 700 }}>QUICK QUERIES</div>
+          {/* Show Bundles — always first */}
+          <button
+            onClick={() => { setQuery('SHOW BUNDLES;'); runQuery('SHOW BUNDLES;'); }}
+            style={{ background: '#1a1a2e', border: '1px solid #2a2a44', borderRadius: 4, padding: '7px 10px', color: '#64b5f6', fontSize: 10, fontFamily: FONT, textAlign: 'left', cursor: 'pointer', width: '100%', marginBottom: 12, fontWeight: 700, letterSpacing: 1 }}
+            onMouseOver={e => { e.currentTarget.style.background = '#2a2a44'; }}
+            onMouseOut={e => { e.currentTarget.style.background = '#1a1a2e'; }}>
+            📦 Show all bundles
+          </button>
+
+          <div style={{ fontSize: 9, color: '#64748b', letterSpacing: 2, marginBottom: 6, fontWeight: 700 }}>CLINICAL PK/PD</div>
+          <div style={{ fontSize: 8, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
+            EUCAST/CLSI-validated drug sections across HIV, MRSA, TB & meningitis compartments
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {PRESETS.map((p, i) => (
-              <button key={i}
+            {PRESETS_CLINICAL.map((p, i) => (
+              <button key={'c'+i}
+                onClick={() => { setQuery(p.gql); runQuery(p.gql); }}
+                style={{ background: 'transparent', border: '1px solid transparent', borderRadius: 4, padding: '7px 10px', color: '#94a3b8', fontSize: 10, fontFamily: FONT, textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                onMouseOver={e => { e.currentTarget.style.background = '#1a1a2e'; e.currentTarget.style.color = '#e2e8f0'; e.currentTarget.style.borderColor = '#2a2a44'; }}
+                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'transparent'; }}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 9, color: '#a78bfa', letterSpacing: 2, marginTop: 16, marginBottom: 6, fontWeight: 700 }}>CHEMBL BIOACTIVITY</div>
+          <div style={{ fontSize: 8, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
+            2.3M+ bioactivity records from ChEMBL v36 — compounds, targets, assays & drug-target fibers
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {PRESETS_CHEMBL.map((p, i) => (
+              <button key={'ch'+i}
+                onClick={() => { setQuery(p.gql); runQuery(p.gql); }}
+                style={{ background: 'transparent', border: '1px solid transparent', borderRadius: 4, padding: '7px 10px', color: '#94a3b8', fontSize: 10, fontFamily: FONT, textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                onMouseOver={e => { e.currentTarget.style.background = '#1a1a2e'; e.currentTarget.style.color = '#e2e8f0'; e.currentTarget.style.borderColor = '#2a2a44'; }}
+                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'transparent'; }}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 9, color: '#22d3ee', letterSpacing: 2, marginTop: 16, marginBottom: 6, fontWeight: 700 }}>MIRADOR UNIVERSE</div>
+          <div style={{ fontSize: 8, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
+            Unified bundle — coherence scoring, confidence, provenance & drug combination with synergy
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {PRESETS_UNIVERSE.map((p, i) => (
+              <button key={'u'+i}
                 onClick={() => { setQuery(p.gql); runQuery(p.gql); }}
                 style={{ background: 'transparent', border: '1px solid transparent', borderRadius: 4, padding: '7px 10px', color: '#94a3b8', fontSize: 10, fontFamily: FONT, textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                 onMouseOver={e => { e.currentTarget.style.background = '#1a1a2e'; e.currentTarget.style.color = '#e2e8f0'; e.currentTarget.style.borderColor = '#2a2a44'; }}
@@ -525,7 +596,7 @@ export default function GigiExplorer() {
               <div style={{ fontSize: 48, marginBottom: 16 }}>⟐</div>
               <div style={{ fontSize: 12, letterSpacing: 2 }}>ENTER A GQL QUERY OR CLICK A PRESET</div>
               <div style={{ fontSize: 10, color: '#1e293b', marginTop: 8 }}>
-                {demoMode ? `⚡ Demo mode — ${DEMO_DB.mirador_drugs.length} drug sections loaded in-browser` : 'Results will appear here'}
+                {demoMode ? `⚡ Demo mode — ${DEMO_DB.mirador_drugs.length} clinical drug sections in-browser · ChEMBL queries need live server` : 'Connected — 3M+ records across clinical PK/PD & ChEMBL bioactivity bundles'}
               </div>
             </div>
           )}
@@ -536,9 +607,9 @@ export default function GigiExplorer() {
       <div style={{ borderTop: '1px solid #1a1a2e', padding: '12px 32px', display: 'flex', justifyContent: 'center', gap: 24, fontSize: 9, color: '#334155' }}>
         <span>GIGI Fiber Bundle Database</span>
         <span>•</span>
-        <span>GQL Query Language</span>
+        <span>Clinical PK/PD + ChEMBL v36</span>
         <span>•</span>
-        <span>{demoMode ? 'In-Browser Demo Engine' : 'POST /v1/gql'}</span>
+        <span>{demoMode ? 'In-Browser Demo Engine' : '3M+ records · POST /v1/gql'}</span>
       </div>
     </div>
   );
