@@ -217,14 +217,14 @@ const PRESETS_CHEMBL = [
   { label: '📊 τ by assay type',      gql: 'INTEGRATE chembl_activities OVER standard_type MEASURE avg(tau), count(*);' },
 ];
 const PRESETS_UNIVERSE = [
-  { label: '🌐 All universe records', gql: 'COVER mirador_universe ALL FIRST 20;' },
-  { label: '🦠 MRSA bone coherence',  gql: "COVER ON mirador_universe WHERE pathogen = 'S_aureus_MRSA' AND tissue = 'bone' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE;" },
-  { label: '🧬 HIV CNS coherence',    gql: "COVER ON mirador_universe WHERE pathogen = 'HIV' AND tissue = 'cns' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE;" },
-  { label: '🫁 TB lung coherence',    gql: "COVER ON mirador_universe WHERE pathogen = 'M_tuberculosis' AND tissue = 'granuloma_lung' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE;" },
-  { label: '🧠 Meningitis CSF',       gql: "COVER ON mirador_universe WHERE pathogen = 'S_pneumoniae' AND tissue = 'csf_inflamed' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE;" },
-  { label: '💊 VAN+RIF synergy',      gql: "COVER ON mirador_universe WHERE pathogen = 'S_aureus_MRSA' AND tissue = 'bone' COMBINE 'VAN', 'RIF' MODE COUPLED SYNERGY 1.2 EVALUATE coherence WITH CONFIDENCE, PROVENANCE;" },
-  { label: '💊 CRO+VAN meningitis',   gql: "COVER ON mirador_universe WHERE pathogen = 'S_pneumoniae' AND tissue = 'csf_inflamed' COMBINE 'CRO', 'VAN' MODE COUPLED SYNERGY 1.0 EVALUATE coherence WITH CONFIDENCE, PROVENANCE;" },
-  { label: '💊 DTG+TFV+FTC HIV',      gql: "COVER ON mirador_universe WHERE pathogen = 'HIV' AND tissue = 'lymph_node' COMBINE 'DTG', 'TFV' MODE COUPLED SYNERGY 1.0 EVALUATE coherence WITH CONFIDENCE, PROVENANCE;" },
+  { label: '🌐 All drugs overview',   gql: 'DESCRIBE mirador_drugs;' },
+  { label: '🦠 MRSA @ bone',          gql: "COVER mirador_drugs ON disease = 'mrsa' AND compartment = 'bone';" },
+  { label: '🧬 HIV @ CNS',            gql: "COVER mirador_drugs ON disease = 'hiv' AND compartment = 'cns';" },
+  { label: '🫁 TB @ granuloma',       gql: "COVER mirador_drugs ON disease = 'tb';" },
+  { label: '🧠 Meningitis @ CSF',     gql: "COVER mirador_drugs ON disease = 'meningitis' AND compartment = 'csf';" },
+  { label: '🔬 Resistance library',   gql: 'COVER mirador_resistance ALL;' },
+  { label: '📈 PK studies',           gql: 'COVER mirador_pk_studies ALL;' },
+  { label: '📐 τ by organism',        gql: 'INTEGRATE mirador_drugs OVER organism MEASURE avg(tau), count(*);' },
 ];
 
 // ── Syntax highlighting (minimal) ──────────────────────────────────
@@ -494,7 +494,7 @@ export default function GigiExplorer() {
 
           <div style={{ fontSize: 9, color: '#22d3ee', letterSpacing: 2, marginTop: 16, marginBottom: 6, fontWeight: 700 }}>MIRADOR UNIVERSE</div>
           <div style={{ fontSize: 8, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
-            Unified bundle — coherence scoring, confidence, provenance & drug combination with synergy
+            Cross-compartment PK/PD — drugs by disease & tissue site, resistance library & PK studies
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {PRESETS_UNIVERSE.map((p, i) => (
