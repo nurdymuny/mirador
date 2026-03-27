@@ -466,6 +466,13 @@ export default function GigiExplorer() {
   const highlightRef = useRef(null);
   const [nlActive, setNlActive] = useState(null);
   const nlTypingRef = useRef(null);
+  const [isMob, setIsMob] = useState(() => window.innerWidth < 640);
+
+  useEffect(() => {
+    const handler = () => setIsMob(window.innerWidth < 640);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   useEffect(() => { localStorage.setItem('gigi_host', host); }, [host]);
 
@@ -559,8 +566,8 @@ export default function GigiExplorer() {
   return (
     <div style={{ minHeight: '100vh', background: '#03030a', color: '#e2e8f0', fontFamily: FONT, padding: 0 }}>
       {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #0f172a 50%, #0a0a1a 100%)', borderBottom: '1px solid #1e3a5f', padding: '20px 32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 1400, margin: '0 auto', flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #0f172a 50%, #0a0a1a 100%)', borderBottom: '1px solid #1e3a5f', padding: isMob ? '14px 14px' : '20px 32px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 1400, margin: '0 auto', flexWrap: 'wrap', gap: 12, flexDirection: isMob ? 'column' : 'row' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -1 }}>
               <span style={{ color: '#64b5f6' }}>GIGI</span>
@@ -570,7 +577,7 @@ export default function GigiExplorer() {
             <div style={{ fontSize: 10, color: '#475569', letterSpacing: 2, borderLeft: '1px solid #1a1a2e', paddingLeft: 14 }}>
               FIBER BUNDLE<br/>EXPLORER
             </div>
-            <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5, maxWidth: 480, borderLeft: '1px solid #1a1a2e', paddingLeft: 14 }}>
+            {!isMob && <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5, maxWidth: 480, borderLeft: '1px solid #1a1a2e', paddingLeft: 14 }}>
               Explore <span style={{ color: '#22d3ee' }}>3M+</span> pharmacological records stored as <span style={{ color: '#a78bfa' }}>fiber bundles</span> — not flat tables.
               Clinical PK/PD data (EUCAST/CLSI) plus ChEMBL v36 bioactivities, compounds & targets.
               Each record carries a geometric potency coordinate <span style={{ color: '#f0e68c' }}>τ</span> that encodes drug-target affinity on a manifold — enabling
@@ -578,9 +585,9 @@ export default function GigiExplorer() {
               {' '}<code style={{ color: '#a78bfa', background: '#a78bfa12', padding: '1px 4px', borderRadius: 3 }}>SECTION</code>, and
               {' '}<code style={{ color: '#a78bfa', background: '#a78bfa12', padding: '1px 4px', borderRadius: 3 }}>COVER</code> queries
               that no relational DB can express.
-            </div>
+            </div>}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             {demoMode && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a0a', border: '1px solid #4a3f00', borderRadius: 4, padding: '4px 10px' }}>
                 <span style={{ fontSize: 12 }}>⚡</span>
@@ -596,7 +603,7 @@ export default function GigiExplorer() {
               </span>
             </div>
             <input value={host} onChange={e => setHost(e.target.value)}
-              style={{ background: '#0a0a14', border: '1px solid #1a1a2e', borderRadius: 4, padding: '5px 10px', color: '#94a3b8', fontSize: 10, fontFamily: FONT, width: 220 }}
+              style={{ background: '#0a0a14', border: '1px solid #1a1a2e', borderRadius: 4, padding: '5px 10px', color: '#94a3b8', fontSize: 10, fontFamily: FONT, width: isMob ? '100%' : 220 }}
               placeholder="http://localhost:3142" spellCheck={false} />
           </div>
         </div>
@@ -604,7 +611,7 @@ export default function GigiExplorer() {
 
       {/* Demo banner */}
       {demoMode && (
-        <div style={{ background: '#0a0a14', borderBottom: '1px solid #1a1a2e', padding: '8px 32px', textAlign: 'center' }}>
+        <div style={{ background: '#0a0a14', borderBottom: '1px solid #1a1a2e', padding: isMob ? '8px 12px' : '8px 32px', textAlign: 'center' }}>
           <span style={{ fontSize: 10, color: '#64748b' }}>
             Running against <span style={{ color: '#f59e0b' }}>embedded clinical seed data</span> ({DEMO_DB.mirador_drugs.length} drug sections · {THRESHOLDS.length} breakpoints · {REGIMENS.length} regimens · {DEMO_DB.mirador_universe.length} universe records).
             ChEMBL queries require a <span style={{ color: '#a78bfa' }}>live GIGI connection</span>. Universe queries with <span style={{ color: '#22d3ee' }}>EVALUATE</span> and <span style={{ color: '#22d3ee' }}>COMBINE</span> run in-browser.
@@ -612,7 +619,7 @@ export default function GigiExplorer() {
         </div>
       )}
 
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '20px 32px', display: 'grid', gridTemplateColumns: '220px 1fr', gap: 20, minHeight: 'calc(100vh - 120px)' }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: isMob ? '12px 12px' : '20px 32px', display: 'grid', gridTemplateColumns: isMob ? '1fr' : '220px 1fr', gap: 20, minHeight: 'calc(100vh - 120px)' }}>
         {/* Sidebar */}
         <div>
           {/* Show Bundles — always first */}
@@ -708,7 +715,7 @@ export default function GigiExplorer() {
                     fontSize: 8, color: group.color, letterSpacing: 2, fontWeight: 700, opacity: 0.7 }}>
                     {group.label}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, padding: '6px 14px 10px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMob ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 8, padding: '6px 14px 10px' }}>
                     {group.questions.map((nq, qi) => {
                       const idx = groupStart + qi;
                       return (
@@ -820,7 +827,7 @@ export default function GigiExplorer() {
       </div>
 
       {/* Footer */}
-      <div style={{ borderTop: '1px solid #1a1a2e', padding: '12px 32px', display: 'flex', justifyContent: 'center', gap: 24, fontSize: 9, color: '#334155' }}>
+      <div style={{ borderTop: '1px solid #1a1a2e', padding: isMob ? '12px 12px' : '12px 32px', display: 'flex', justifyContent: 'center', gap: isMob ? 10 : 24, fontSize: 9, color: '#334155', flexWrap: 'wrap' }}>
         <span>GIGI Fiber Bundle Database</span>
         <span>•</span>
         <span>Clinical PK/PD + ChEMBL v36</span>
