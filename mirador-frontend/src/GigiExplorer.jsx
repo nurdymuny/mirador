@@ -227,6 +227,34 @@ const PRESETS_UNIVERSE = [
   { label: '📐 τ by organism',        gql: 'INTEGRATE mirador_drugs OVER organism MEASURE avg(tau), count(*);' },
 ];
 
+// ── Plain-English → GQL demo questions ─────────────────────────────
+const NL_QUESTIONS = [
+  { q: "Which HIV drugs cross the blood-brain barrier?",
+    gql: "COVER mirador_drugs ON disease = 'hiv' AND compartment = 'cns';",
+    tag: "HIV · CNS", why: "CNS penetration is the #1 barrier to HIV cure — τ ranks drugs by geometric BBB permeability in one fiber scan" },
+  { q: "What kills MRSA inside bone tissue?",
+    gql: "COVER mirador_drugs ON disease = 'mrsa' AND compartment = 'bone';",
+    tag: "MRSA · bone", why: "Osteomyelitis needs drugs that survive bone matrix AND biofilm — τ(bone) + k_biofilm surfaced in a single bundle traversal" },
+  { q: "Rank TB drug efficacy across all compartments",
+    gql: "INTEGRATE mirador_drugs OVER compartment MEASURE avg(tau), count(*);",
+    tag: "TB · INTEGRATE", why: "TB granulomas have 5 distinct pharmacological barriers — INTEGRATE collapses them all into a ranked τ-summary in <2ms" },
+  { q: "Find the 50 most potent ChEMBL drug hits",
+    gql: "COVER chembl_activities ON potency_class = 'potent' FIRST 50;",
+    tag: "ChEMBL · 4.9M", why: "Scanning 4.9M bioactivity records for potent hits would take ETL pipelines days — COVER returns 50 in <100ms" },
+  { q: "Which human proteins do drugs target most?",
+    gql: "COVER chembl_drug_target ON organism = 'Homo sapiens' FIRST 50;",
+    tag: "drug-target · 690K", why: "690K drug-target fibers traversed without a JOIN — bundle structure replaces relational joins with geometric projection" },
+  { q: "How does potency vary by EC50 vs IC50 vs Ki?",
+    gql: "INTEGRATE chembl_activities OVER standard_type MEASURE avg(tau), count(*);",
+    tag: "assay type · τ", why: "INTEGRATE is a fiber-bundle integral operator — collapses 4.9M assays into mean τ by assay type, no GROUP BY clause needed" },
+  { q: "Which meningitis drugs reach inflamed CSF?",
+    gql: "COVER mirador_drugs ON disease = 'meningitis';",
+    tag: "meningitis · CSF", why: "Inflamed vs uninflamed BBB can differ 10-40× — this query surfaces both penetration ratios alongside EUCAST breakpoints" },
+  { q: "Show all EUCAST/CLSI resistance breakpoints",
+    gql: "COVER mirador_thresholds ALL;",
+    tag: "EUCAST · CLSI", why: "Standard MIC S/I/R breakpoints encoded as geometric fiber data — the whole drug-resistance landscape in one statement" },
+];
+
 // ── Syntax highlighting (minimal) ──────────────────────────────────
 const GQL_KEYWORDS = /\b(SHOW|DESCRIBE|BUNDLE|BUNDLES|SECTION|SECTIONS|COVER|CURVATURE|SPECTRAL|CONSISTENCY|CONFIDENCE|CAPACITY|INTEGRATE|PULLBACK|CORRELATE|SEGMENT|PREDICT|WILSON|TRANSPORT|GEODESIC|DOUBLECOVER|REDEFINE|RETRACT|ATLAS|EXPLAIN|AT|ON|WHERE|ALL|OVER|MEASURE|PROJECT|DISTINCT|FIRST|RANK|SKIP|SET|BEGIN|COMMIT|ROLLBACK|ALONG|ONTO|INTO|BY|FROM|TO|AROUND|FULL|REPAIR|BASE|FIBER|RANGE|NUMERIC|CATEGORICAL|TEXT|TIMESTAMP|BINARY|VECTOR|HEALTH|VERBOSE|EVALUATE|COMBINE|MODE|COUPLED|SYNERGY|PROVENANCE|ASC|DESC|AND|WITH)\b/gi;
 const GQL_FUNCTIONS = /\b(avg|sum|count|min|max|std|var)\b/gi;
@@ -317,6 +345,8 @@ export default function GigiExplorer() {
   const [demoMode, setDemoMode] = useState(false);
   const textareaRef = useRef(null);
   const highlightRef = useRef(null);
+  const [nlActive, setNlActive] = useState(null);
+  const nlTypingRef = useRef(null);
 
   useEffect(() => { localStorage.setItem('gigi_host', host); }, [host]);
 
@@ -386,6 +416,21 @@ export default function GigiExplorer() {
       requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = start + 2; });
     }
   };
+
+  const animateGQL = useCallback((gqlStr, idx) => {
+    if (nlTypingRef.current) clearInterval(nlTypingRef.current);
+    setNlActive(idx); setQuery(''); setResult(null); setError(null);
+    let i = 0;
+    nlTypingRef.current = setInterval(() => {
+      i++;
+      setQuery(gqlStr.slice(0, i));
+      if (i >= gqlStr.length) {
+        clearInterval(nlTypingRef.current);
+        nlTypingRef.current = null;
+        setTimeout(() => runQuery(gqlStr), 200);
+      }
+    }, 14);
+  }, [runQuery]);
 
   const resultData = result?.rows ?? result?.bundles ?? result?.data ?? (result?.value !== undefined ? [{value: result.value}] : null);
   const resultMeta = result?.meta ?? (result?.count !== undefined ? {count: result.count} : null);
@@ -528,6 +573,33 @@ export default function GigiExplorer() {
 
         {/* Main area */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* ── NL → GQL Live Translator ─────────────────────────── */}
+          <div style={{ background: '#07071a', border: '1px solid #1a2a40', borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{ padding: '8px 14px', borderBottom: '1px solid #1a1a2e', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 9, color: '#64748b', letterSpacing: 2, fontWeight: 700 }}>ASK IN PLAIN ENGLISH</span>
+              <span style={{ fontSize: 9, color: '#2a3a50' }}>→</span>
+              <span style={{ fontSize: 9, color: '#334155' }}>translated to GQL & executed against {demoMode ? 'demo engine' : '5.5M live records'}</span>
+            </div>
+            <div style={{ display: 'flex', overflowX: 'auto', gap: 8, padding: '10px 14px', scrollbarWidth: 'none' }}>
+              {NL_QUESTIONS.map((nq, i) => (
+                <button key={i} onClick={() => animateGQL(nq.gql, i)}
+                  style={{ flexShrink: 0, maxWidth: 190, background: nlActive === i ? '#0d2040' : '#0f0f1e', border: `1px solid ${nlActive === i ? '#2a5a9f' : '#1e1e32'}`, borderRadius: 6, padding: '9px 12px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s' }}
+                  onMouseOver={e => { if (nlActive !== i) { e.currentTarget.style.background = '#13132a'; e.currentTarget.style.borderColor = '#2a2a50'; } }}
+                  onMouseOut={e => { if (nlActive !== i) { e.currentTarget.style.background = '#0f0f1e'; e.currentTarget.style.borderColor = '#1e1e32'; } }}>
+                  <div style={{ fontSize: 10, color: nlActive === i ? '#e2e8f0' : '#94a3b8', lineHeight: 1.45, marginBottom: 5 }}>{nq.q}</div>
+                  <div style={{ fontSize: 8, color: nlActive === i ? '#64b5f6' : '#334155', letterSpacing: 1, fontWeight: 700 }}>{nq.tag}</div>
+                </button>
+              ))}
+            </div>
+            {nlActive !== null && (
+              <div style={{ borderTop: '1px solid #1a1a2e', padding: '8px 14px', display: 'flex', gap: 10, alignItems: 'flex-start', background: '#0a0a18' }}>
+                <span style={{ fontSize: 8, color: '#22d3ee', letterSpacing: 1, fontWeight: 700, whiteSpace: 'nowrap', paddingTop: 1 }}>WHY FASTER</span>
+                <span style={{ fontSize: 10, color: '#64748b', lineHeight: 1.5 }}>{NL_QUESTIONS[nlActive].why}</span>
+              </div>
+            )}
+          </div>
+
           {/* Editor */}
           <div style={{ position: 'relative', borderRadius: 8, border: '1px solid #1e3a5f', overflow: 'hidden', background: '#0a0a14' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: '#0f0f1a', borderBottom: '1px solid #1a1a2e' }}>
