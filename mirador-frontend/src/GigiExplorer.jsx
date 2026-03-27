@@ -540,7 +540,11 @@ export default function GigiExplorer() {
       await new Promise(r => setTimeout(r, 15));
       const dt = performance.now() - t0;
       setElapsed(dt);
-      const res = demoGQL(queryText);
+      // Route universe queries directly — bypass demoGQL entirely
+      const isUniverseQ = /^COVER\s+ON\s+mirador_universe\b/i.test(queryText);
+      const res = isUniverseQ
+        ? (universeGQL(queryText, DEMO_DB.mirador_universe) || {error:'Universe query could not be evaluated'})
+        : demoGQL(queryText);
       if (res.error) setError(res.error); else setResult(res);
       setHistory(prev => [{ query: queryText, time: new Date().toISOString(), elapsed: dt, demo: true }, ...prev].slice(0, 50));
       setLoading(false);
