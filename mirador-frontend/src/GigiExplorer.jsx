@@ -199,10 +199,10 @@ const PRESETS_CLINICAL = [
   { label: '🦠 MRSA drugs',          gql: "COVER mirador_drugs ON disease = 'mrsa';" },
   { label: '🫁 TB drugs',            gql: "COVER mirador_drugs ON disease = 'tb';" },
   { label: '🧠 Meningitis drugs',    gql: "COVER mirador_drugs ON disease = 'meningitis';" },
-  { label: '📊 Curvature κ(τ)',      gql: 'CURVATURE mirador_drugs;' },
+  { label: '📊 τ by compartment',    gql: 'INTEGRATE mirador_drugs OVER compartment MEASURE avg(tau), count(*);' },
   { label: '📏 Breakpoints',         gql: 'COVER mirador_thresholds ALL;' },
   { label: '💊 Regimens',            gql: 'COVER mirador_regimens ALL;' },
-  { label: '🎯 DTG @ CNS',          gql: "SECTION mirador_drugs AT compound_id=100, compartment='cns';" },
+  { label: '🎯 DTG @ CNS',          gql: "COVER mirador_drugs ON drug_name = 'DTG' AND compartment = 'cns';" },
   { label: '📐 τ by disease',        gql: 'INTEGRATE mirador_drugs OVER disease MEASURE avg(tau), count(*);' },
   { label: '📈 High τ drugs',        gql: 'COVER mirador_drugs ON tau > 4;' },
 ];
@@ -214,7 +214,7 @@ const PRESETS_CHEMBL = [
   { label: '🧪 Drug-target fibers',   gql: 'COVER chembl_drug_target ALL FIRST 50;' },
   { label: '📋 Describe drug-target',  gql: 'DESCRIBE chembl_drug_target;' },
   { label: '📐 τ by potency',         gql: 'INTEGRATE chembl_activities OVER potency_class MEASURE avg(tau), count(*);' },
-  { label: '📊 Curvature κ(acts)',    gql: 'CURVATURE chembl_activities;' },
+  { label: '📊 τ by assay type',      gql: 'INTEGRATE chembl_activities OVER standard_type MEASURE avg(tau), count(*);' },
 ];
 const PRESETS_UNIVERSE = [
   { label: '🌐 All universe records', gql: 'COVER mirador_universe ALL FIRST 20;' },
