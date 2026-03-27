@@ -953,3 +953,23 @@ describe('v1.0 — bug fix: mycobacterium maps to tb', () => {
     expect(r.entities.diseases).not.toContain('mrsa');
   });
 });
+
+describe('v1.0 — multi-disease co-infection queries', () => {
+  it('extracts two diseases from co-infection question', () => {
+    const r = translateNL('a patient with HIV has meningitis — which drug can reach the CSF?');
+    expect(r.entities.diseases).toContain('hiv');
+    expect(r.entities.diseases).toContain('meningitis');
+    expect(r.entities.diseases.length).toBe(2);
+  });
+
+  it('nlToGql merges results from multiple diseases', () => {
+    const universe = [
+      { drug:'CRO', disease:'meningitis', tissue:'csf_inflamed', C:0.65, tau:1, K_pathway:0, k_admet:0, k_barrier:0.5, k_biofilm:0, crossesThreshold:true, confidence:1, provenance:'test' },
+      { drug:'DTG', disease:'hiv', tissue:'cns', C:2.05, tau:1, K_pathway:0, k_admet:0, k_barrier:0, k_biofilm:0, crossesThreshold:true, confidence:1, provenance:'test' },
+    ];
+    const r = nlToGql('HIV and meningitis co-infection — which drugs work at csf?', universe);
+    expect(r.status).toBe('ok');
+    expect(r.answer).toMatch(/Cross-disease/i);
+    expect(r.result.meta.multi_disease).toBe(true);
+  });
+});

@@ -252,8 +252,28 @@ function generateAnswer(question, intent, entities, gql, result) {
     }
   } else if (intent === 'drug_ranking' || intent === 'cure_feasibility') {
     const rows = result.rows || [];
-    if (!rows.length) { answer = 'No drugs found matching the criteria.'; verdict = 'no_data'; }
-    else {
+    const isMultiDisease = result.meta?.multi_disease;
+    if (!rows.length) {
+      verdict = 'no_data';
+      answer = 'No drugs found matching the criteria.';
+      if (entities.diseases.length >= 2) {
+        answer += ' This was a cross-disease query. Try each disease separately:';
+      }
+    } else if (isMultiDisease) {
+      const byDisease = {};
+      for (const r of rows) { const d = r.disease || 'unknown'; (byDisease[d] ??= []).push(r); }
+      const passing = rows.filter(r => { const th = r.threshold || getThresholdForDisease(r.disease); return r.C >= th; });
+      verdict = passing.length ? 'drugs_available' : 'no_drugs_pass';
+      const parts = [];
+      for (const [d, dRows] of Object.entries(byDisease)) {
+        const th = getThresholdForDisease(d);
+        const dPassing = dRows.filter(r => r.C >= th);
+        parts.push(`${d.toUpperCase()} (θ=${th}): ${dRows.length} drug(s), ${dPassing.length} meet threshold`);
+      }
+      answer = `Cross-disease search: ${rows.length} total drug(s) found across ${Object.keys(byDisease).length} diseases. ${parts.join('. ')}. ` +
+        `${passing.length}/${rows.length} meet their respective thresholds.`;
+      if (rows.length > 0) answer += ' Ranking: ' + rows.map((r, i) => `${i + 1}. ${r.drug} [${(r.disease||'').toUpperCase()}] C=${r.C.toFixed(4)}`).join(', ') + '.';
+    } else {
       const top = rows[0], passing = rows.filter(r => r['≥θ'] === 'yes');
       verdict = passing.length ? 'drugs_available' : 'no_drugs_pass';
       answer = `${rows.length} drug(s) found. Top: ${top.drug} (C = ${top.C.toFixed(4)}${top['≥θ'] === 'yes' ? ', meets threshold' : ', below threshold'}). ` +
@@ -285,9 +305,17 @@ function generateAnswer(question, intent, entities, gql, result) {
   // Follow-up suggestions
   const follow_ups = [];
   const tissue = entities.tissues[0] || (disease ? NL_DEFAULT_TISSUE[disease] : null);
-  if (intent !== 'drug_ranking' && disease) {
-    follow_ups.push({ label: `Rank all ${disease.toUpperCase()} drugs${tissue ? ' at ' + tissue : ''}`,
-      gql: `COVER ON mirador_universe WHERE disease = '${disease}'${tissue ? ` AND tissue = '${tissue}'` : ''} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` });
+  if (entities.diseases.length >= 2) {
+    for (const d of entities.diseases) {
+      const t = tissue || NL_DEFAULT_TISSUE[d];
+      follow_ups.push({ label: `${d.toUpperCase()} drugs${t ? ' at ' + t : ''}`,
+        gql: `COVER ON mirador_universe WHERE disease = '${d}'${t ? ` AND tissue = '${t}'` : ''} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` });
+    }
+  } else {
+    if (intent !== 'drug_ranking' && disease) {
+      follow_ups.push({ label: `Rank all ${disease.toUpperCase()} drugs${tissue ? ' at ' + tissue : ''}`,
+        gql: `COVER ON mirador_universe WHERE disease = '${disease}'${tissue ? ` AND tissue = '${tissue}'` : ''} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` });
+    }
   }
   if (intent !== 'failure_diagnosis' && entities.drugs[0] && tissue) {
     follow_ups.push({ label: `Why does ${entities.drugs[0]} fail at ${tissue}?`,
