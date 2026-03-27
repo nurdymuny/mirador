@@ -106,6 +106,12 @@ function demoGQL(q) {
   // SHOW BUNDLES (also accept legacy BUNDLES)
   if (up === 'SHOW BUNDLES' || up === 'BUNDLES') return { bundles: Object.entries(DEMO_DB).map(([n,r])=>({name:n,records:r.length,fields:r.length?Object.keys(r[0]).length:0})) };
 
+  // Route universe queries early — prevents COVER regexes capturing "ON" as bundle name
+  if (/^COVER\s+ON\s+mirador_universe\b/i.test(up)) {
+    const uResult = universeGQL(s, DEMO_DB.mirador_universe);
+    return uResult || {error:'Universe query could not be evaluated'};
+  }
+
   let m;
   // DESCRIBE <b>
   if ((m = s.match(/^DESCRIBE\s+(\w+)/i))) {
