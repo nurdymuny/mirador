@@ -6,6 +6,12 @@ module.exports = function handler(req, res) {
     servers: [{ url: 'https://usemirador.sh', description: 'Production' }],
     paths: {
       '/v1/ask': {
+        get: {
+          summary: 'Natural language → GQL (GET — for AI agents)',
+          description: 'Query-string version for tools that can only fetch URLs (e.g. Claude web_fetch). Same pipeline as POST.',
+          parameters: [{ name: 'q', in: 'query', required: true, schema: { type: 'string' }, description: 'Plain-text clinical question', example: 'Can vancomycin reach MRSA in bone?' }],
+          responses: { 200: { description: 'Translation result' } },
+        },
         post: {
           summary: 'Natural language → GQL translation (with LLM fallback)',
           description: 'Submit a plain-text clinical question. Returns the classified intent, extracted entities, and generated GQL statement. If regex parsing fails, falls back to Claude then Gemini for translation.',

@@ -92,13 +92,19 @@ module.exports = async function handler(req, res) {
     return res.status(204).end();
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'POST only' });
+  if (req.method !== 'POST' && req.method !== 'GET') {
+    return res.status(405).json({ error: 'GET or POST only' });
   }
 
-  const { question, patient, session_id } = req.body || {};
+  // GET /v1/ask?q=... for AI agents that can only fetch URLs
+  // POST /v1/ask { question: "..." } for full-featured clients
+  const question = req.method === 'GET'
+    ? req.query?.q
+    : req.body?.question;
+  const patient = req.method === 'GET' ? undefined : req.body?.patient;
+
   if (!question || typeof question !== 'string') {
-    return res.status(400).json({ error: 'Missing "question" string in request body.' });
+    return res.status(400).json({ error: 'Missing question. GET: ?q=... or POST: {"question":"..."}' });
   }
 
   const q = question.slice(0, 1000);
