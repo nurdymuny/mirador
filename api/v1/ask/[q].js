@@ -19,5 +19,6 @@ module.exports = function handler(req, res) {
   result.version = '1.0';
   result.note = 'Execute the generated_gql against the WASM engine or POST it to /v1/query on a live GIGI server.';
 
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   return res.status(200).json(result);
 };
