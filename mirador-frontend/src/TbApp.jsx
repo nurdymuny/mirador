@@ -523,7 +523,7 @@ export default function TbApp() {
   const [wasmReady, setWasmReady] = useState(false);
   const [wasmResult, setWasmResult] = useState(null);
   useEffect(() => {
-    init('/mirador_tb/mirador_tb_wasm_bg.wasm').then(() => setWasmReady(true));
+    init({ module_or_path: '/mirador_tb/mirador_tb_wasm_bg.wasm' }).then(() => setWasmReady(true));
   }, []);
 
   const mob = useIsMobile();
