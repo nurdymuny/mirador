@@ -344,7 +344,7 @@ export default function MeningitisApp() {
   useEffect(() => {
     import('./mirador_meningitis/mirador_meningitis_wasm.js').then(mod => {
       wasmRef.current = mod;
-      return mod.default('/mirador_meningitis/mirador_meningitis_wasm_bg.wasm');
+      return mod.default({ module_or_path: '/mirador_meningitis/mirador_meningitis_wasm_bg.wasm' });
     }).then(() => setWasmReady(true))
       .catch(e => console.error('Meningitis WASM init failed:', e));
   }, []);

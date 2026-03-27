@@ -415,7 +415,7 @@ export default function HivApp() {
   useEffect(() => {
     import('./mirador_hiv/mirador_hiv_wasm.js').then(mod => {
       wasmRef.current = mod;
-      return mod.default('/mirador_hiv/mirador_hiv_wasm_bg.wasm');
+      return mod.default({ module_or_path: '/mirador_hiv/mirador_hiv_wasm_bg.wasm' });
     }).then(() => setWasmReady(true))
       .catch(e => console.error('HIV WASM init failed:', e));
   }, []);
@@ -425,7 +425,7 @@ export default function HivApp() {
   const [sel, setSel] = useState([0, 1, 2]); // DTG, TFV, FTC
   const [lraIdx, setLraIdx] = useState(null);
   const [vizExpanded, setVizExpanded] = useState(null);
-  const [pt, setPt] = useState({ cd4: 450, vl: "<20", artYears: 5, weight: 72, creatinine: 0.9, egfr: 0 });
+  const [pt, setPt] = useState({ cd4: 450, vl: 20, artYears: 5, weight: 72, creatinine: 0.9, egfr: 0 });
   const [xDrug, setXDrug] = useState(null);     // expanded drug key in Stage 0
   const [xRes, setXRes] = useState(null);        // expanded reservoir key in Stage 1
   const [xCell, setXCell] = useState(null);      // "DTG:CNS" in Stage 2
