@@ -15,7 +15,11 @@ import init, {
  * @param {string} [wasmPath] URL to .wasm file (default: auto-detect via import.meta.url)
  */
 export async function initEngine(wasmPath) {
-  await init(wasmPath);
+  if (wasmPath) {
+    await init({ module_or_path: wasmPath });
+  } else {
+    await init();
+  }
 }
 
 /**
