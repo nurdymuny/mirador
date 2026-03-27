@@ -485,7 +485,7 @@ const NL_TISSUES = {
   csf:'csf_inflamed', spinal:'csf_inflamed',
   cns:'cns', brain:'cns', bbb:'cns', 'blood-brain':'cns',
   lymph:'lymph_node',
-  lung:'granuloma_lung', pulmonary:'granuloma_lung', granuloma:'granuloma_lung',
+  lung:'granuloma_lung', lungs:'granuloma_lung', pulmonary:'granuloma_lung', granuloma:'granuloma_lung',
   caseum:'granuloma_necrotic', caseous:'granuloma_necrotic', necrotic:'granuloma_necrotic',
   cavity:'granuloma_cavity', cavitary:'granuloma_cavity',
   genital:'genital_tract',
