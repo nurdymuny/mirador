@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { buildUniverse, universeGQL } from './gql-engine';
 
 const FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
-const DEFAULT_HOST = import.meta.env.DEV ? 'http://localhost:3142' : 'https://gigi-stream.fly.dev';
+const DEFAULT_HOST = 'https://gigi-stream.fly.dev';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // EMBEDDED SEED DATA (mirrors mirador_gigi_seed.py)
@@ -302,7 +302,11 @@ function MetaPanel({ meta }) {
 // ── Main component ─────────────────────────────────────────────────
 
 export default function GigiExplorer() {
-  const [host, setHost] = useState(() => localStorage.getItem('gigi_host') || DEFAULT_HOST);
+  const [host, setHost] = useState(() => {
+    const saved = localStorage.getItem('gigi_host');
+    if (saved && saved.includes('localhost')) { localStorage.removeItem('gigi_host'); return DEFAULT_HOST; }
+    return saved || DEFAULT_HOST;
+  });
   const [query, setQuery] = useState("COVER mirador_drugs ON disease = 'hiv';");
   const [history, setHistory] = useState([]);
   const [result, setResult] = useState(null);
