@@ -551,11 +551,11 @@ export default function SciencePage() {
           </Expandable>
         </TimelineItem>
 
-        <TimelineItem year="1845" title="Kirchhoff Meets Pharmacology" color="#f97316" delay={0.15}
-          body={<>Gustav Kirchhoff's parallel-resistor law describes how current distributes across parallel conductors. In pharmacology, when multiple drugs act simultaneously, each provides a "conductance" channel. Each drug = a conductor. Each K = a resistance. Total combination = parallel sum. This is not a metaphor — it is a direct mathematical correspondence. Multi-drug regimens act like parallel resistors. Adding a drug always reduces total impedance.</>}
+        <TimelineItem year="2004" title="Drusano Applies Network Theory to Drug Combinations" color="#f97316" delay={0.15}
+          body={<>In 2004, Drusano formalised what Kirchhoff described in 1845: parallel-resistor mathematics maps directly onto multi-drug pharmacology. Each drug = a conductor. Each K = a resistance. Total combination = parallel sum. This is not a metaphor — it is a direct mathematical correspondence. Multi-drug regimens act like parallel resistors. Adding a drug always reduces total impedance.</>}
           equation={<>K<sub>combo</sub> = 1 / ({"Σ"} 1/K<sub>i</sub>)</>}
           eqNote="Adding a drug with very high K (poor penetration) contributes almost nothing — exactly like a high-resistance wire contributes negligible current."
-          sources="Kirchhoff G. Annalen der Physik 1845; Drusano GL. Clin Infect Dis 2004">
+          sources="Drusano GL. Clin Infect Dis 2004; Kirchhoff G. Annalen der Physik 1845">
           <Expandable label="WORKED EXAMPLE: DTG+TFV+FTC at GALT" color="#f97316">
             <div style={{ fontSize: 10, color: "#94a3b8", fontFamily: FM, lineHeight: 1.9 }}>
               <div style={{ color: "#64748b", marginBottom: 4 }}># Each drug has its own impedance path through GALT tissue</div>

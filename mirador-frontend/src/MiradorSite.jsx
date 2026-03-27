@@ -1685,7 +1685,7 @@ export default function MiradorSite() {
         <p style={{ fontSize: 13, color: "#64748b", fontFamily: FS, lineHeight: 1.8 }}>
           Built on 60 years of clinical pharmacology.<br />
           <span style={{ fontFamily: FM, fontSize: 11, letterSpacing: 1, color: "#475569" }}>
-            Eagle 1953 &middot; Craig 1998 &middot; Kirchhoff 1845 &middot; Davis 2025
+            Eagle 1953 &middot; Craig 1998 &middot; Drusano 2004 &middot; Davis 2025
           </span>
         </p>
       </div>
