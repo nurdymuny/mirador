@@ -409,9 +409,15 @@ function ResultTable({ data }) {
       return url ? <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
         style={{ color: '#22d3ee', textDecoration: 'underline', textUnderlineOffset: 2 }}>{fmt(val)}</a> : fmt(val);
     }
-    if (col === 'reference') {
+    if (col === 'reference' || col === 'guideline') {
       const links = refLinks(val);
       return links || fmt(val);
+    }
+    if (col === 'trial') {
+      const q = encodeURIComponent(String(val).trim());
+      const url = `https://clinicaltrials.gov/search?term=${q}`;
+      return <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+        style={{ color: '#22d3ee', textDecoration: 'underline', textUnderlineOffset: 2 }}>{fmt(val)}</a>;
     }
     return fmt(val);
   };
@@ -461,7 +467,7 @@ function ResultTable({ data }) {
                     const v = row[c];
                     return (
                       <td key={c} style={{ padding: '5px 10px', color: numColor(c, v), borderBottom: isExp ? 'none' : '1px solid #1a1a2e',
-                        whiteSpace: c === 'reference' ? 'normal' : 'nowrap', fontVariantNumeric: typeof v === 'number' ? 'tabular-nums' : undefined }}>
+                        whiteSpace: ['reference','guideline','trial'].includes(c) ? 'normal' : 'nowrap', fontVariantNumeric: typeof v === 'number' ? 'tabular-nums' : undefined }}>
                         {renderCell(c, v, row)}
                       </td>
                     );
