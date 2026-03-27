@@ -17,20 +17,25 @@ function coverEvaluate(universe, filters, options = {}) {
   const rankField = options.rankBy || 'C';
   const rankDir = options.rankDir || 'DESC';
   results.sort((a, b) => rankDir === 'DESC' ? b[rankField] - a[rankField] : a[rankField] - b[rankField]);
-  results = results.map(r => ({
-    drug: r.drug, C: r.C,
-    '≥θ': r.crossesThreshold ? 'yes' : 'no',
-    K_pathway: r.K_pathway,
-    confidence: r.confidence,
-    provenance: r.provenance,
-  }));
+  results = results.map(r => {
+    const row = {
+      drug: r.drug, C: r.C,
+      '≥θ': r.crossesThreshold ? 'yes' : 'no',
+      K_pathway: r.K_pathway,
+      confidence: r.confidence,
+      provenance: r.provenance,
+    };
+    if (r.age_group) row.age_group = r.age_group;
+    return row;
+  });
   return results;
 }
 
-function decompose(universe, { drug, tissue }) {
+function decompose(universe, { drug, tissue, age_group }) {
   const record = universe.find(r =>
     r.drug.toLowerCase() === drug.toLowerCase() &&
-    r.tissue.toLowerCase() === tissue.toLowerCase()
+    r.tissue.toLowerCase() === tissue.toLowerCase() &&
+    (!age_group || !r.age_group || r.age_group.toLowerCase() === age_group.toLowerCase())
   );
   if (!record) return null;
   const k_admet = record.k_admet || 0;
@@ -52,12 +57,13 @@ function decompose(universe, { drug, tissue }) {
   };
 }
 
-function compareDrugs(universe, drugNames, tissue) {
+function compareDrugs(universe, drugNames, tissue, age_group) {
   if (!drugNames || drugNames.length === 0) return null;
   const matched = drugNames.map(name =>
     universe.find(r =>
       r.drug.toLowerCase() === name.toLowerCase() &&
-      r.tissue.toLowerCase() === tissue.toLowerCase()
+      r.tissue.toLowerCase() === tissue.toLowerCase() &&
+      (!age_group || !r.age_group || r.age_group.toLowerCase() === age_group.toLowerCase())
     )
   ).filter(Boolean);
   if (matched.length === 0) return null;
@@ -107,7 +113,7 @@ function universeGQL(query, universe) {
       if (cm) filters[cm[1]] = cm[2];
     });
     if (!filters.drug || !filters.tissue) return { error: 'DECOMPOSE requires drug and tissue' };
-    const result = decompose(universe, { drug: filters.drug, tissue: filters.tissue });
+    const result = decompose(universe, { drug: filters.drug, tissue: filters.tissue, age_group: filters.age_group });
     if (!result) return { error: `Drug '${filters.drug}' not found at tissue '${filters.tissue}'` };
     return result;
   }
@@ -121,7 +127,7 @@ function universeGQL(query, universe) {
       if (cm) filters[cm[1]] = cm[2];
     });
     const tissue = filters.tissue || '';
-    const result = compareDrugs(universe, drugNames, tissue);
+    const result = compareDrugs(universe, drugNames, tissue, filters.age_group);
     if (!result) return { error: `No matching drugs found at tissue '${tissue}'` };
     return result;
   }
@@ -269,34 +275,54 @@ function generateAnswer(question, intent, entities, gql, result) {
     answer = JSON.stringify(result).slice(0, 200); verdict = 'raw';
   }
 
+  // Age context
+  const age_group = entities.age_group;
+  const ageLabel = age_group ? ` (${age_group} context)` : '';
+  if (age_group && answer) answer = `[${age_group.charAt(0).toUpperCase() + age_group.slice(1)}]${ageLabel.includes(age_group) ? '' : ''} ${answer}`;
+
   // Follow-up suggestions
   const follow_ups = [];
   const tissue = entities.tissues[0] || (disease ? NL_DEFAULT_TISSUE[disease] : null);
+  const ageFollow = age_group ? ` AND age_group = '${age_group}'` : '';
   if (entities.diseases.length >= 2) {
     for (const d of entities.diseases) {
       const t = tissue || NL_DEFAULT_TISSUE[d];
-      follow_ups.push({ label: `${d.toUpperCase()} drugs${t ? ' at ' + t : ''}`,
-        gql: `COVER ON mirador_universe WHERE disease = '${d}'${t ? ` AND tissue = '${t}'` : ''} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` });
+      follow_ups.push({ label: `${d.toUpperCase()} drugs${t ? ' at ' + t : ''}${ageLabel}`,
+        gql: `COVER ON mirador_universe WHERE disease = '${d}'${t ? ` AND tissue = '${t}'` : ''}${ageFollow} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` });
     }
   } else {
     if (intent !== 'drug_ranking' && disease) {
-      follow_ups.push({ label: `Rank all ${disease.toUpperCase()} drugs${tissue ? ' at ' + tissue : ''}`,
-        gql: `COVER ON mirador_universe WHERE disease = '${disease}'${tissue ? ` AND tissue = '${tissue}'` : ''} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` });
+      follow_ups.push({ label: `Rank all ${disease.toUpperCase()} drugs${tissue ? ' at ' + tissue : ''}${ageLabel}`,
+        gql: `COVER ON mirador_universe WHERE disease = '${disease}'${tissue ? ` AND tissue = '${tissue}'` : ''}${ageFollow} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` });
     }
   }
   if (intent !== 'failure_diagnosis' && entities.drugs[0] && tissue) {
     follow_ups.push({ label: `Why does ${entities.drugs[0]} fail at ${tissue}?`,
-      gql: `DECOMPOSE mirador_universe ON drug = '${entities.drugs[0]}' AND tissue = '${tissue}'` });
+      gql: `DECOMPOSE mirador_universe ON drug = '${entities.drugs[0]}' AND tissue = '${tissue}'${ageFollow}` });
   }
   if (entities.drugs.length >= 2 && tissue && intent !== 'comparison') {
     follow_ups.push({ label: `Compare ${entities.drugs[0]} vs ${entities.drugs[1]}`,
-      gql: `COMPARE ['${entities.drugs[0]}', '${entities.drugs[1]}'] ON mirador_universe WHERE tissue = '${tissue}'` });
+      gql: `COMPARE ['${entities.drugs[0]}', '${entities.drugs[1]}'] ON mirador_universe WHERE tissue = '${tissue}'${ageFollow}` });
+  }
+  // Age comparison follow-ups
+  if (age_group && disease) {
+    const otherAges = ['pediatric', 'adult', 'geriatric'].filter(a => a !== age_group);
+    for (const other of otherAges) {
+      follow_ups.push({ label: `Same query for ${other}`,
+        gql: gql.replace(/age_group\s*=\s*'[^']+'/i, `age_group = '${other}'`) });
+    }
   }
 
-  return {
+  const resp = {
     status: 'ok', question, answer, verdict, generated_gql: gql, result, follow_ups,
     geometric_verdict_note: 'Mathematical classification (C vs θ). Not clinical guidance.',
   };
+  if (age_group) {
+    const { AGE_MODIFIERS } = require('./_shared');
+    const mod = AGE_MODIFIERS[age_group];
+    resp.age_adjustment = { age_group, auc_factor: mod.auc_factor, r_csf_factor: mod.r_csf_factor };
+  }
+  return resp;
 }
 
 module.exports = { universeGQL, generateAnswer };

@@ -14,6 +14,7 @@ import {
   toDHOOM,
   fromDHOOM,
   applyPatientContext,
+  expandUniverseWithAge,
 } from './gql-engine';
 
 // ── WASM init (must run before any buildUniverse call) ─────────────
@@ -864,6 +865,141 @@ describe('v1.0 — applyPatientContext()', () => {
     expect(result.C).toBeDefined();
     expect(typeof result.K).toBe('number');
     expect(typeof result.C).toBe('number');
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// §12  Age-stratified context (base space expansion)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('age context — extractEntities()', () => {
+  // extractEntities is not exported directly; test via translateNL
+  it('extracts "children" as pediatric age_group', () => {
+    const r = translateNL('best drugs for meningitis in children');
+    expect(r.entities.age_group).toBe('pediatric');
+  });
+
+  it('extracts "elderly" as geriatric age_group', () => {
+    const r = translateNL('best drugs for meningitis in elderly');
+    expect(r.entities.age_group).toBe('geriatric');
+  });
+
+  it('extracts "neonatal" as neonate age_group', () => {
+    const r = translateNL('what treats neonatal meningitis');
+    expect(r.entities.age_group).toBe('neonate');
+  });
+
+  it('returns null age_group when no age keyword', () => {
+    const r = translateNL('best drugs for meningitis');
+    expect(r.entities.age_group).toBeNull();
+  });
+
+  it('extracts "adult" as adult age_group', () => {
+    const r = translateNL('best drugs for meningitis in adults');
+    expect(r.entities.age_group).toBe('adult');
+  });
+});
+
+describe('age context — GQL generation', () => {
+  it('adds age_group to COVER WHERE clause when detected', () => {
+    const r = translateNL('best drugs for meningitis in children');
+    expect(r.generated_gql).toContain("age_group = 'pediatric'");
+  });
+
+  it('omits age_group when not detected', () => {
+    const r = translateNL('best drugs for meningitis');
+    expect(r.generated_gql).not.toContain('age_group');
+  });
+
+  it('adds age_group to DECOMPOSE ON clause', () => {
+    const r = translateNL('does vancomycin work for meningitis in elderly');
+    expect(r.generated_gql).toContain("age_group = 'geriatric'");
+  });
+
+  it('adds age_group to COMPARE WHERE clause', () => {
+    const r = translateNL('compare vancomycin vs ceftriaxone for meningitis in children');
+    expect(r.generated_gql).toContain("age_group = 'pediatric'");
+  });
+});
+
+describe('age context — expandUniverseWithAge()', () => {
+  let base, expanded;
+  beforeAll(() => {
+    base = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+    expanded = expandUniverseWithAge(base);
+  });
+
+  it('tags existing records as adult', () => {
+    const adults = expanded.filter(r => r.age_group === 'adult');
+    expect(adults.length).toBe(base.length);
+  });
+
+  it('creates pediatric and geriatric variants', () => {
+    const ped = expanded.filter(r => r.age_group === 'pediatric');
+    const ger = expanded.filter(r => r.age_group === 'geriatric');
+    expect(ped.length).toBe(base.length);
+    expect(ger.length).toBe(base.length);
+  });
+
+  it('total records = base × 5 (neonate, infant, pediatric, adult, geriatric)', () => {
+    // AGE_MODIFIERS has 5 entries (neonate, infant, pediatric, adult, geriatric)
+    expect(expanded.length).toBe(base.length * 5);
+  });
+
+  it('is idempotent — skip if already expanded', () => {
+    const double = expandUniverseWithAge(expanded);
+    expect(double.length).toBe(expanded.length);
+  });
+
+  it('pediatric records have lower tau (faster clearance)', () => {
+    const adultVAN = expanded.find(r => r.drug === 'VAN' && r.age_group === 'adult');
+    const pedVAN = expanded.find(r => r.drug === 'VAN' && r.age_group === 'pediatric');
+    expect(pedVAN.tau).toBeLessThan(adultVAN.tau);
+  });
+
+  it('geriatric records have higher tau (slower clearance)', () => {
+    const adultVAN = expanded.find(r => r.drug === 'VAN' && r.age_group === 'adult');
+    const gerVAN = expanded.find(r => r.drug === 'VAN' && r.age_group === 'geriatric');
+    expect(gerVAN.tau).toBeGreaterThan(adultVAN.tau);
+  });
+
+  it('age-adjusted records have confidence 0.85', () => {
+    const ped = expanded.filter(r => r.age_group === 'pediatric');
+    for (const r of ped) expect(r.confidence).toBe(0.85);
+  });
+});
+
+describe('age context — query execution on expanded universe', () => {
+  let expanded;
+  beforeAll(() => {
+    const base = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+    expanded = expandUniverseWithAge(base);
+  });
+
+  it('COVER with age_group filter returns only that age group', () => {
+    const res = universeGQL(
+      "COVER ON mirador_universe WHERE disease = 'mrsa' AND tissue = 'bone' AND age_group = 'pediatric' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE",
+      expanded
+    );
+    expect(res.count).toBe(3); // VAN, RIF, CAR
+    for (const r of res.rows) expect(r.age_group).toBe('pediatric');
+  });
+
+  it('COVER without age_group returns all age groups', () => {
+    const res = universeGQL(
+      "COVER ON mirador_universe WHERE disease = 'mrsa' AND tissue = 'bone' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE",
+      expanded
+    );
+    expect(res.count).toBe(15); // 3 drugs × 5 age groups
+  });
+
+  it('DECOMPOSE with age_group finds the right record', () => {
+    const res = universeGQL(
+      "DECOMPOSE mirador_universe ON drug = 'VAN' AND tissue = 'bone' AND age_group = 'geriatric'",
+      expanded
+    );
+    expect(res.drug).toBe('VAN');
+    expect(res.tau).toBeGreaterThan(2.602); // geriatric has higher AUC → higher tau
   });
 });
 

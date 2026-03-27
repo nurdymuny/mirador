@@ -69,6 +69,34 @@ const NL_TISSUES = {
   blood:'planktonic', serum:'planktonic',
 };
 
+// ── Age / patient-context vocabulary ────────────────────────────────
+
+const NL_AGE_GROUPS = {
+  neonate:'neonate', neonatal:'neonate', newborn:'neonate',
+  infant:'infant', baby:'infant',
+  child:'pediatric', children:'pediatric', pediatric:'pediatric',
+  kid:'pediatric', kids:'pediatric', paediatric:'pediatric',
+  adult:'adult', adults:'adult',
+  elderly:'geriatric', geriatric:'geriatric', older:'geriatric',
+  senior:'geriatric', seniors:'geriatric',
+};
+
+// Age-group modifiers for the Davis Field Equation.
+// auc_factor  — multiplier on AUC (clearance difference)
+// r_csf_factor — multiplier on R_penetration for CSF/CNS tissues (inflammation)
+// Sources: Nau et al. AAC 2010 (R_CSF pediatric inflation);
+//          Kearns et al. NEJM 2003 (pediatric clearance);
+//          Mangoni & Jackson, Br J Clin Pharmacol 2004 (geriatric PK).
+const AGE_MODIFIERS = {
+  neonate:   { auc_factor: 1.30, r_csf_factor: 1.5 },
+  infant:    { auc_factor: 0.90, r_csf_factor: 1.3 },
+  pediatric: { auc_factor: 0.85, r_csf_factor: 1.3 },
+  adult:     { auc_factor: 1.00, r_csf_factor: 1.0 },
+  geriatric: { auc_factor: 1.40, r_csf_factor: 0.7 },
+};
+
+const CSF_TISSUES = new Set(['csf_inflamed', 'csf_uninflamed', 'cns']);
+
 // Human-readable barrier names
 const K_NAMES = {
   k_admet: 'ADMET/absorption',
@@ -97,5 +125,6 @@ function getDominantK(decomposition) {
 module.exports = {
   DISEASE_THRESHOLDS, getThresholdForDisease, NL_DEFAULT_TISSUE,
   NL_DRUGS, NL_DISEASES, NL_TISSUE_PHRASES, NL_TISSUES, K_NAMES,
+  NL_AGE_GROUPS, AGE_MODIFIERS, CSF_TISSUES,
   describeConfidence, getDominantK,
 };

@@ -149,14 +149,18 @@ export function coverEvaluate(universe, filters, options = {}) {
   results.sort((a, b) => rankDir === 'DESC' ? b[rankField] - a[rankField] : a[rankField] - b[rankField]);
 
   // Attach ≥θ indicator
-  results = results.map(r => ({
-    drug: r.drug,
-    C: r.C,
-    '≥θ': r.crossesThreshold ? 'yes' : 'no',
-    K_pathway: r.K_pathway,
-    confidence: r.confidence,
-    provenance: r.provenance,
-  }));
+  results = results.map(r => {
+    const row = {
+      drug: r.drug,
+      C: r.C,
+      '≥θ': r.crossesThreshold ? 'yes' : 'no',
+      K_pathway: r.K_pathway,
+      confidence: r.confidence,
+      provenance: r.provenance,
+    };
+    if (r.age_group) row.age_group = r.age_group;
+    return row;
+  });
 
   return results;
 }
@@ -167,10 +171,11 @@ export function coverEvaluate(universe, filters, options = {}) {
  * DECOMPOSE: returns the full impedance stack for a single drug at a tissue.
  * Used by AI agents to understand WHY a drug fails or succeeds at a site.
  */
-export function decompose(universe, { drug, tissue }) {
+export function decompose(universe, { drug, tissue, age_group }) {
   const record = universe.find(r =>
     r.drug.toLowerCase() === drug.toLowerCase() &&
-    r.tissue.toLowerCase() === tissue.toLowerCase()
+    r.tissue.toLowerCase() === tissue.toLowerCase() &&
+    (!age_group || !r.age_group || r.age_group.toLowerCase() === age_group.toLowerCase())
   );
   if (!record) return null;
 
@@ -212,13 +217,14 @@ export function decompose(universe, { drug, tissue }) {
  * compareDrugs: rank multiple drugs at the same tissue by coherence.
  * Returns a comparison object with winner, advantage, and per-barrier wins.
  */
-export function compareDrugs(universe, drugNames, tissue) {
+export function compareDrugs(universe, drugNames, tissue, age_group) {
   if (!drugNames || drugNames.length === 0) return null;
 
   const matched = drugNames.map(name =>
     universe.find(r =>
       r.drug.toLowerCase() === name.toLowerCase() &&
-      r.tissue.toLowerCase() === tissue.toLowerCase()
+      r.tissue.toLowerCase() === tissue.toLowerCase() &&
+      (!age_group || !r.age_group || r.age_group.toLowerCase() === age_group.toLowerCase())
     )
   ).filter(Boolean);
 
@@ -358,7 +364,7 @@ export function universeGQL(query, universe) {
     const drug = filters.drug;
     const tissue = filters.tissue;
     if (!drug || !tissue) return { error: 'DECOMPOSE requires drug and tissue' };
-    const result = decompose(universe, { drug, tissue });
+    const result = decompose(universe, { drug, tissue, age_group: filters.age_group });
     if (!result) return { error: `Drug '${drug}' not found at tissue '${tissue}'` };
     return result;
   }
@@ -377,7 +383,7 @@ export function universeGQL(query, universe) {
       if (cm) filters[cm[1]] = cm[2];
     }
     const tissue = filters.tissue || '';
-    const result = compareDrugs(universe, drugNames, tissue);
+    const result = compareDrugs(universe, drugNames, tissue, filters.age_group);
     if (!result) return { error: `No matching drugs found at tissue '${tissue}'` };
     return result;
   }
@@ -498,6 +504,27 @@ const NL_DEFAULT_TISSUE = {
   mrsa:'bone', tb:'granuloma_lung', hiv:'cns', meningitis:'csf_inflamed',
 };
 
+// Age / patient-context vocabulary
+const NL_AGE_GROUPS = {
+  neonate:'neonate', neonatal:'neonate', newborn:'neonate',
+  infant:'infant', baby:'infant',
+  child:'pediatric', children:'pediatric', pediatric:'pediatric',
+  kid:'pediatric', kids:'pediatric', paediatric:'pediatric',
+  adult:'adult', adults:'adult',
+  elderly:'geriatric', geriatric:'geriatric', older:'geriatric',
+  senior:'geriatric', seniors:'geriatric',
+};
+
+const AGE_MODIFIERS = {
+  neonate:   { auc_factor: 1.30, r_csf_factor: 1.5 },
+  infant:    { auc_factor: 0.90, r_csf_factor: 1.3 },
+  pediatric: { auc_factor: 0.85, r_csf_factor: 1.3 },
+  adult:     { auc_factor: 1.00, r_csf_factor: 1.0 },
+  geriatric: { auc_factor: 1.40, r_csf_factor: 0.7 },
+};
+
+const CSF_TISSUES = new Set(['csf_inflamed', 'csf_uninflamed', 'cns']);
+
 // ── Stage 1: Intent classification ─────────────────────────────────
 
 function classifyIntent(q) {
@@ -528,6 +555,7 @@ function classifyIntent(q) {
 function extractEntities(q) {
   const lower = q.toLowerCase();
   const drugs = [], diseases = [], tissues = [];
+  let age_group = null;
 
   // Multi-word tissue phrases first
   for (const [phrase, mapped] of NL_TISSUE_PHRASES) {
@@ -540,29 +568,32 @@ function extractEntities(q) {
     if (NL_DRUGS[w] && !drugs.includes(NL_DRUGS[w])) drugs.push(NL_DRUGS[w]);
     if (NL_DISEASES[w] && !diseases.includes(NL_DISEASES[w])) diseases.push(NL_DISEASES[w]);
     if (NL_TISSUES[w] && !tissues.includes(NL_TISSUES[w])) tissues.push(NL_TISSUES[w]);
+    if (!age_group && NL_AGE_GROUPS[w]) age_group = NL_AGE_GROUPS[w];
   }
 
-  return { drugs, diseases, tissues: [...new Set(tissues)] };
+  return { drugs, diseases, tissues: [...new Set(tissues)], age_group };
 }
 
 // ── Stage 3: GQL generation ────────────────────────────────────────
 
 function generateGQL(intent, entities) {
-  const { drugs, diseases, tissues } = entities;
+  const { drugs, diseases, tissues, age_group } = entities;
   const disease = diseases[0];
   const tissue = tissues[0] || (disease ? NL_DEFAULT_TISSUE[disease] : null);
+  const ageClause = age_group ? ` AND age_group = '${age_group}'` : '';
 
   switch (intent) {
     case 'single_drug_check':
     case 'failure_diagnosis': {
       if (!drugs[0] || !tissue) return null;
-      return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'`;
+      return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'${ageClause}`;
     }
     case 'drug_ranking':
     case 'cure_feasibility': {
       const w = [];
       if (disease) w.push(`disease = '${disease}'`);
       if (tissue) w.push(`tissue = '${tissue}'`);
+      if (age_group) w.push(`age_group = '${age_group}'`);
       return w.length ? `COVER ON mirador_universe WHERE ${w.join(' AND ')} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` : null;
     }
     case 'combination_query': {
@@ -571,30 +602,31 @@ function generateGQL(intent, entities) {
       if (disease) w.push(`disease = '${disease}'`);
       if (tissue) w.push(`tissue = '${tissue}'`);
       if (!w.length) return null;
-      return `COVER ON mirador_universe WHERE ${w.join(' AND ')} COMBINE '${drugs[0]}', '${drugs[1]}' MODE COUPLED SYNERGY 1.2 EVALUATE coherence WITH CONFIDENCE, PROVENANCE`;
+      return `COVER ON mirador_universe WHERE ${w.join(' AND ')}${ageClause} COMBINE '${drugs[0]}', '${drugs[1]}' MODE COUPLED SYNERGY 1.2 EVALUATE coherence WITH CONFIDENCE, PROVENANCE`;
     }
     case 'comparison': {
       if (drugs.length < 2 || !tissue) return null;
-      return `COMPARE [${drugs.map(d => `'${d}'`).join(', ')}] ON mirador_universe WHERE tissue = '${tissue}'`;
+      return `COMPARE [${drugs.map(d => `'${d}'`).join(', ')}] ON mirador_universe WHERE tissue = '${tissue}'${ageClause}`;
     }
     case 'data_quality': {
-      if (drugs[0] && tissue) return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'`;
+      if (drugs[0] && tissue) return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'${ageClause}`;
       const w = [];
       if (disease) w.push(`disease = '${disease}'`);
       if (tissue) w.push(`tissue = '${tissue}'`);
+      if (age_group) w.push(`age_group = '${age_group}'`);
       return w.length ? `COVER ON mirador_universe WHERE ${w.join(' AND ')} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` : null;
     }
     case 'predict_unmeasured': {
       const d = drugs[0];
       const t = tissue;
-      if (d && t) return `COMPLETE ON mirador_universe WHERE drug = '${d}' AND tissue = '${t}' METHOD sheaf_extension`;
+      if (d && t) return `COMPLETE ON mirador_universe WHERE drug = '${d}' AND tissue = '${t}'${ageClause} METHOD sheaf_extension`;
       if (d) return `COMPLETE ON mirador_universe WHERE drug = '${d}' METHOD sheaf_extension`;
       return null;
     }
     case 'cascade_analysis': {
       const d = drugs[0];
       const t = tissue;
-      if (d && t) return `PROPAGATE ON mirador_universe ASSUMING drug = '${d}' AND tissue = '${t}' SHOW newly_determined`;
+      if (d && t) return `PROPAGATE ON mirador_universe ASSUMING drug = '${d}' AND tissue = '${t}'${ageClause} SHOW newly_determined`;
       return null;
     }
     default: return null;
@@ -777,14 +809,15 @@ export function nlToGql(question, universe) {
   if (t.status !== 'ok') return t;
 
   // Multi-disease queries: run per-disease, merge results
-  const { diseases, tissues } = t.entities;
+  const { diseases, tissues, age_group } = t.entities;
   if (diseases.length >= 2 && (t.intent === 'drug_ranking' || t.intent === 'cure_feasibility')) {
     const tissue = tissues[0]; // shared tissue from question (e.g. CSF)
+    const ageClause = age_group ? ` AND age_group = '${age_group}'` : '';
     const allRows = [];
     const gqls = [];
     for (const dis of diseases) {
       const tis = tissue || NL_DEFAULT_TISSUE[dis];
-      const gql = `COVER ON mirador_universe WHERE disease = '${dis}'${tis ? ` AND tissue = '${tis}'` : ''} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE`;
+      const gql = `COVER ON mirador_universe WHERE disease = '${dis}'${tis ? ` AND tissue = '${tis}'` : ''}${ageClause} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE`;
       gqls.push(gql);
       const res = universeGQL(gql, universe);
       if (res?.rows) {
@@ -800,4 +833,60 @@ export function nlToGql(question, universe) {
 
   const result = universeGQL(t.generated_gql, universe);
   return generateAnswer(question, t.intent, t.entities, t.generated_gql, result);
+}
+
+// ── Age-stratified universe expansion ──────────────────────────────
+
+/**
+ * Expand a base universe with age-stratified records.
+ * Adds age_group='adult' to existing records, then generates pediatric
+ * and geriatric variants using literature-sourced PK modifiers.
+ * Formula: C = τ × R × (1 − k_admet)  [Davis Field Equation, WASM impl]
+ */
+export function expandUniverseWithAge(baseUniverse) {
+  if (!baseUniverse?.length) return baseUniverse;
+  // Skip if already expanded
+  if (baseUniverse[0]?.age_group) return baseUniverse;
+
+  const expanded = baseUniverse.map(r => ({ ...r, age_group: 'adult' }));
+
+  for (const [ageGroup, mod] of Object.entries(AGE_MODIFIERS)) {
+    if (ageGroup === 'adult') continue;
+    for (const record of baseUniverse) {
+      const isCsf = CSF_TISSUES.has(record.tissue);
+      const rFactor = isCsf ? mod.r_csf_factor : 1.0;
+
+      let auc_eff, tau_eff;
+      if (record.auc_24 > 0) {
+        auc_eff = +(record.auc_24 * mod.auc_factor).toFixed(2);
+        tau_eff = +(Math.log10(auc_eff / record.mic)).toFixed(4);
+      } else {
+        auc_eff = 0;
+        tau_eff = +(record.tau + Math.log10(mod.auc_factor)).toFixed(4);
+      }
+
+      const r_eff = +(record.r_penetration * rFactor).toFixed(6);
+      const k_barrier_eff = (r_eff > 0 && r_eff < 1) ? +(-Math.log10(r_eff)).toFixed(4) : 0;
+      const K_pathway = +(k_barrier_eff + (record.k_biofilm || 0)).toFixed(4);
+      const C = +(tau_eff * r_eff * (1 - record.k_admet)).toFixed(4);
+      const thresh = DISEASE_THRESHOLDS[record.disease]?.theta ?? 5.0;
+
+      expanded.push({
+        ...record,
+        age_group: ageGroup,
+        context: ageGroup,
+        tau: tau_eff,
+        C,
+        K_pathway,
+        confidence: 0.85,
+        provenance: `Age-adjusted (${ageGroup}): AUC×${mod.auc_factor}${isCsf ? `, R_CSF×${mod.r_csf_factor}` : ''}`,
+        crossesThreshold: C >= thresh,
+        auc_24: auc_eff,
+        r_penetration: r_eff,
+        k_barrier: k_barrier_eff,
+      });
+    }
+  }
+
+  return expanded;
 }

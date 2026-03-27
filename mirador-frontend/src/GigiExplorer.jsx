@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { initEngine, buildUniverse, universeGQL, nlToGql } from './gql-engine';
+import { initEngine, buildUniverse, universeGQL, nlToGql, expandUniverseWithAge } from './gql-engine';
 
 const FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 const DEFAULT_HOST = 'https://gigi-stream.fly.dev';
@@ -564,7 +564,7 @@ export default function GigiExplorer() {
         mirador_drugs: _DRUGS,
         mirador_thresholds: THRESHOLDS,
         mirador_regimens: REGIMENS,
-        mirador_universe: buildUniverse(_DRUGS, THRESHOLDS, REGIMENS),
+        mirador_universe: expandUniverseWithAge(buildUniverse(_DRUGS, THRESHOLDS, REGIMENS)),
       };
       setWasmReady(true);
     });
