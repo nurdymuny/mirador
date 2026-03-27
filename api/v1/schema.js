@@ -3,7 +3,7 @@ module.exports = function handler(req, res) {
   res.status(200).json({
     openapi: '3.0.0',
     info: { title: 'MIRADOR GQL API', version: '0.2', description: 'Geometric pharmacology query engine. Translates natural language clinical questions into GQL (Geometric Query Language) and executes them against the MIRADOR universe — a fiber-bundle database of drug-pathogen-tissue coherence.' },
-    servers: [{ url: 'https://mirador-six.vercel.app', description: 'Production' }],
+    servers: [{ url: 'https://usemirador.sh', description: 'Production' }],
     paths: {
       '/v1/ask': {
         post: {
