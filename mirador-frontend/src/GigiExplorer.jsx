@@ -364,6 +364,19 @@ function ResultTable({ data }) {
     return String(v);
   };
 
+  // Build a reference URL from provenance string + row context
+  const provenanceUrl = (prov, row) => {
+    if (!prov || typeof prov !== 'string') return null;
+    if (/WHO/i.test(prov)) return 'https://www.whocc.no/atc_ddd_index/';
+    const m = prov.match(/Computed from AUC\/MIC/i);
+    if (m && row?.drug) {
+      const drug = encodeURIComponent(row.drug);
+      const disease = row.disease ? encodeURIComponent(row.disease) : '';
+      return `https://pubmed.ncbi.nlm.nih.gov/?term=${drug}+AUC+MIC${disease ? '+' + disease : ''}`;
+    }
+    return null;
+  };
+
   // Color-code numeric values by magnitude (tau / pchembl / etc)
   const numColor = (col, v) => {
     if (typeof v !== 'number') return '#e2e8f0';
@@ -407,10 +420,14 @@ function ResultTable({ data }) {
                   onMouseOut={e => { if (!isExp) e.currentTarget.style.background = i % 2 === 0 ? '#0a0a14' : '#0f0f1a'; }}>
                   {cols.map(c => {
                     const v = row[c];
+                    const pUrl = c === 'provenance' ? provenanceUrl(v, row) : null;
                     return (
                       <td key={c} style={{ padding: '5px 10px', color: numColor(c, v), borderBottom: isExp ? 'none' : '1px solid #1a1a2e',
                         whiteSpace: 'nowrap', fontVariantNumeric: typeof v === 'number' ? 'tabular-nums' : undefined }}>
-                        {v === null || v === undefined ? <span style={{ color: '#334155' }}>—</span> : fmt(v)}
+                        {v === null || v === undefined ? <span style={{ color: '#334155' }}>—</span>
+                          : pUrl ? <a href={pUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                              style={{ color: '#22d3ee', textDecoration: 'underline', textUnderlineOffset: 2 }}>{fmt(v)}</a>
+                          : fmt(v)}
                       </td>
                     );
                   })}
@@ -424,12 +441,16 @@ function ResultTable({ data }) {
                           fontWeight: 700, marginBottom: 4 }}>ROW DETAIL — click header to sort, click row to collapse</div>
                         {cols.map(c => {
                           const v = row[c];
+                          const pUrl = c === 'provenance' ? provenanceUrl(v, row) : null;
                           return (
                             <div key={c}>
                               <div style={{ fontSize: 8, color: '#475569', letterSpacing: 1, marginBottom: 2 }}>{c.toUpperCase()}</div>
                               <div style={{ fontSize: 12, color: numColor(c, v), fontWeight: typeof v === 'number' ? 700 : 400,
                                 wordBreak: 'break-word', whiteSpace: 'normal' }}>
-                                {v === null || v === undefined ? <span style={{ color: '#334155' }}>—</span> : fmt(v)}
+                                {v === null || v === undefined ? <span style={{ color: '#334155' }}>—</span>
+                                  : pUrl ? <a href={pUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                                      style={{ color: '#22d3ee', textDecoration: 'underline', textUnderlineOffset: 2 }}>{fmt(v)}</a>
+                                  : fmt(v)}
                               </div>
                             </div>
                           );
