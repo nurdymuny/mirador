@@ -273,36 +273,110 @@ function highlightGQL(code) {
 // ── Result rendering ───────────────────────────────────────────────
 
 function ResultTable({ data }) {
+  const [sortCol, setSortCol] = useState(null);
+  const [sortDir, setSortDir] = useState('asc');
+  const [expanded, setExpanded] = useState(null);
+
   if (!data || !Array.isArray(data) || data.length === 0) return null;
   const cols = Object.keys(data[0]);
+
+  const sorted = sortCol ? [...data].sort((a, b) => {
+    const av = a[sortCol], bv = b[sortCol];
+    if (av == null) return 1; if (bv == null) return -1;
+    const cmp = typeof av === 'number' && typeof bv === 'number'
+      ? av - bv : String(av).localeCompare(String(bv));
+    return sortDir === 'asc' ? cmp : -cmp;
+  }) : data;
+
+  const handleSort = col => {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir('asc'); }
+    setExpanded(null);
+  };
+
+  const fmt = v => {
+    if (v === null || v === undefined) return null;
+    if (typeof v === 'number') return Number.isInteger(v) ? v.toLocaleString() : v.toFixed(4);
+    return String(v);
+  };
+
+  // Color-code numeric values by magnitude (tau / pchembl / etc)
+  const numColor = (col, v) => {
+    if (typeof v !== 'number') return '#e2e8f0';
+    const lc = col.toLowerCase();
+    if (lc.includes('tau') || lc.includes('pchembl') || lc.includes('avg')) {
+      if (v >= 7) return '#4ade80'; if (v >= 5) return '#f0e68c'; return '#f87171';
+    }
+    return '#f0e68c';
+  };
+
   return (
-    <div style={{ overflowX: 'auto', maxHeight: 500, overflowY: 'auto' }}>
+    <div style={{ overflowX: 'auto', maxHeight: 520, overflowY: 'auto' }}>
       <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 11, fontFamily: FONT }}>
         <thead>
           <tr>
-            {cols.map(c => (
-              <th key={c} style={{ position: 'sticky', top: 0, background: '#0f0f1a', padding: '6px 10px', textAlign: 'left', color: '#64b5f6', borderBottom: '2px solid #1e3a5f', whiteSpace: 'nowrap', fontSize: 10, letterSpacing: 1 }}>{c}</th>
-            ))}
+            {cols.map(c => {
+              const active = sortCol === c;
+              return (
+                <th key={c} onClick={() => handleSort(c)}
+                  style={{ position: 'sticky', top: 0, background: '#0f0f1a', padding: '6px 10px',
+                    textAlign: 'left', color: active ? '#64b5f6' : '#475569', borderBottom: '2px solid #1e3a5f',
+                    whiteSpace: 'nowrap', fontSize: 10, letterSpacing: 1, cursor: 'pointer',
+                    userSelect: 'none', transition: 'color 0.1s' }}
+                  onMouseOver={e => e.currentTarget.style.color = '#94a3b8'}
+                  onMouseOut={e => e.currentTarget.style.color = active ? '#64b5f6' : '#475569'}>
+                  {c} {active ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
-          {data.map((row, i) => (
-            <tr key={i} style={{ background: i % 2 === 0 ? '#0a0a14' : '#0f0f1a' }}
-                onMouseOver={e => e.currentTarget.style.background = '#1a1a3a'}
-                onMouseOut={e => e.currentTarget.style.background = i % 2 === 0 ? '#0a0a14' : '#0f0f1a'}>
-              {cols.map(c => {
-                const v = row[c];
-                const isNum = typeof v === 'number';
-                return (
-                  <td key={c} style={{ padding: '5px 10px', color: isNum ? '#f0e68c' : '#e2e8f0', borderBottom: '1px solid #1a1a2e', whiteSpace: 'nowrap', fontVariantNumeric: isNum ? 'tabular-nums' : undefined }}>
-                    {v === null || v === undefined ? <span style={{ color: '#475569' }}>null</span>
-                      : isNum ? (Number.isInteger(v) ? v : v.toFixed(4))
-                      : String(v)}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+          {sorted.map((row, i) => {
+            const isExp = expanded === i;
+            return (
+              <>
+                <tr key={i}
+                  onClick={() => setExpanded(isExp ? null : i)}
+                  style={{ background: isExp ? '#0d2040' : i % 2 === 0 ? '#0a0a14' : '#0f0f1a', cursor: 'pointer' }}
+                  onMouseOver={e => { if (!isExp) e.currentTarget.style.background = '#131330'; }}
+                  onMouseOut={e => { if (!isExp) e.currentTarget.style.background = i % 2 === 0 ? '#0a0a14' : '#0f0f1a'; }}>
+                  {cols.map(c => {
+                    const v = row[c];
+                    return (
+                      <td key={c} style={{ padding: '5px 10px', color: numColor(c, v), borderBottom: isExp ? 'none' : '1px solid #1a1a2e',
+                        whiteSpace: 'nowrap', fontVariantNumeric: typeof v === 'number' ? 'tabular-nums' : undefined }}>
+                        {v === null || v === undefined ? <span style={{ color: '#334155' }}>—</span> : fmt(v)}
+                      </td>
+                    );
+                  })}
+                </tr>
+                {isExp && (
+                  <tr key={`exp-${i}`}>
+                    <td colSpan={cols.length} style={{ padding: 0, borderBottom: '2px solid #1e3a5f' }}>
+                      <div style={{ background: '#080e1a', padding: '12px 16px', display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px 20px' }}>
+                        <div style={{ gridColumn: '1 / -1', fontSize: 9, color: '#22d3ee', letterSpacing: 2,
+                          fontWeight: 700, marginBottom: 4 }}>ROW DETAIL — click header to sort, click row to collapse</div>
+                        {cols.map(c => {
+                          const v = row[c];
+                          return (
+                            <div key={c}>
+                              <div style={{ fontSize: 8, color: '#475569', letterSpacing: 1, marginBottom: 2 }}>{c.toUpperCase()}</div>
+                              <div style={{ fontSize: 12, color: numColor(c, v), fontWeight: typeof v === 'number' ? 700 : 400,
+                                wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                                {v === null || v === undefined ? <span style={{ color: '#334155' }}>—</span> : fmt(v)}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -572,7 +646,7 @@ export default function GigiExplorer() {
         </div>
 
         {/* Main area */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
 
           {/* ── NL → GQL Live Translator ─────────────────────────── */}
           <div style={{ background: '#07071a', border: '1px solid #1a2a40', borderRadius: 8, overflow: 'hidden' }}>
