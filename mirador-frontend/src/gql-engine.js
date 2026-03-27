@@ -26,6 +26,84 @@ export function initEngineSync(wasmBuffer) {
   initSync({ module: wasmBuffer });
 }
 
+// ── v1.0 Disease-specific thresholds ───────────────────────────────
+
+export const DISEASE_THRESHOLDS = {
+  mrsa:       { theta: 5.0,  anchor: 'vancomycin monotherapy failure' },
+  tb:         { theta: 0.50, anchor: 'INH monotherapy at cavity site' },
+  meningitis: { theta: 0.50, anchor: 'ceftriaxone at peak inflammation' },
+  hiv:        { theta: 1.0,  anchor: 'single-cell suppression' },
+};
+
+function getThresholdForDisease(disease) {
+  return DISEASE_THRESHOLDS[disease]?.theta ?? 5.0;
+}
+
+// ── v1.0 Confidence + K helpers ───────────────────────────────────
+
+const K_NAMES = {
+  k_admet: 'ADMET/absorption',
+  k_barrier: 'tissue penetration barrier',
+  k_biofilm: 'biofilm/phenotype resistance',
+};
+
+export function describeConfidence(conf) {
+  if (conf >= 0.85) return `high (${conf.toFixed(2)})`;
+  if (conf >= 0.60) return `moderate (${conf.toFixed(2)})`;
+  return `low (${conf.toFixed(2)})`;
+}
+
+export function getDominantK(decomposition) {
+  const entries = [
+    ['k_admet', decomposition.k_admet],
+    ['k_barrier', decomposition.k_barrier],
+    ['k_biofilm', decomposition.k_biofilm],
+  ];
+  entries.sort((a, b) => b[1] - a[1]);
+  return { key: entries[0][0], value: entries[0][1], name: K_NAMES[entries[0][0]] || entries[0][0] };
+}
+
+// ── v1.0 DHOOM wire format ────────────────────────────────────────
+
+export function toDHOOM(rows, fields) {
+  const header = fields.join('|');
+  const body = rows.map(r => fields.map(f => r[f] ?? '').join('|')).join('\n');
+  return header + '\n' + body;
+}
+
+export function fromDHOOM(dhoom) {
+  const lines = dhoom.trim().split('\n');
+  if (lines.length < 2) return [];
+  const fields = lines[0].split('|');
+  return lines.slice(1).map(line => {
+    const vals = line.split('|');
+    const obj = {};
+    fields.forEach((f, i) => { obj[f] = vals[i] ?? ''; });
+    return obj;
+  });
+}
+
+// ── v1.0 Patient context adjustment ──────────────────────────────
+
+export function applyPatientContext(drug, patient) {
+  const crpFactor = Math.min(
+    1.0 + 0.006 * Math.max((patient.crp_mg_L || 0) - 100, 0),
+    2.0
+  );
+  drug.R_eff = +(drug.R_bone * crpFactor).toFixed(6);
+  drug.k_barrier = Math.max(1.0 / drug.R_eff - 1.0, -1.0);
+
+  if (patient.chronicity === 'acute') {
+    drug.MBEC_factor = 0.5;
+  } else {
+    drug.MBEC_factor = 1.0;
+  }
+
+  drug.K = +(drug.k_admet + drug.k_barrier + drug.k_biofilm * drug.MBEC_factor).toFixed(6);
+  drug.C = drug.K > 0 ? +(drug.tau / drug.K).toFixed(6) : 0;
+  return drug;
+}
+
 // ── WASM-backed: math computed in Rust ─────────────────────────────
 
 /**
@@ -105,16 +183,20 @@ export function decompose(universe, { drug, tissue }) {
   const barriers = { k_admet, k_barrier, k_biofilm };
   const dominant_barrier = Object.entries(barriers).sort((a, b) => b[1] - a[1])[0][0];
 
-  const threshold = 5.0;
+  // v1.0: disease-specific threshold
+  const threshold = getThresholdForDisease(record.disease);
 
   return {
     drug: record.drug,
     tissue: record.tissue,
+    disease: record.disease,
     tau: record.tau,
     C: record.C,
+    confidence: record.confidence,
     decomposition: { k_admet, k_barrier, k_biofilm, K_total },
     dominant_barrier,
-    geometric_verdict: record.C >= threshold ? 'meets_threshold' : 'fails_threshold',
+    geometric_verdict: record.C >= threshold ? 'above_threshold' : 'below_threshold',
+    geometric_verdict_note: 'Mathematical classification (C vs θ). Not clinical guidance.',
     threshold,
     raw: {
       auc_24: record.auc_24,
@@ -300,6 +382,64 @@ export function universeGQL(query, universe) {
     return result;
   }
 
+  // COMPLETE ON mirador_universe WHERE drug = 'X' AND tissue = 'Y' METHOD sheaf_extension
+  if ((m = q.match(/^COMPLETE\s+ON\s+mirador_universe\s+WHERE\s+(.+?)\s+METHOD\s+(\w+)/i))) {
+    const filterStr = m[1];
+    const method = m[2];
+    const filters = {};
+    const conditions = filterStr.split(/\s+AND\s+/i);
+    for (const cond of conditions) {
+      const cm = cond.trim().match(/^(\w+)\s*=\s*'([^']+)'$/);
+      if (cm) filters[cm[1]] = cm[2];
+    }
+    const drug = filters.drug;
+    const tissue = filters.tissue;
+    // Try exact match first; if missing, this is a sheaf completion scenario
+    const record = universe.find(r =>
+      r.drug.toLowerCase() === (drug || '').toLowerCase() &&
+      (!tissue || r.tissue.toLowerCase() === tissue.toLowerCase())
+    );
+    if (record) {
+      return {
+        drug: record.drug, tissue: record.tissue, C: record.C,
+        confidence: record.confidence, origin: 'sheaf_completed',
+        method, note: 'Exact data exists. No completion needed.',
+      };
+    }
+    // No exact match — return sheaf_completed placeholder with neighboring data
+    const neighbors = universe
+      .filter(r => r.drug.toLowerCase() === (drug || '').toLowerCase())
+      .map(r => ({ tissue: r.tissue, C: r.C, confidence: r.confidence }));
+    return {
+      drug: drug || 'unknown', tissue: tissue || 'unknown',
+      C: null, confidence: 0, origin: 'sheaf_completed',
+      method, note: 'No direct measurement. Sheaf completion from neighboring sections.',
+      neighbors,
+    };
+  }
+
+  // PROPAGATE ON mirador_universe ASSUMING drug = 'X' AND tissue = 'Y' AND R = 0.20 SHOW newly_determined
+  if ((m = q.match(/^PROPAGATE\s+ON\s+mirador_universe\s+ASSUMING\s+(.+?)\s+SHOW\s+(\w+)/i))) {
+    const filterStr = m[1];
+    const filters = {};
+    const conditions = filterStr.split(/\s+AND\s+/i);
+    for (const cond of conditions) {
+      const cm = cond.trim().match(/^(\w+)\s*=\s*'?([^']*)'?$/);
+      if (cm) filters[cm[1]] = cm[2];
+    }
+    const drug = filters.drug;
+    const tissue = filters.tissue;
+    // Find same-drug records at other tissues to compute cascades
+    const related = universe
+      .filter(r => r.drug.toLowerCase() === (drug || '').toLowerCase() && r.tissue.toLowerCase() !== (tissue || '').toLowerCase())
+      .map(r => ({ tissue: r.tissue, C: r.C, confidence: +(r.confidence * 0.85).toFixed(2) }));
+    return {
+      drug: drug || 'unknown', source_tissue: tissue || 'unknown',
+      cascades: related,
+      note: `Measuring ${drug} at ${tissue} would cascade to ${related.length} additional completion(s).`,
+    };
+  }
+
   return null; // Not a universe query — fall through to base engine
 }
 
@@ -315,19 +455,20 @@ const NL_DRUGS = {
   darunavir:'DRV', efavirenz:'EFV',
   isoniazid:'INH', pyrazinamide:'PZA', ethambutol:'EMB',
   moxifloxacin:'MXF', bedaquiline:'BDQ',
+  tedizolid:'TDZ',
   // abbreviations
   van:'VAN', rif:'RIF', lzd:'LZD', cro:'CRO', dap:'DAP',
   car:'CAR', cli:'CLI', dtg:'DTG', tfv:'TFV', ftc:'FTC',
   drv:'DRV', efv:'EFV', inh:'INH', pza:'PZA', emb:'EMB',
-  mxf:'MXF', bdq:'BDQ',
+  mxf:'MXF', bdq:'BDQ', tdz:'TDZ',
 };
 
 // Controlled vocabulary: disease / pathogen
 const NL_DISEASES = {
   mrsa:'mrsa', staph:'mrsa', staphylococcus:'mrsa', 'methicillin-resistant':'mrsa',
-  tb:'tb', tuberculosis:'tb', mycobacterium:'mrsa',
+  tb:'tb', tuberculosis:'tb', mycobacterium:'tb',
   hiv:'hiv', 'hiv-1':'hiv', aids:'hiv',
-  meningitis:'meningitis', meningococcal:'meningitis',
+  meningitis:'meningitis', meningococcal:'meningitis', pneumococcal:'meningitis',
 };
 
 // Multi-word tissue phrases (checked first)
@@ -363,6 +504,10 @@ function classifyIntent(q) {
   const l = q.toLowerCase();
   if (/why\s+(does|doesn'?t|isn'?t|can'?t|won'?t|did)\b/.test(l) || /why\s+fail/.test(l) || /why\s+not\s+work/.test(l))
     return 'failure_diagnosis';
+  if (/\bif\s+(?:I|we)\s+measured\b|\bwhat\s+else\b.*\blearn\b/.test(l))
+    return 'cascade_analysis';
+  if (/\bpredict\b|\bguess\b|\bestimate\b|\bunmeasured\b/.test(l))
+    return 'predict_unmeasured';
   if (/\bvs\.?\b|\bversus\b|\bcompare\b|\bbetter\s+than\b/.test(l))
     return 'comparison';
   if (/\bcombination\b|\bcombo\b|\bplus\b|\bcombine\b|\badd(ing)?\s+\w/.test(l))
@@ -390,7 +535,7 @@ function extractEntities(q) {
   }
 
   // Single-word scans
-  const words = lower.replace(/[?.,!;:'"()]/g, ' ').split(/\s+/);
+  const words = lower.replace(/[?.,!;:'"()\u2018\u2019\u201C\u201D]/g, ' ').split(/\s+/);
   for (const w of words) {
     if (NL_DRUGS[w] && !drugs.includes(NL_DRUGS[w])) drugs.push(NL_DRUGS[w]);
     if (NL_DISEASES[w] && !diseases.includes(NL_DISEASES[w])) diseases.push(NL_DISEASES[w]);
@@ -439,6 +584,19 @@ function generateGQL(intent, entities) {
       if (tissue) w.push(`tissue = '${tissue}'`);
       return w.length ? `COVER ON mirador_universe WHERE ${w.join(' AND ')} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` : null;
     }
+    case 'predict_unmeasured': {
+      const d = drugs[0];
+      const t = tissue;
+      if (d && t) return `COMPLETE ON mirador_universe WHERE drug = '${d}' AND tissue = '${t}' METHOD sheaf_extension`;
+      if (d) return `COMPLETE ON mirador_universe WHERE drug = '${d}' METHOD sheaf_extension`;
+      return null;
+    }
+    case 'cascade_analysis': {
+      const d = drugs[0];
+      const t = tissue;
+      if (d && t) return `PROPAGATE ON mirador_universe ASSUMING drug = '${d}' AND tissue = '${t}' SHOW newly_determined`;
+      return null;
+    }
     default: return null;
   }
 }
@@ -452,21 +610,25 @@ function generateAnswer(question, intent, entities, gql, result) {
     return { status:'error', question, answer: result?.error || 'Could not execute query.', generated_gql: gql };
   }
 
-  const thresh = 5.0;
+  // v1.0: disease-specific threshold
+  const disease = entities.diseases[0] || result.disease;
+  const thresh = getThresholdForDisease(disease);
   let answer = '', verdict = '';
 
   if (intent === 'single_drug_check' || intent === 'failure_diagnosis') {
     const C = result.C, passes = C >= thresh;
-    verdict = passes ? 'meets_threshold' : 'fails_threshold';
-    const dom = result.dominant_barrier;
-    const label = K_LABELS[dom] || dom;
+    verdict = passes ? 'above_threshold' : 'below_threshold';
+    const dom = getDominantK(result.decomposition);
+    const conf = describeConfidence(result.confidence ?? 1.0);
     if (intent === 'failure_diagnosis') {
-      answer = `${result.drug} achieves C = ${C.toFixed(2)} at ${result.tissue}, ${passes ? 'above' : 'below'} threshold θ = ${thresh}. ` +
-        `The dominant impedance is ${label} (${dom} = ${result.decomposition[dom].toFixed(4)}). ` +
+      answer = `${result.drug} achieves C = ${C.toFixed(2)} at ${result.tissue}, ${passes ? 'above' : 'below'} threshold θ = ${thresh} ` +
+        `(confidence: ${conf}). ` +
+        `The dominant barrier is ${dom.name} (${dom.key} = ${dom.value.toFixed(4)}). ` +
         `Full: k_admet=${result.decomposition.k_admet.toFixed(4)}, k_barrier=${result.decomposition.k_barrier.toFixed(4)}, k_biofilm=${result.decomposition.k_biofilm.toFixed(4)}.`;
     } else {
-      answer = `${passes ? 'Yes' : 'No'}. ${result.drug} achieves C = ${C.toFixed(2)} at ${result.tissue}, ${passes ? 'above' : 'below'} θ = ${thresh}. ` +
-        `Dominant barrier: ${label} (${dom} = ${result.decomposition[dom].toFixed(4)}).`;
+      answer = `${passes ? 'Yes' : 'No'}. ${result.drug} achieves C = ${C.toFixed(2)} at ${result.tissue}, ${passes ? 'above' : 'below'} θ = ${thresh} ` +
+        `(confidence: ${conf}). ` +
+        `Dominant barrier: ${dom.name} (${dom.key} = ${dom.value.toFixed(4)}).`;
     }
   } else if (intent === 'drug_ranking' || intent === 'cure_feasibility') {
     const rows = result.rows || [];
@@ -491,7 +653,7 @@ function generateAnswer(question, intent, entities, gql, result) {
     verdict = 'comparison_done';
   } else if (intent === 'data_quality') {
     if (result.C !== undefined) {
-      answer = `${result.drug} at ${result.tissue}: C = ${result.C.toFixed(4)}, confidence = ${result.confidence ?? 'N/A'}.`;
+      answer = `${result.drug} at ${result.tissue}: C = ${result.C.toFixed(4)}, confidence = ${describeConfidence(result.confidence ?? 1.0)}.`;
     } else {
       answer = JSON.stringify(result).slice(0, 200);
     }
@@ -502,7 +664,6 @@ function generateAnswer(question, intent, entities, gql, result) {
 
   // Follow-up suggestions
   const follow_ups = [];
-  const disease = entities.diseases[0];
   const tissue = entities.tissues[0] || (disease ? NL_DEFAULT_TISSUE[disease] : null);
   if (intent !== 'drug_ranking' && disease) {
     follow_ups.push({ label: `Rank all ${disease.toUpperCase()} drugs${tissue ? ' at ' + tissue : ''}`,
@@ -517,7 +678,10 @@ function generateAnswer(question, intent, entities, gql, result) {
       gql: `COMPARE ['${entities.drugs[0]}', '${entities.drugs[1]}'] ON mirador_universe WHERE tissue = '${tissue}'` });
   }
 
-  return { status: 'ok', question, answer, verdict, generated_gql: gql, result, follow_ups };
+  return {
+    status: 'ok', question, answer, verdict, generated_gql: gql, result, follow_ups,
+    geometric_verdict_note: 'Mathematical classification (C vs θ). Not clinical guidance.',
+  };
 }
 
 // ── Public API ─────────────────────────────────────────────────────

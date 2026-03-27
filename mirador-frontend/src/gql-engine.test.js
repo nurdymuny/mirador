@@ -7,6 +7,13 @@ import {
   buildUniverse, coverEvaluate, combineDrugs, universeGQL,
   decompose, compareDrugs, batchGQL,
   translateNL, nlToGql,
+  // v1.0 exports
+  DISEASE_THRESHOLDS,
+  describeConfidence,
+  getDominantK,
+  toDHOOM,
+  fromDHOOM,
+  applyPatientContext,
 } from './gql-engine';
 
 // ── WASM init (must run before any buildUniverse call) ─────────────
@@ -251,7 +258,7 @@ describe('decompose()', () => {
 
   it('includes geometric_verdict (not clinical verdict)', () => {
     const result = decompose(universe, { drug: 'VAN', tissue: 'bone' });
-    expect(result.geometric_verdict).toBe('fails_threshold');
+    expect(result.geometric_verdict).toBe('below_threshold');
   });
 
   it('returns null for unknown drug', () => {
@@ -643,5 +650,293 @@ describe('nlToGql() – Full pipeline with execution', () => {
   it('returns error for null universe', () => {
     const r = nlToGql('Can vancomycin reach bone?', null);
     expect(r.status).toBe('error');
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// v1.0 UPGRADE TESTS — Tier 1: Disease-specific thresholds
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('v1.0 — DISEASE_THRESHOLDS', () => {
+  it('exports disease-specific thresholds object', () => {
+    expect(DISEASE_THRESHOLDS).toBeDefined();
+    expect(DISEASE_THRESHOLDS.mrsa.theta).toBe(5.0);
+    expect(DISEASE_THRESHOLDS.tb.theta).toBe(0.50);
+    expect(DISEASE_THRESHOLDS.meningitis.theta).toBe(0.50);
+    expect(DISEASE_THRESHOLDS.hiv.theta).toBe(1.0);
+  });
+
+  it('each threshold has an anchor description', () => {
+    for (const [, val] of Object.entries(DISEASE_THRESHOLDS)) {
+      expect(val.anchor).toBeDefined();
+      expect(typeof val.anchor).toBe('string');
+    }
+  });
+});
+
+describe('v1.0 — decompose() with disease-specific threshold', () => {
+  let universe;
+  beforeAll(() => {
+    // Use full DEMO_DB-style drugs with varied diseases
+    const drugs = [
+      { compound_id: 300, drug_name: 'VAN', drug_class: 'antibiotic', disease: 'mrsa', compartment: 'bone', auc_24: 400, mic: 1.0, tau: 2.602, k_admet: 0.50, r_penetration: 0.20, k_barrier: 0.699, k_biofilm: 2.709 },
+      { compound_id: 200, drug_name: 'CRO', drug_class: 'antibiotic', disease: 'meningitis', compartment: 'csf_inflamed', auc_24: 1000, mic: 0.015, tau: 4.824, k_admet: 0.10, r_penetration: 0.15, k_barrier: 0.824, k_biofilm: 0 },
+      { compound_id: 100, drug_name: 'DTG', drug_class: 'INSTI', disease: 'hiv', compartment: 'cns', auc_24: 126400, mic: 0.51, tau: 5.3945, k_admet: 0.05, r_penetration: 0.01, k_barrier: 2.0, k_biofilm: 0 },
+    ];
+    universe = buildUniverse(drugs, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+  });
+
+  it('uses θ=5.0 for MRSA', () => {
+    const r = decompose(universe, { drug: 'VAN', tissue: 'bone' });
+    expect(r.threshold).toBe(5.0);
+  });
+
+  it('uses θ=0.50 for meningitis', () => {
+    const r = decompose(universe, { drug: 'CRO', tissue: 'csf_inflamed' });
+    expect(r.threshold).toBe(0.50);
+  });
+
+  it('uses θ=1.0 for HIV', () => {
+    const r = decompose(universe, { drug: 'DTG', tissue: 'cns' });
+    expect(r.threshold).toBe(1.0);
+  });
+
+  it('geometric_verdict uses disease-specific threshold', () => {
+    const r = decompose(universe, { drug: 'CRO', tissue: 'csf_inflamed' });
+    // CRO meningitis C should be compared against 0.50, not 5.0
+    expect(r.geometric_verdict).toBeDefined();
+    expect(r.threshold).toBe(0.50);
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// v1.0 UPGRADE TESTS — Confidence + Provenance helpers
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('v1.0 — describeConfidence()', () => {
+  it('high confidence >= 0.85', () => {
+    expect(describeConfidence(0.90)).toMatch(/high/i);
+  });
+
+  it('moderate confidence 0.60–0.84', () => {
+    expect(describeConfidence(0.70)).toMatch(/moderate/i);
+  });
+
+  it('low confidence < 0.60', () => {
+    expect(describeConfidence(0.40)).toMatch(/low/i);
+  });
+});
+
+describe('v1.0 — getDominantK()', () => {
+  it('identifies the largest K component', () => {
+    const decomp = { k_admet: 0.5, k_barrier: 1.63, k_biofilm: 2.57 };
+    const result = getDominantK(decomp);
+    expect(result.key).toBe('k_biofilm');
+    expect(result.value).toBeCloseTo(2.57);
+    expect(result.name).toBeDefined();
+  });
+
+  it('returns meaningful name for k_barrier', () => {
+    const decomp = { k_admet: 0.1, k_barrier: 3.0, k_biofilm: 0.5 };
+    const result = getDominantK(decomp);
+    expect(result.key).toBe('k_barrier');
+    expect(result.name).toMatch(/penetration|barrier/i);
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// v1.0 UPGRADE TESTS — Enhanced answer generation
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('v1.0 — nlToGql() enhanced answers', () => {
+  let universe;
+  beforeAll(() => { universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS); });
+
+  it('answer includes confidence description', () => {
+    const r = nlToGql('Can vancomycin reach MRSA in bone?', universe);
+    expect(r.answer).toMatch(/confidence/i);
+  });
+
+  it('answer includes dominant barrier explanation', () => {
+    const r = nlToGql('Can vancomycin reach MRSA in bone?', universe);
+    expect(r.answer).toMatch(/dominant|barrier/i);
+  });
+
+  it('answer uses geometric_verdict_note disclaimer', () => {
+    const r = nlToGql('Can vancomycin reach MRSA in bone?', universe);
+    expect(r.geometric_verdict_note).toBeDefined();
+    expect(r.geometric_verdict_note).toMatch(/not.*clinical/i);
+  });
+
+  it('failure diagnosis includes full K breakdown', () => {
+    const r = nlToGql('Why does vancomycin fail in bone?', universe);
+    expect(r.answer).toMatch(/k_admet|k_barrier|k_biofilm/i);
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// v1.0 UPGRADE TESTS — Tier 2: DHOOM wire format
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('v1.0 — DHOOM wire format', () => {
+  it('toDHOOM() produces pipe-delimited string', () => {
+    const data = [{ drug: 'VAN', tissue: 'bone', C: 2.08, theta: 5.0, pass: 'N', conf: 0.70 }];
+    const dhoom = toDHOOM(data, ['drug', 'tissue', 'C', 'theta', 'pass', 'conf']);
+    expect(typeof dhoom).toBe('string');
+    expect(dhoom).toContain('|');
+    expect(dhoom.split('\n')[0]).toBe('drug|tissue|C|theta|pass|conf');
+    expect(dhoom.split('\n')[1]).toContain('VAN');
+  });
+
+  it('fromDHOOM() parses back to objects', () => {
+    const dhoom = 'drug|tissue|C\nVAN|bone|2.08\nRIF|bone|0.68';
+    const rows = fromDHOOM(dhoom);
+    expect(rows).toHaveLength(2);
+    expect(rows[0].drug).toBe('VAN');
+    expect(rows[0].C).toBe('2.08');
+  });
+
+  it('round-trip: toDHOOM -> fromDHOOM preserves data', () => {
+    const data = [
+      { drug: 'VAN', C: 2.08, pass: 'N' },
+      { drug: 'RIF', C: 0.68, pass: 'N' },
+    ];
+    const dhoom = toDHOOM(data, ['drug', 'C', 'pass']);
+    const parsed = fromDHOOM(dhoom);
+    expect(parsed).toHaveLength(2);
+    expect(parsed[0].drug).toBe('VAN');
+    expect(parsed[1].drug).toBe('RIF');
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// v1.0 UPGRADE TESTS — Tier 3: Patient context
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('v1.0 — applyPatientContext()', () => {
+  it('adjusts R for high CRP (> 100)', () => {
+    const drug = { R_bone: 0.20, k_barrier: 0.699, k_admet: 0.50, k_biofilm: 2.57, tau: 2.602 };
+    const patient = { crp_mg_L: 250, chronicity: 'chronic' };
+    const result = applyPatientContext({ ...drug }, patient);
+    expect(result.R_eff).toBeGreaterThan(drug.R_bone);
+    expect(result.R_eff).toBeLessThanOrEqual(drug.R_bone * 2.0);
+  });
+
+  it('caps CRP multiplier at 2.0', () => {
+    const drug = { R_bone: 0.20, k_barrier: 0.699, k_admet: 0.50, k_biofilm: 2.57, tau: 2.602 };
+    const patient = { crp_mg_L: 999, chronicity: 'chronic' };
+    const result = applyPatientContext({ ...drug }, patient);
+    expect(result.R_eff).toBeCloseTo(drug.R_bone * 2.0, 4);
+  });
+
+  it('acute chronicity halves MBEC penalty', () => {
+    const drug = { R_bone: 0.20, k_barrier: 0.699, k_admet: 0.50, k_biofilm: 2.57, tau: 2.602 };
+    const patient = { crp_mg_L: 100, chronicity: 'acute' };
+    const result = applyPatientContext({ ...drug }, patient);
+    expect(result.MBEC_factor).toBe(0.5);
+  });
+
+  it('chronic chronicity keeps full MBEC', () => {
+    const drug = { R_bone: 0.20, k_barrier: 0.699, k_admet: 0.50, k_biofilm: 2.57, tau: 2.602 };
+    const patient = { crp_mg_L: 100, chronicity: 'chronic' };
+    const result = applyPatientContext({ ...drug }, patient);
+    expect(result.MBEC_factor).toBe(1.0);
+  });
+
+  it('recomputes K and C from adjusted values', () => {
+    const drug = { R_bone: 0.20, k_barrier: 0.699, k_admet: 0.50, k_biofilm: 2.57, tau: 2.602 };
+    const patient = { crp_mg_L: 250, chronicity: 'chronic' };
+    const result = applyPatientContext({ ...drug }, patient);
+    expect(result.K).toBeDefined();
+    expect(result.C).toBeDefined();
+    expect(typeof result.K).toBe('number');
+    expect(typeof result.C).toBe('number');
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// v1.0 UPGRADE TESTS — Tier 5: New intents (COMPLETE, PROPAGATE)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('v1.0 — new intent patterns', () => {
+  it('classifies predict_unmeasured intent', () => {
+    const r = translateNL("Can you predict tedizolid's bone penetration?");
+    expect(r.status).toBe('ok');
+    expect(r.intent).toBe('predict_unmeasured');
+    expect(r.generated_gql).toMatch(/COMPLETE/);
+  });
+
+  it('classifies cascade_analysis intent', () => {
+    const r = translateNL('If we measured tedizolid in bone, what else would we learn?');
+    expect(r.status).toBe('ok');
+    expect(r.intent).toBe('cascade_analysis');
+    expect(r.generated_gql).toMatch(/PROPAGATE/);
+  });
+
+  it('generates COMPLETE GQL for predict questions', () => {
+    const r = translateNL('Estimate linezolid at CSF');
+    expect(r.status).toBe('ok');
+    expect(r.generated_gql).toMatch(/COMPLETE ON mirador_universe/);
+  });
+
+  it('generates PROPAGATE GQL for cascade questions', () => {
+    const r = translateNL('If I measured VAN at bone, what else would we learn?');
+    expect(r.status).toBe('ok');
+    expect(r.generated_gql).toMatch(/PROPAGATE ON mirador_universe/);
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// v1.0 UPGRADE TESTS — Geometric verdict language
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('v1.0 — geometric verdict language', () => {
+  let universe;
+  beforeAll(() => { universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS); });
+
+  it('decompose uses "below_threshold" / "above_threshold" language', () => {
+    const r = decompose(universe, { drug: 'VAN', tissue: 'bone' });
+    expect(r.geometric_verdict).toMatch(/below_threshold|above_threshold/);
+  });
+
+  it('decompose verdict_note says not clinical guidance', () => {
+    const r = decompose(universe, { drug: 'VAN', tissue: 'bone' });
+    expect(r.geometric_verdict_note).toBeDefined();
+    expect(r.geometric_verdict_note).toMatch(/not.*clinical/i);
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// v1.0 UPGRADE TESTS — GQL parser: COMPLETE + PROPAGATE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('v1.0 — universeGQL() new verbs', () => {
+  let universe;
+  beforeAll(() => { universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS); });
+
+  it('parses COMPLETE query', () => {
+    const q = "COMPLETE ON mirador_universe WHERE drug = 'VAN' AND tissue = 'bone' METHOD sheaf_extension";
+    const result = universeGQL(q, universe);
+    expect(result).not.toBeNull();
+    expect(result.origin).toBe('sheaf_completed');
+  });
+
+  it('parses PROPAGATE query', () => {
+    const q = "PROPAGATE ON mirador_universe ASSUMING drug = 'VAN' AND tissue = 'bone' AND R = 0.20 SHOW newly_determined";
+    const result = universeGQL(q, universe);
+    expect(result).not.toBeNull();
+    expect(result.cascades).toBeDefined();
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// v1.0 UPGRADE TESTS — mycobacterium bug fix
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('v1.0 — bug fix: mycobacterium maps to tb', () => {
+  it('mycobacterium → tb (not mrsa)', () => {
+    const r = translateNL('Can INH treat mycobacterium infection?');
+    expect(r.entities.diseases).toContain('tb');
+    expect(r.entities.diseases).not.toContain('mrsa');
   });
 });

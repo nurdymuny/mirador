@@ -31,12 +31,25 @@ pub fn confidence(tau_values: &[f64]) -> f64 {
     round4(1.0 / (1.0 + variance))
 }
 
-/// Coherence C = τ × r_penetration × (1 − k_admet)
+/// Coherence C = τ / K  (Davis Field Equation)
+/// K = k_admet + k_barrier + k_biofilm (total curvature)
 pub fn coherence(record: &DrugRecord) -> f64 {
-    let t = record.tau;
-    let r = record.r_penetration;
-    let ka = record.k_admet;
-    round4(t * r * (1.0 - ka))
+    let k = record.k_admet + record.k_barrier + record.k_biofilm;
+    if k <= 0.0 {
+        return 0.0;
+    }
+    round4(record.tau / k)
+}
+
+/// Disease-specific coherence thresholds (θ).
+pub fn threshold_for_disease(disease: &str) -> f64 {
+    match disease {
+        "mrsa" => 5.0,
+        "tb" => 0.50,
+        "meningitis" => 0.50,
+        "hiv" => 1.0,
+        _ => 5.0,
+    }
 }
 
 /// Combination potency using parallel-resistor law.
@@ -47,7 +60,8 @@ pub fn combine_potency(drugs: &[DrugRecord], synergy_factor: f64) -> CombinePote
     }
     let sum_c: f64 = drugs.iter().map(|d| coherence(d)).sum();
     let c = round4(sum_c * synergy_factor);
-    let threshold = 5.0;
+    let disease = &drugs[0].disease;
+    let threshold = threshold_for_disease(disease);
     CombinePotencyResult {
         c,
         crosses_threshold: c >= threshold,
@@ -156,13 +170,16 @@ pub struct CombineResult {
 pub struct DecomposeResult {
     pub drug: String,
     pub tissue: String,
+    pub disease: String,
     pub tau: f64,
     #[serde(rename = "C")]
     pub c: f64,
     pub decomposition: Decomposition,
     pub dominant_barrier: String,
     pub geometric_verdict: String,
+    pub geometric_verdict_note: String,
     pub threshold: f64,
+    pub confidence: f64,
     pub raw: RawPK,
 }
 
@@ -283,6 +300,8 @@ pub fn build_universe(
             format!("Computed from AUC/MIC ({})", drug.disease)
         };
 
+        let threshold = threshold_for_disease(&drug.disease);
+
         UniverseRecord {
             drug: drug.drug_name.clone(),
             pathogen,
@@ -293,7 +312,7 @@ pub fn build_universe(
             k_pathway,
             confidence: conf,
             provenance,
-            crosses_threshold: c >= 5.0,
+            crosses_threshold: c >= threshold,
             disease: drug.disease.clone(),
             auc_24: drug.auc_24,
             mic: drug.mic,
@@ -444,17 +463,20 @@ pub fn decompose(universe: &[UniverseRecord], drug: &str, tissue: &str) -> Optio
         .map(|(name, _)| name.to_string())
         .unwrap_or_default();
 
-    let threshold = 5.0;
+    let threshold = threshold_for_disease(&record.disease);
 
     Some(DecomposeResult {
         drug: record.drug.clone(),
         tissue: record.tissue.clone(),
+        disease: record.disease.clone(),
         tau: record.tau,
         c: record.c,
         decomposition: Decomposition { k_admet: ka, k_barrier: kb, k_biofilm: kbf, k_total },
         dominant_barrier: dominant,
-        geometric_verdict: if record.c >= threshold { "meets_threshold".to_string() } else { "fails_threshold".to_string() },
+        geometric_verdict: if record.c >= threshold { "above_threshold".to_string() } else { "below_threshold".to_string() },
+        geometric_verdict_note: "Mathematical classification (C vs \u{03b8}). Not clinical guidance.".to_string(),
         threshold,
+        confidence: record.confidence,
         raw: RawPK { auc_24: record.auc_24, mic: record.mic, r_penetration: record.r_penetration },
     })
 }
@@ -629,7 +651,8 @@ mod tests {
     fn build_universe_computes_coherence() {
         let u = build_universe(&sample_drugs(), &sample_thresholds(), &sample_regimens());
         let van = u.iter().find(|r| r.drug == "VAN").unwrap();
-        let expected = 2.602 * 0.20 * 0.50;
+        // C = τ / K where K = k_admet + k_barrier + k_biofilm = 0.50 + 0.699 + 2.709 = 3.908
+        let expected = 2.602 / (0.50 + 0.699 + 2.709);
         assert!((van.c - expected).abs() < 0.01);
     }
 
@@ -677,7 +700,7 @@ mod tests {
         assert_eq!(r.tissue, "bone");
         assert!((r.tau - 2.602).abs() < 0.01);
         assert_eq!(r.dominant_barrier, "k_biofilm");
-        assert_eq!(r.geometric_verdict, "fails_threshold");
+        assert_eq!(r.geometric_verdict, "below_threshold");
         assert_eq!(r.threshold, 5.0);
     }
 

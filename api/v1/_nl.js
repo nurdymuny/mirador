@@ -2,6 +2,14 @@
 // Shared by /api/v1/ask and /api/v1/query serverless functions.
 // Math stays in Rust/WASM — this module only does text → GQL string.
 
+// v1.0: disease-specific thresholds
+const DISEASE_THRESHOLDS = {
+  mrsa:       { theta: 5.0,  anchor: 'vancomycin monotherapy failure' },
+  tb:         { theta: 0.50, anchor: 'INH monotherapy at cavity site' },
+  meningitis: { theta: 0.50, anchor: 'ceftriaxone at peak inflammation' },
+  hiv:        { theta: 1.0,  anchor: 'single-cell suppression' },
+};
+
 const NL_DRUGS = {
   vancomycin:'VAN', vanco:'VAN', van:'VAN',
   rifampin:'RIF', rifampicin:'RIF', rif:'RIF',
@@ -20,13 +28,14 @@ const NL_DRUGS = {
   ethambutol:'EMB', emb:'EMB',
   moxifloxacin:'MXF', mxf:'MXF',
   bedaquiline:'BDQ', bdq:'BDQ',
+  tedizolid:'TDZ', tdz:'TDZ',
 };
 
 const NL_DISEASES = {
   mrsa:'mrsa', staph:'mrsa', staphylococcus:'mrsa',
-  tb:'tb', tuberculosis:'tb',
+  tb:'tb', tuberculosis:'tb', mycobacterium:'tb',
   hiv:'hiv', aids:'hiv',
-  meningitis:'meningitis',
+  meningitis:'meningitis', pneumococcal:'meningitis',
 };
 
 const NL_TISSUE_PHRASES = [
@@ -54,6 +63,8 @@ const NL_DEFAULT_TISSUE = { mrsa:'bone', tb:'granuloma_lung', hiv:'cns', meningi
 function classifyIntent(q) {
   const l = q.toLowerCase();
   if (/why\s+(does|doesn'?t|isn'?t|can'?t|won'?t|did)\b/.test(l) || /why\s+fail/.test(l)) return 'failure_diagnosis';
+  if (/\bif\s+(?:I|we)\s+measured\b|\bwhat\s+else\b.*\blearn\b/.test(l)) return 'cascade_analysis';
+  if (/\bpredict\b|\bguess\b|\bestimate\b|\bunmeasured\b/.test(l)) return 'predict_unmeasured';
   if (/\bvs\.?\b|\bversus\b|\bcompare\b|\bbetter\s+than\b/.test(l)) return 'comparison';
   if (/\bcombination\b|\bcombo\b|\bplus\b|\bcombine\b/.test(l)) return 'combination_query';
   if (/\bbest\b|\brank\b|\bwhich\s+drug|\btop\b|\bmost\s+(effective|potent)/.test(l) || /what\s+(kills|works|treats|reaches)/.test(l)) return 'drug_ranking';
@@ -68,7 +79,7 @@ function extractEntities(q) {
   const drugs = [], diseases = [], tissues = [];
   for (const [phrase, mapped] of NL_TISSUE_PHRASES)
     if (lower.includes(phrase) && !tissues.includes(mapped)) tissues.push(mapped);
-  const words = lower.replace(/[?.,!;:'"()]/g, ' ').split(/\s+/);
+  const words = lower.replace(/[?.,!;:'"()\u2018\u2019\u201C\u201D]/g, ' ').split(/\s+/);
   for (const w of words) {
     if (NL_DRUGS[w] && !drugs.includes(NL_DRUGS[w])) drugs.push(NL_DRUGS[w]);
     if (NL_DISEASES[w] && !diseases.includes(NL_DISEASES[w])) diseases.push(NL_DISEASES[w]);
@@ -108,6 +119,17 @@ function generateGQL(intent, entities) {
       if (disease) w2.push(`disease = '${disease}'`);
       if (tissue) w2.push(`tissue = '${tissue}'`);
       return w2.length ? `COVER ON mirador_universe WHERE ${w2.join(' AND ')} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` : null;
+    case 'predict_unmeasured': {
+      const d = drugs[0], t = tissue;
+      if (d && t) return `COMPLETE ON mirador_universe WHERE drug = '${d}' AND tissue = '${t}' METHOD sheaf_extension`;
+      if (d) return `COMPLETE ON mirador_universe WHERE drug = '${d}' METHOD sheaf_extension`;
+      return null;
+    }
+    case 'cascade_analysis': {
+      const d2 = drugs[0], t2 = tissue;
+      if (d2 && t2) return `PROPAGATE ON mirador_universe ASSUMING drug = '${d2}' AND tissue = '${t2}' SHOW newly_determined`;
+      return null;
+    }
     default: return null;
   }
 }
