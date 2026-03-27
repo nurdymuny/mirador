@@ -543,7 +543,21 @@ export default function GigiExplorer() {
       await new Promise(r => setTimeout(r, 15));
       const dt = performance.now() - t0;
       setElapsed(dt);
-      const res = universeGQL(queryText, DEMO_DB.mirador_universe) || {error:'Universe query could not be evaluated'};
+      // Handle UNION queries (multi-disease): split, run each, merge rows
+      let res;
+      if (/--\s*UNION\s*--/i.test(queryText)) {
+        const parts = queryText.split(/\n?--\s*UNION\s*--\n?/i).map(s => s.trim()).filter(Boolean);
+        const allRows = [];
+        for (const part of parts) {
+          const sub = universeGQL(part, DEMO_DB.mirador_universe);
+          if (sub?.rows) for (const row of sub.rows) allRows.push(row);
+        }
+        allRows.sort((a, b) => (b.C ?? 0) - (a.C ?? 0));
+        res = allRows.length ? { count: allRows.length, rows: allRows, meta: { source: 'mirador_universe', mode: 'evaluate_coherence', multi_disease: true } } : null;
+      } else {
+        res = universeGQL(queryText, DEMO_DB.mirador_universe);
+      }
+      res = res || {error:'Universe query could not be evaluated'};
       if (res.error) setError(res.error); else setResult(res);
       setHistory(prev => [{ query: queryText, time: new Date().toISOString(), elapsed: dt, demo: true }, ...prev].slice(0, 50));
       setLoading(false);
@@ -618,10 +632,9 @@ export default function GigiExplorer() {
       // from nlToGql instead of re-running through demoGQL.
       if (nlTypingRef.current) clearInterval(nlTypingRef.current);
       setNlActive(null); setQuery(''); setError(null);
-      // Set the result from the NL engine directly
-      const execResult = universeGQL(res.generated_gql, DEMO_DB.mirador_universe);
-      if (execResult) {
-        setResult(execResult);
+      // Use the result already computed by nlToGql (handles UNION/multi-disease)
+      if (res.result) {
+        setResult(res.result);
       }
       // Animate the GQL text into the query box (display only, no re-execution)
       let i = 0;
