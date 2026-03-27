@@ -316,6 +316,23 @@ const NL_GROUPS = [
         tag: "pChEMBL · organism", why: "pChEMBL = −log₁₀(IC₅₀ in mol/L) — INTEGRATE projects 690K drug-target pairs onto the organism fiber, producing a cross-species potency ranking impossible to compute in SQL without multiple CTEs" },
     ],
   },
+  {
+    label: 'PATIENT CONTEXT', color: '#f9a8d4',
+    questions: [
+      { q: "Which meningitis drugs work best in children?",
+        gql: "COVER ON mirador_universe WHERE disease = 'meningitis' AND age_group = 'pediatric' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE",
+        tag: "pediatric · meningitis", why: "Pediatric patients clear drugs faster (AUC factor 0.85) — the age-stratified universe adjusts every drug's τ and coherence score for a child's physiology, surfacing different rankings than adults" },
+      { q: "Best MRSA drugs for an elderly woman?",
+        gql: "COVER ON mirador_universe WHERE disease = 'mrsa' AND tissue = 'bone' AND age_group = 'geriatric' AND pk_sex = 'estrogen_dominant' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE",
+        tag: "geriatric · female · MRSA", why: "Two patient dimensions compose: geriatric physiology (AUC ×1.40, slower clearance) + estrogen-dominant PK (AUC ×1.15, lower Vd) — the geometric framework adjusts τ for both simultaneously, no manual PK calculation needed" },
+      { q: "How does vancomycin differ between men and women for MRSA?",
+        gql: "COMPARE VAN AT bone WHERE disease = 'mrsa' AND age_group = 'adult' AND pk_sex = 'testosterone_dominant' vs pk_sex = 'estrogen_dominant'",
+        tag: "sex · VAN comparison", why: "Estrogen-dominant physiology has 15% higher AUC and 15% lower volume of distribution — COMPARE shows the exact τ and coherence difference between hormonal profiles for the same drug at the same site" },
+      { q: "What's the best HIV drug for a trans woman on HRT?",
+        gql: "COVER ON mirador_universe WHERE disease = 'hiv' AND pk_sex = 'estrogen_dominant' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE",
+        tag: "trans · HIV · HRT", why: "Trans women on established HRT have estrogen-dominant pharmacokinetics — the system maps 'trans woman on hrt' to the correct PK category automatically, using the same clearance and Vd adjustments as cis women. No separate category needed — physiology, not identity, determines PK" },
+    ],
+  },
 ];
 const NL_QUESTIONS = NL_GROUPS.flatMap(g => g.questions);
 
