@@ -364,13 +364,23 @@ function ResultTable({ data }) {
     return String(v);
   };
 
+  // Drug code → generic name for PubMed searches
+  const DRUG_NAMES = {
+    VAN:'vancomycin', RIF:'rifampicin', LZD:'linezolid', LZD_TB:'linezolid',
+    CRO:'ceftriaxone', DAP:'daptomycin', CAR:'ceftaroline', CLI:'clindamycin',
+    DTG:'dolutegravir', TFV:'tenofovir', FTC:'emtricitabine', DRV:'darunavir',
+    EFV:'efavirenz', INH:'isoniazid', PZA:'pyrazinamide', EMB:'ethambutol',
+    MXF:'moxifloxacin', BDQ:'bedaquiline',
+  };
+
   // Build reference link(s) for provenance / reference columns
   const provenanceUrl = (prov, row) => {
     if (!prov || typeof prov !== 'string') return null;
     if (/WHO/i.test(prov)) return 'https://www.whocc.no/atc_ddd_index/';
     const m = prov.match(/Computed from AUC\/MIC/i);
     if (m && row?.drug) {
-      const drug = encodeURIComponent(row.drug);
+      const name = DRUG_NAMES[row.drug] || row.drug;
+      const drug = encodeURIComponent(name);
       const disease = row.disease ? encodeURIComponent(row.disease) : '';
       return `https://pubmed.ncbi.nlm.nih.gov/?term=${drug}+AUC+MIC${disease ? '+' + disease : ''}`;
     }
