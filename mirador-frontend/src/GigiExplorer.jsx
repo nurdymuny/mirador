@@ -96,6 +96,11 @@ const _DRUGS = _buildDrugs();
 const DEMO_DB = { mirador_drugs: _DRUGS, mirador_thresholds: THRESHOLDS, mirador_regimens: REGIMENS, mirador_universe: buildUniverse(_DRUGS, THRESHOLDS, REGIMENS) };
 
 // ── Lightweight in-browser GQL engine ──────────────────────────────
+const _noBundleMsg = (name) => {
+  const available = Object.keys(DEMO_DB).join(', ');
+  return {error:`Bundle '${name}' is not available in demo mode.\n\nChEMBL bundles (chembl_compounds, chembl_targets, chembl_activities, chembl_drug_target, etc.) require a live GIGI connection.\n\nAvailable in demo: ${available}`};
+};
+
 function demoGQL(q) {
   const s = q.trim().replace(/;$/,'').trim(), up = s.toUpperCase();
   // SHOW BUNDLES (also accept legacy BUNDLES)
@@ -104,26 +109,26 @@ function demoGQL(q) {
   let m;
   // DESCRIBE <b>
   if ((m = s.match(/^DESCRIBE\s+(\w+)/i))) {
-    const t = DEMO_DB[m[1]]; if (!t) return {error:`Bundle '${m[1]}' not found`};
+    const t = DEMO_DB[m[1]]; if (!t) return _noBundleMsg(m[1]);
     const numF = t.length ? Object.values(t[0]).filter(v=>typeof v==='number').length : 0;
     return {record_count:t.length,base_fields:2,fiber_fields:t.length?Object.keys(t[0]).length-2:0,storage_mode:'hashed',curvature:0,confidence:0};
   }
   // COVER <b> ALL [FIRST n]
   if ((m = s.match(/^COVER\s+(\w+)\s+ALL(?:\s+FIRST\s+(\d+))?$/i))) {
-    const t = DEMO_DB[m[1]]; if (!t) return {error:`Bundle '${m[1]}' not found`};
+    const t = DEMO_DB[m[1]]; if (!t) return _noBundleMsg(m[1]);
     const rows = m[2] ? t.slice(0, parseInt(m[2])) : t;
     return {count:rows.length,rows};
   }
   // COVER <b> ON <f> = '<v>' [FIRST n]
   if ((m = s.match(/^COVER\s+(\w+)\s+ON\s+(\w+)\s*=\s*'([^']+)'(?:\s+FIRST\s+(\d+))?$/i))) {
-    const t = DEMO_DB[m[1]]; if (!t) return {error:`Bundle '${m[1]}' not found`};
+    const t = DEMO_DB[m[1]]; if (!t) return _noBundleMsg(m[1]);
     let rows = t.filter(r => String(r[m[2]]).toLowerCase() === m[3].toLowerCase());
     if (m[4]) rows = rows.slice(0, parseInt(m[4]));
     return {count:rows.length,rows};
   }
   // COVER <b> ON/WHERE <f> <op> <num> [FIRST n]
   if ((m = s.match(/^COVER\s+(\w+)\s+(?:ON|WHERE)\s+(\w+)\s*(>|<|>=|<=|=)\s*([\d.]+)(?:\s+FIRST\s+(\d+))?$/i))) {
-    const t = DEMO_DB[m[1]]; if (!t) return {error:`Bundle '${m[1]}' not found`};
+    const t = DEMO_DB[m[1]]; if (!t) return _noBundleMsg(m[1]);
     const ops = {'>': (a,b)=>a>b,'<': (a,b)=>a<b,'>=': (a,b)=>a>=b,'<=': (a,b)=>a<=b,'=': (a,b)=>a===b};
     const num = parseFloat(m[4]);
     let rows = t.filter(r => typeof r[m[2]]==='number' && ops[m[3]](r[m[2]],num));
@@ -132,21 +137,21 @@ function demoGQL(q) {
   }
   // COVER <b> DISTINCT <f>
   if ((m = s.match(/^COVER\s+(\w+)\s+DISTINCT\s+(\w+)$/i))) {
-    const t = DEMO_DB[m[1]]; if (!t) return {error:`Bundle '${m[1]}' not found`};
+    const t = DEMO_DB[m[1]]; if (!t) return _noBundleMsg(m[1]);
     const vals = [...new Set(t.map(r=>r[m[2]]))].sort();
     const rows = vals.map(v=>({[m[2]]:v}));
     return {count:rows.length,rows};
   }
   // SECTION <b> AT k=v, k2='v2'
   if ((m = s.match(/^SECTION\s+(\w+)\s+AT\s+(.+)$/i))) {
-    const t = DEMO_DB[m[1]]; if (!t) return {error:`Bundle '${m[1]}' not found`};
+    const t = DEMO_DB[m[1]]; if (!t) return _noBundleMsg(m[1]);
     const pairs = m[2].split(',').map(p => p.trim().split('=')).map(([k,v]) => { const val = v.replace(/'/g,'').trim(); return [k.trim(), isNaN(val)?val:parseFloat(val)]; });
     const row = t.find(r => pairs.every(([k,v]) => typeof r[k]==='number' ? r[k]===v : String(r[k])===String(v)));
     return row ? {count:1,rows:[row]} : {count:0,rows:[]};
   }
   // CURVATURE <b>
   if ((m = s.match(/^CURVATURE\s+(\w+)/i))) {
-    const t = DEMO_DB[m[1]]; if (!t) return {error:`Bundle '${m[1]}' not found`};
+    const t = DEMO_DB[m[1]]; if (!t) return _noBundleMsg(m[1]);
     const taus = t.map(r=>r.tau).filter(v=>typeof v==='number'&&v>0);
     if (taus.length<2) return {value:0};
     const mean = taus.reduce((a,b)=>a+b,0)/taus.length;
@@ -155,12 +160,12 @@ function demoGQL(q) {
   }
   // SPECTRAL <b>
   if ((m = s.match(/^SPECTRAL\s+(\w+)/i))) {
-    const t = DEMO_DB[m[1]]; if (!t) return {error:`Bundle '${m[1]}' not found`};
+    const t = DEMO_DB[m[1]]; if (!t) return _noBundleMsg(m[1]);
     return {value:0};
   }
   // CONSISTENCY <b>
   if ((m = s.match(/^CONSISTENCY\s+(\w+)/i))) {
-    const t = DEMO_DB[m[1]]; if (!t) return {error:`Bundle '${m[1]}' not found`};
+    const t = DEMO_DB[m[1]]; if (!t) return _noBundleMsg(m[1]);
     const taus = t.map(r=>r.tau).filter(v=>typeof v==='number'&&v>0);
     const mean = taus.length ? taus.reduce((a,b)=>a+b,0)/taus.length : 0;
     const vari = taus.length ? taus.reduce((a,v)=>a+(v-mean)**2,0)/taus.length : 0;
@@ -168,7 +173,7 @@ function demoGQL(q) {
   }
   // INTEGRATE <b> OVER <f> MEASURE aggs
   if ((m = s.match(/^INTEGRATE\s+(\w+)\s+OVER\s+(\w+)\s+MEASURE\s+(.+)$/i))) {
-    const t = DEMO_DB[m[1]]; if (!t) return {status:'error',error:`Bundle '${m[1]}' not found`};
+    const t = DEMO_DB[m[1]]; if (!t) return _noBundleMsg(m[1]);
     const groupBy = m[2], specs = m[3].split(',').map(s=>s.trim());
     const groups = {}; t.forEach(r => { const k = String(r[groupBy]??'null'); (groups[k]??=[]).push(r); });
     const rows = Object.entries(groups).map(([k,gRows]) => {
@@ -467,11 +472,11 @@ export default function GigiExplorer() {
             ))}
           </div>
 
-          <div style={{ fontSize: 9, color: '#a78bfa', letterSpacing: 2, marginTop: 16, marginBottom: 6, fontWeight: 700 }}>CHEMBL BIOACTIVITY</div>
+          <div style={{ fontSize: 9, color: demoMode ? '#5a4f8a' : '#a78bfa', letterSpacing: 2, marginTop: 16, marginBottom: 6, fontWeight: 700 }}>CHEMBL BIOACTIVITY {demoMode && <span style={{ fontSize: 7, color: '#475569' }}>🔒 LIVE</span>}</div>
           <div style={{ fontSize: 8, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
             2.3M+ bioactivity records from ChEMBL v36 — compounds, targets, assays & drug-target fibers
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, opacity: demoMode ? 0.45 : 1 }}>
             {PRESETS_CHEMBL.map((p, i) => (
               <button key={'ch'+i}
                 onClick={() => { setQuery(p.gql); runQuery(p.gql); }}
