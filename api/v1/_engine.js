@@ -2,38 +2,10 @@
 // Ported from mirador-frontend/src/gql-engine.js.
 // Operates on a pre-built universe JSON (api/v1/_universe.json).
 
-const DISEASE_THRESHOLDS = {
-  mrsa:       { theta: 5.0,  anchor: 'vancomycin monotherapy failure' },
-  tb:         { theta: 0.50, anchor: 'INH monotherapy at cavity site' },
-  meningitis: { theta: 0.50, anchor: 'ceftriaxone at peak inflammation' },
-  hiv:        { theta: 1.0,  anchor: 'single-cell suppression' },
-};
-
-function getThresholdForDisease(disease) {
-  return DISEASE_THRESHOLDS[disease]?.theta ?? 5.0;
-}
-
-const K_NAMES = {
-  k_admet: 'ADMET/absorption',
-  k_barrier: 'tissue penetration barrier',
-  k_biofilm: 'biofilm/phenotype resistance',
-};
-
-function describeConfidence(conf) {
-  if (conf >= 0.85) return `high (${conf.toFixed(2)})`;
-  if (conf >= 0.60) return `moderate (${conf.toFixed(2)})`;
-  return `low (${conf.toFixed(2)})`;
-}
-
-function getDominantK(decomposition) {
-  const entries = [
-    ['k_admet', decomposition.k_admet],
-    ['k_barrier', decomposition.k_barrier],
-    ['k_biofilm', decomposition.k_biofilm],
-  ];
-  entries.sort((a, b) => b[1] - a[1]);
-  return { key: entries[0][0], value: entries[0][1], name: K_NAMES[entries[0][0]] || entries[0][0] };
-}
+const {
+  DISEASE_THRESHOLDS, getThresholdForDisease, NL_DEFAULT_TISSUE,
+  K_NAMES, describeConfidence, getDominantK,
+} = require('./_shared');
 
 // ── Data operations ────────────────────────────────────────────────
 
@@ -218,11 +190,6 @@ function universeGQL(query, universe) {
 
   return null;
 }
-
-// ── Default tissue for disease ─────────────────────────────────────
-const NL_DEFAULT_TISSUE = {
-  mrsa:'bone', tb:'granuloma_lung', hiv:'cns', meningitis:'csf_inflamed',
-};
 
 // ── generateAnswer — template English responses ────────────────────
 

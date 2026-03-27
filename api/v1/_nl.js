@@ -2,63 +2,10 @@
 // Shared by /api/v1/ask and /api/v1/query serverless functions.
 // Math stays in Rust/WASM — this module only does text → GQL string.
 
-// v1.0: disease-specific thresholds
-const DISEASE_THRESHOLDS = {
-  mrsa:       { theta: 5.0,  anchor: 'vancomycin monotherapy failure' },
-  tb:         { theta: 0.50, anchor: 'INH monotherapy at cavity site' },
-  meningitis: { theta: 0.50, anchor: 'ceftriaxone at peak inflammation' },
-  hiv:        { theta: 1.0,  anchor: 'single-cell suppression' },
-};
-
-const NL_DRUGS = {
-  vancomycin:'VAN', vanco:'VAN', van:'VAN',
-  rifampin:'RIF', rifampicin:'RIF', rif:'RIF',
-  linezolid:'LZD', lzd:'LZD',
-  ceftriaxone:'CRO', cro:'CRO',
-  daptomycin:'DAP', dap:'DAP',
-  ceftaroline:'CAR', car:'CAR',
-  clindamycin:'CLI', cli:'CLI', clinda:'CLI',
-  dolutegravir:'DTG', dtg:'DTG',
-  tenofovir:'TFV', tfv:'TFV',
-  emtricitabine:'FTC', ftc:'FTC',
-  darunavir:'DRV', drv:'DRV',
-  efavirenz:'EFV', efv:'EFV',
-  isoniazid:'INH', inh:'INH',
-  pyrazinamide:'PZA', pza:'PZA',
-  ethambutol:'EMB', emb:'EMB',
-  moxifloxacin:'MXF', mxf:'MXF',
-  bedaquiline:'BDQ', bdq:'BDQ',
-  tedizolid:'TDZ', tdz:'TDZ',
-};
-
-const NL_DISEASES = {
-  mrsa:'mrsa', staph:'mrsa', staphylococcus:'mrsa',
-  tb:'tb', tuberculosis:'tb', mycobacterium:'tb',
-  hiv:'hiv', aids:'hiv',
-  meningitis:'meningitis', pneumococcal:'meningitis',
-};
-
-const NL_TISSUE_PHRASES = [
-  ['blood-brain barrier','cns'], ['blood brain barrier','cns'],
-  ['cerebrospinal fluid','csf_inflamed'], ['central nervous system','cns'],
-  ['bone marrow','bone_marrow'], ['lymph node','lymph_node'],
-  ['genital tract','genital_tract'],
-];
-
-const NL_TISSUES = {
-  bone:'bone', osseous:'bone', osteomyelitis:'bone',
-  csf:'csf_inflamed', spinal:'csf_inflamed',
-  cns:'cns', brain:'cns', bbb:'cns', 'blood-brain':'cns',
-  lymph:'lymph_node',
-  lung:'granuloma_lung', lungs:'granuloma_lung', pulmonary:'granuloma_lung', granuloma:'granuloma_lung',
-  caseum:'granuloma_necrotic', caseous:'granuloma_necrotic',
-  cavity:'granuloma_cavity', cavitary:'granuloma_cavity',
-  genital:'genital_tract',
-  gut:'galt', galt:'galt', intestinal:'galt',
-  blood:'planktonic', serum:'planktonic',
-};
-
-const NL_DEFAULT_TISSUE = { mrsa:'bone', tb:'granuloma_lung', hiv:'cns', meningitis:'csf_inflamed' };
+const {
+  NL_DRUGS, NL_DISEASES, NL_TISSUE_PHRASES, NL_TISSUES,
+  NL_DEFAULT_TISSUE,
+} = require('./_shared');
 
 function classifyIntent(q) {
   const l = q.toLowerCase();

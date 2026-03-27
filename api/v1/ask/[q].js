@@ -4,6 +4,7 @@
 
 const { translateNL } = require('../_nl');
 const { universeGQL, generateAnswer } = require('../_engine');
+const { NL_DEFAULT_TISSUE, getThresholdForDisease } = require('../_shared');
 const UNIVERSE = require('../_universe.json');
 
 module.exports = function handler(req, res) {
@@ -29,8 +30,6 @@ module.exports = function handler(req, res) {
   // Multi-disease queries: run per-disease, merge results
   const { diseases, tissues } = t.entities;
   if (diseases.length >= 2 && (t.intent === 'drug_ranking' || t.intent === 'cure_feasibility')) {
-    const NL_DEFAULT_TISSUE = { mrsa:'bone', tb:'granuloma_lung', hiv:'cns', meningitis:'csf_inflamed' };
-    const THRESHOLDS = { mrsa:5.0, tb:0.50, hiv:1.0, meningitis:0.50 };
     const tissue = tissues[0];
     const allRows = [];
     const gqls = [];
@@ -40,7 +39,7 @@ module.exports = function handler(req, res) {
       gqls.push(gql);
       const res2 = universeGQL(gql, UNIVERSE);
       if (res2?.rows) {
-        const thresh = THRESHOLDS[dis] ?? 5.0;
+        const thresh = getThresholdForDisease(dis);
         for (const row of res2.rows) allRows.push({ ...row, disease: dis, threshold: thresh });
       }
     }
