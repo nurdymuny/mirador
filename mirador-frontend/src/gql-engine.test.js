@@ -1,110 +1,30 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 import {
-  tau, kBarrier, confidence, coherence, combinePotency,
+  initEngineSync,
   buildUniverse, coverEvaluate, combineDrugs, universeGQL,
   decompose, compareDrugs, batchGQL,
 } from './gql-engine';
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// §1  Math primitives
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ── WASM init (must run before any buildUniverse call) ─────────────
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const wasmPath = resolve(__dirname, 'mirador_universe', 'mirador_universe_wasm_bg.wasm');
 
-describe('tau(auc, mic)', () => {
-  it('computes log10(AUC/MIC)', () => {
-    expect(tau(1000, 1)).toBeCloseTo(3.0, 3);
-    expect(tau(100, 10)).toBeCloseTo(1.0, 3);
-  });
-  it('returns 0 for zero/negative inputs', () => {
-    expect(tau(0, 1)).toBe(0);
-    expect(tau(100, 0)).toBe(0);
-    expect(tau(-1, 1)).toBe(0);
-  });
-});
-
-describe('kBarrier(r)', () => {
-  it('computes -log10(r) for 0 < r < 1', () => {
-    expect(kBarrier(0.1)).toBeCloseTo(1.0, 3);
-    expect(kBarrier(0.01)).toBeCloseTo(2.0, 3);
-  });
-  it('returns 0 for r >= 1 or r <= 0', () => {
-    expect(kBarrier(1.0)).toBe(0);
-    expect(kBarrier(2.0)).toBe(0);
-    expect(kBarrier(0)).toBe(0);
-  });
-});
-
-describe('confidence(tauValues)', () => {
-  it('returns 1.0 for single value', () => {
-    expect(confidence([5.0])).toBe(1.0);
-  });
-  it('returns 1.0 for identical values (zero variance)', () => {
-    expect(confidence([5.0, 5.0, 5.0])).toBe(1.0);
-  });
-  it('returns high confidence for low variance', () => {
-    const c = confidence([5.0, 5.1, 4.9]);
-    expect(c).toBeGreaterThan(0.9);
-  });
-  it('returns low confidence for high variance', () => {
-    const c = confidence([1.0, 10.0]);
-    expect(c).toBeLessThan(0.1);
-  });
-  it('formula is 1/(1+K) where K is variance', () => {
-    // vals = [2, 6], mean=4, var=4, confidence = 1/(1+4) = 0.2
-    expect(confidence([2, 6])).toBeCloseTo(0.2, 4);
-  });
+beforeAll(() => {
+  const buf = readFileSync(wasmPath);
+  initEngineSync(buf);
 });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// §2  Coherence & combination
+// §1-§2  Math primitives — tested in Rust (23 tests in mirador-universe)
+//        No JS duplication. See: mirador_rs/crates/mirador-universe/src/engine.rs
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-describe('coherence(record)', () => {
-  it('computes tau × r_penetration × (1 - k_admet)', () => {
-    const C = coherence({ tau: 5.0, r_penetration: 0.5, k_admet: 0.1 });
-    // 5.0 × 0.5 × 0.9 = 2.25
-    expect(C).toBeCloseTo(2.25, 3);
-  });
-  it('returns 0 for missing fields', () => {
-    expect(coherence({})).toBe(0);
-  });
-  it('handles high-penetration drugs', () => {
-    const C = coherence({ tau: 10.0, r_penetration: 1.0, k_admet: 0.0 });
-    expect(C).toBeCloseTo(10.0, 3);
-  });
-});
-
-describe('combinePotency(drugs, synergyFactor)', () => {
-  it('sums coherence values with synergy factor', () => {
-    const drugs = [
-      { tau: 5.0, r_penetration: 0.5, k_admet: 0.1 }, // C = 2.25
-      { tau: 3.0, r_penetration: 0.4, k_admet: 0.2 }, // C = 0.96
-    ];
-    const result = combinePotency(drugs, 1.2);
-    expect(result.C).toBeCloseTo((2.25 + 0.96) * 1.2, 1);
-  });
-  it('detects threshold crossing at θ=5.0', () => {
-    const drugs = [
-      { tau: 10.0, r_penetration: 1.0, k_admet: 0.0 }, // C = 10
-      { tau: 5.0, r_penetration: 0.5, k_admet: 0.1 },  // C = 2.25
-    ];
-    const result = combinePotency(drugs, 1.0);
-    expect(result.crossesThreshold).toBe(true);
-    expect(result.ratio).toBeGreaterThan(1.0);
-  });
-  it('reports no crossing for weak drugs', () => {
-    const drugs = [
-      { tau: 1.0, r_penetration: 0.1, k_admet: 0.5 }, // C = 0.05
-    ];
-    const result = combinePotency(drugs, 1.0);
-    expect(result.crossesThreshold).toBe(false);
-  });
-  it('returns 0 for empty array', () => {
-    expect(combinePotency([], 1.0).C).toBe(0);
-  });
-});
-
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// §3  Universe builder
+// §3  Universe builder (WASM-backed)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 const SAMPLE_DRUGS = [
@@ -124,7 +44,8 @@ const SAMPLE_REGIMENS = [
 ];
 
 describe('buildUniverse()', () => {
-  const universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+  let universe;
+  beforeAll(() => { universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS); });
 
   it('produces one record per drug input', () => {
     expect(universe).toHaveLength(3);
@@ -167,7 +88,8 @@ describe('buildUniverse()', () => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 describe('coverEvaluate()', () => {
-  const universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+  let universe;
+  beforeAll(() => { universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS); });
 
   it('filters by pathogen', () => {
     const results = coverEvaluate(universe, { pathogen: 'S_aureus_MRSA' });
@@ -207,11 +129,12 @@ describe('coverEvaluate()', () => {
 });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// §5  COMBINE ... MODE COUPLED SYNERGY
+// §5  COMBINE ... MODE COUPLED SYNERGY (WASM-backed)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 describe('combineDrugs()', () => {
-  const universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+  let universe;
+  beforeAll(() => { universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS); });
 
   it('combines two drugs at a tissue with synergy', () => {
     const result = combineDrugs(universe, ['VAN', 'RIF'], 'bone', 1.2);
@@ -220,13 +143,13 @@ describe('combineDrugs()', () => {
     expect(result.C).toBeGreaterThan(0);
     expect(result.synergy).toBe(1.2);
   });
-  it('C_combo > sum of individual C values when synergy > 1', () => {
-    const vanC = coherence(SAMPLE_DRUGS[0]);
-    const rifC = coherence(SAMPLE_DRUGS[1]);
+  it('C_combo uses WASM combinePotency (sum(C_i) × synergy)', () => {
+    const van = universe.find(r => r.drug === 'VAN');
+    const rif = universe.find(r => r.drug === 'RIF');
     const result = combineDrugs(universe, ['VAN', 'RIF'], 'bone', 1.2);
-    expect(result.C).toBeCloseTo((vanC + rifC) * 1.2, 1);
+    expect(result.C).toBeCloseTo((van.C + rif.C) * 1.2, 1);
   });
-  it('reports threshold crossing with ratio', () => {
+  it('reports threshold crossing', () => {
     const result = combineDrugs(universe, ['VAN', 'RIF'], 'bone', 1.2);
     expect(result['≥θ']).toMatch(/yes|no/);
   });
@@ -250,7 +173,8 @@ describe('combineDrugs()', () => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 describe('universeGQL()', () => {
-  const universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+  let universe;
+  beforeAll(() => { universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS); });
 
   it('parses COVER ON mirador_universe WHERE ... EVALUATE coherence query', () => {
     const q = "COVER ON mirador_universe WHERE pathogen = 'S_aureus_MRSA' AND tissue = 'bone' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE;";
@@ -296,7 +220,8 @@ describe('universeGQL()', () => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 describe('decompose()', () => {
-  const universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+  let universe;
+  beforeAll(() => { universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS); });
 
   it('returns full impedance stack for a known drug+tissue', () => {
     const result = decompose(universe, { drug: 'VAN', tissue: 'bone' });
@@ -320,7 +245,7 @@ describe('decompose()', () => {
 
   it('identifies the dominant barrier', () => {
     const result = decompose(universe, { drug: 'VAN', tissue: 'bone' });
-    expect(result.dominant_barrier).toBe('k_biofilm'); // VAN has k_biofilm=2.709
+    expect(result.dominant_barrier).toBe('k_biofilm');
   });
 
   it('includes geometric_verdict (not clinical verdict)', () => {
@@ -356,7 +281,8 @@ describe('decompose()', () => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 describe('compareDrugs()', () => {
-  const universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+  let universe;
+  beforeAll(() => { universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS); });
 
   it('compares multiple drugs at same tissue', () => {
     const result = compareDrugs(universe, ['VAN', 'RIF', 'CAR'], 'bone');
@@ -376,7 +302,7 @@ describe('compareDrugs()', () => {
 
   it('identifies the winner', () => {
     const result = compareDrugs(universe, ['VAN', 'RIF'], 'bone');
-    expect(result.winner).toBe('RIF'); // RIF has higher coherence
+    expect(result.winner).toBe('RIF');
   });
 
   it('computes advantage ratio', () => {
@@ -471,7 +397,6 @@ describe('batchGQL()', () => {
     expect(result.results).toHaveLength(2);
     expect(result.results[0].status).toBe('ok');
     expect(result.results[1].status).toBe('error');
-    // q3 never executed
   });
 
   it('returns total_time_ms', () => {
@@ -499,7 +424,6 @@ describe('batchGQL()', () => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 describe('coverEvaluate() edge cases', () => {
-  // Universe with mixed diseases & tissues
   const MULTI_DRUGS = [
     { compound_id: 100, drug_name: 'DTG', drug_class: 'INSTI', disease: 'hiv', compartment: 'cns',
       auc_24: 126400, mic: 0.51, tau: 5.3945, k_admet: 0.05, r_penetration: 0.01, k_barrier: 2.0, k_biofilm: 0 },
@@ -510,7 +434,9 @@ describe('coverEvaluate() edge cases', () => {
     { compound_id: 301, drug_name: 'VAN', drug_class: 'antibiotic', disease: 'mrsa', compartment: 'planktonic',
       auc_24: 400, mic: 1.0, tau: 2.602, k_admet: 0.50, r_penetration: 1.0, k_barrier: 0, k_biofilm: 2.709 },
   ];
-  const universe = buildUniverse(MULTI_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+
+  let universe;
+  beforeAll(() => { universe = buildUniverse(MULTI_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS); });
 
   it('filters by disease AND compartment correctly', () => {
     const results = coverEvaluate(universe, { disease: 'hiv', tissue: 'cns' });
@@ -544,7 +470,8 @@ describe('coverEvaluate() edge cases', () => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 describe('universeGQL() — new verbs', () => {
-  const universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+  let universe;
+  beforeAll(() => { universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS); });
 
   it('parses DECOMPOSE query', () => {
     const q = "DECOMPOSE mirador_universe ON drug = 'VAN' AND tissue = 'bone';";

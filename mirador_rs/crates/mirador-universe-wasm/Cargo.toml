@@ -1,0 +1,15 @@
+[package]
+name = "mirador-universe-wasm"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "WASM bridge — exposes universe engine (tau, coherence, decompose, compare, combine) to frontend"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+mirador-universe = { path = "../mirador-universe" }

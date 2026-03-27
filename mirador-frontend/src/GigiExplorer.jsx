@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { buildUniverse, universeGQL } from './gql-engine';
+import { initEngine, buildUniverse, universeGQL } from './gql-engine';
 
 const FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 const DEFAULT_HOST = 'https://gigi-stream.fly.dev';
@@ -93,7 +93,7 @@ const REGIMENS = [
 ];
 
 const _DRUGS = _buildDrugs();
-const DEMO_DB = { mirador_drugs: _DRUGS, mirador_thresholds: THRESHOLDS, mirador_regimens: REGIMENS, mirador_universe: buildUniverse(_DRUGS, THRESHOLDS, REGIMENS) };
+let DEMO_DB = null; // Lazy: populated after WASM init
 
 // ── Lightweight in-browser GQL engine ──────────────────────────────
 const _noBundleMsg = (name) => {
@@ -480,6 +480,20 @@ export default function GigiExplorer() {
   const [nlActive, setNlActive] = useState(null);
   const nlTypingRef = useRef(null);
   const [isMob, setIsMob] = useState(() => window.innerWidth < 640);
+  const [wasmReady, setWasmReady] = useState(false);
+
+  // WASM init — must happen before any buildUniverse call
+  useEffect(() => {
+    initEngine('/mirador_universe/mirador_universe_wasm_bg.wasm').then(() => {
+      DEMO_DB = {
+        mirador_drugs: _DRUGS,
+        mirador_thresholds: THRESHOLDS,
+        mirador_regimens: REGIMENS,
+        mirador_universe: buildUniverse(_DRUGS, THRESHOLDS, REGIMENS),
+      };
+      setWasmReady(true);
+    });
+  }, []);
 
   useEffect(() => {
     const handler = () => setIsMob(window.innerWidth < 640);
@@ -575,6 +589,12 @@ export default function GigiExplorer() {
   const resultMeta = result?.meta ?? (result?.count !== undefined ? {count: result.count} : null);
   const resultStatus = result?.status ?? (result?.error ? 'error' : result ? 'ok' : null);
   const rowCount = Array.isArray(resultData) ? resultData.length : null;
+
+  if (!wasmReady) return (
+    <div style={{ minHeight: '100vh', background: '#03030a', color: '#64b5f6', fontFamily: FONT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+      Initializing WASM engine…
+    </div>
+  );
 
   return (
     <div style={{ minHeight: '100vh', background: '#03030a', color: '#e2e8f0', fontFamily: FONT, padding: 0 }}>

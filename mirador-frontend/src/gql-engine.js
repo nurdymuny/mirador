@@ -1,121 +1,55 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// mirador_universe engine — testable GQL core
+// mirador_universe engine — WASM-backed GQL core
+// Math lives in Rust (mirador-universe crate) → no formulas in JS.
+// JS handles: data ops (filter/sort/project), GQL parsing, orchestration.
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-// ── Math primitives ────────────────────────────────────────────────
-
-export const tau = (auc, mic) => mic > 0 && auc > 0 ? +(Math.log10(auc / mic)).toFixed(4) : 0;
-export const kBarrier = (r) => r > 0 && r < 1 ? +(-Math.log10(r)).toFixed(4) : 0;
+import init, {
+  initSync,
+  wasm_build_universe,
+  wasm_combine_drugs,
+} from './mirador_universe/mirador_universe_wasm.js';
 
 /**
- * Confidence = 1/(1+K) where K = variance of tau values across sources.
- * High agreement across labs → low K → confidence near 1.
+ * Async init — call from React useEffect or browser context.
+ * @param {string} [wasmPath] URL to .wasm file (default: auto-detect via import.meta.url)
  */
-export function confidence(tauValues) {
-  if (!tauValues || tauValues.length < 2) return 1.0;
-  const mean = tauValues.reduce((a, b) => a + b, 0) / tauValues.length;
-  const variance = tauValues.reduce((a, v) => a + (v - mean) ** 2, 0) / tauValues.length;
-  return +(1 / (1 + variance)).toFixed(4);
+export async function initEngine(wasmPath) {
+  await init(wasmPath);
 }
 
 /**
- * Coherence score for a drug at a particular tissue site.
- * C = tau × r_penetration × (1 - k_admet)
- * Higher = better drug-tissue fit.
+ * Sync init — call from vitest/Node with a WASM buffer.
+ * @param {BufferSource} wasmBuffer
  */
-export function coherence(record) {
-  const t = record.tau || 0;
-  const r = record.r_penetration || 0;
-  const ka = record.k_admet || 0;
-  return +(t * r * (1 - ka)).toFixed(4);
+export function initEngineSync(wasmBuffer) {
+  initSync({ module: wasmBuffer });
 }
 
-/**
- * Combination potency using parallel-resistor law.
- * C_combo = sum(C_i) × synergy_factor
- * The ≥θ test checks if it crosses MIC threshold.
- */
-export function combinePotency(drugs, synergyFactor = 1.0) {
-  if (!drugs || drugs.length === 0) return { C: 0, crossesThreshold: false, ratio: 0 };
-  const sumC = drugs.reduce((acc, d) => acc + coherence(d), 0);
-  const C = +(sumC * synergyFactor).toFixed(4);
-  const threshold = 5.0; // θ = 5.0 (standard PK/PD threshold)
-  return {
-    C,
-    crossesThreshold: C >= threshold,
-    ratio: +(C / threshold).toFixed(1),
-  };
-}
-
-// ── Universe builder ───────────────────────────────────────────────
+// ── WASM-backed: math computed in Rust ─────────────────────────────
 
 /**
- * Pathogen → organism mapping for provenance lookups.
- */
-const PATHOGEN_MAP = {
-  'S_aureus_MRSA': 'mrsa',
-  'M_tuberculosis': 'tb',
-  'S_pneumoniae': 'meningitis',
-  'HIV': 'hiv',
-};
-
-/**
- * Build the mirador_universe bundle from raw drug data + thresholds.
- * Each record in the universe has:
- *   drug, pathogen, tissue, context, tau, C (coherence),
- *   K_pathway, confidence, provenance
+ * Build the mirador_universe via Rust/WASM.
+ * All coherence, tau, K_pathway math happens in the Rust crate.
  */
 export function buildUniverse(drugs, thresholds, regimens) {
-  const universe = [];
-
-  for (const drug of drugs) {
-    // Map disease to pathogen name
-    const pathogen = Object.entries(PATHOGEN_MAP)
-      .find(([, disease]) => disease === drug.disease)?.[0] || drug.disease;
-
-    // Find matching threshold for confidence provenance
-    const matchingThresholds = thresholds.filter(t =>
-      t.drug_name === drug.drug_name ||
-      t.drug_name === drug.drug_name.replace('_TB', '')
-    );
-    const provSources = matchingThresholds.map(t => t.standard);
-
-    // K_pathway = k_barrier + k_biofilm (total pathway resistance)
-    const kPathway = +((drug.k_barrier || 0) + (drug.k_biofilm || 0)).toFixed(4);
-
-    // Compute coherence
-    const C = coherence(drug);
-
-    // Confidence from tau variance across sources (use 1.0 for single-source)
-    const conf = provSources.length >= 2 ? confidence([drug.tau, drug.tau * 0.95, drug.tau * 1.05]) : 1.0;
-
-    universe.push({
-      drug: drug.drug_name,
-      pathogen,
-      tissue: drug.compartment,
-      context: 'standard',
-      tau: drug.tau,
-      C,
-      K_pathway: kPathway,
-      confidence: conf >= 0.5 ? +conf.toFixed(2) : 0.5,
-      provenance: provSources.length > 0
-        ? provSources.join(' · ')
-        : `Computed from AUC/MIC (${drug.disease})`,
-      crossesThreshold: C >= 5.0,
-      disease: drug.disease,
-      auc_24: drug.auc_24,
-      mic: drug.mic,
-      r_penetration: drug.r_penetration,
-      k_admet: drug.k_admet,
-      k_barrier: drug.k_barrier || 0,
-      k_biofilm: drug.k_biofilm || 0,
-    });
-  }
-
-  return universe;
+  const json = wasm_build_universe(JSON.stringify({ drugs, thresholds, regimens }));
+  return JSON.parse(json);
 }
 
-// ── Advanced GQL operations ────────────────────────────────────────
+/**
+ * Combine drugs via Rust/WASM (uses combinePotency formula from Rust).
+ */
+export function combineDrugs(universe, drugNames, tissue, synergyFactor = 1.0) {
+  const json = wasm_combine_drugs(JSON.stringify({
+    universe, drugs: drugNames, tissue, synergy_factor: synergyFactor,
+  }));
+  const result = JSON.parse(json);
+  if (result.error) return null;
+  return result;
+}
+
+// ── JS-only: data operations (no formulas) ────────────────────────
 
 /**
  * COVER ... WHERE ... EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE
@@ -147,49 +81,6 @@ export function coverEvaluate(universe, filters, options = {}) {
   }));
 
   return results;
-}
-
-/**
- * COMBINE 'drug1', 'drug2' MODE COUPLED SYNERGY factor
- *
- * Looks up drugs in universe at specified tissue, combines them
- * using parallel-resistor law with synergy factor.
- */
-export function combineDrugs(universe, drugNames, tissue, synergyFactor = 1.0) {
-  const matchedDrugs = drugNames.map(name =>
-    universe.find(r =>
-      r.drug.toLowerCase() === name.toLowerCase() &&
-      r.tissue.toLowerCase() === tissue.toLowerCase()
-    )
-  ).filter(Boolean);
-
-  if (matchedDrugs.length === 0) return null;
-
-  const combo = combinePotency(matchedDrugs, synergyFactor);
-
-  // Merge provenance from all drugs
-  const allProv = matchedDrugs.map(d => d.provenance).filter(Boolean);
-  const mergedProv = [...new Set(allProv.flatMap(p => p.split(' · ')))].join(' · ');
-
-  // K_combo = harmonic mean of individual K_pathways
-  const kValues = matchedDrugs.map(d => d.K_pathway).filter(k => k > 0);
-  const kCombo = kValues.length > 0
-    ? +(kValues.length / kValues.reduce((a, k) => a + 1 / k, 0)).toFixed(4)
-    : 0;
-
-  // Confidence = min of individual confidences (weakest link)
-  const minConf = Math.min(...matchedDrugs.map(d => d.confidence));
-
-  return {
-    combination: matchedDrugs.map(d => d.drug).join(' + '),
-    C: combo.C,
-    '≥θ': combo.crossesThreshold ? `yes (${combo.ratio}×)` : 'no',
-    K_combo: kCombo,
-    confidence: minConf,
-    provenance: mergedProv,
-    mode: 'coupled',
-    synergy: synergyFactor,
-  };
 }
 
 // ── DECOMPOSE — full impedance breakdown ───────────────────────────

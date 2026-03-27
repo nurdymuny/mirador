@@ -326,6 +326,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "mirador-universe"
+version = "0.1.0"
+dependencies = [
+ "approx",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "mirador-universe-wasm"
+version = "0.1.0"
+dependencies = [
+ "mirador-universe",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "nalgebra"
 version = "0.33.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

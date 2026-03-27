@@ -27,6 +27,8 @@ members = [
     "crates/mirador-tb-wasm",
     "crates/mirador-meningitis",
     "crates/mirador-meningitis-wasm",
+    "crates/mirador-universe",
+    "crates/mirador-universe-wasm",
 ]
 resolver = "2"
 

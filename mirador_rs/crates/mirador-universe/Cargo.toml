@@ -1,0 +1,13 @@
+[package]
+name = "mirador-universe"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "GQL universe engine — single source of truth for tau, coherence, impedance, decompose, compare, combine"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+approx = { workspace = true }
