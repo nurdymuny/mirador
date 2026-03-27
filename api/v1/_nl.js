@@ -66,10 +66,10 @@ function classifyIntent(q) {
   if (/\bif\s+(?:I|we)\s+measured\b|\bwhat\s+else\b.*\blearn\b/.test(l)) return 'cascade_analysis';
   if (/\bpredict\b|\bguess\b|\bestimate\b|\bunmeasured\b/.test(l)) return 'predict_unmeasured';
   if (/\bvs\.?\b|\bversus\b|\bcompare\b|\bbetter\s+than\b/.test(l)) return 'comparison';
-  if (/\bcombination\b|\bcombo\b|\bplus\b|\bcombine\b|\btogether\b/.test(l)) return 'combination_query';
+  if (/\bcombination\b|\bcombo\b|\bplus\b|\bcombine\b|\btogether\b|\bcombined\b/.test(l)) return 'combination_query';
   if (/\bbest\b|\brank\b|\bwhich\s+drug|\btop\b|\bmost\s+(effective|potent)/.test(l) || /what\s+(kills|works|treats|reaches)/.test(l)) return 'drug_ranking';
   if (/\bcan\s+\w+\s+(reach|treat|work|penetrate)\b/.test(l) || /\bdoes\s+\w+\s+work/.test(l) || /\bhow\s+(well|much|effective)/.test(l)) return 'single_drug_check';
-  if (/\breliable\b|\bstudies\s+agree\b|\bconsistency\b|\bdata\s+quality\b/.test(l)) return 'data_quality';
+  if (/\breliable\b|\bstudies\s+agree\b|\bconsistency\b|\bdata\s+quality\b|\bhow\s+reliable\b/.test(l)) return 'data_quality';
   if (/\bcure\b|\bcurable\b|\beradicate\b/.test(l)) return 'cure_feasibility';
   return null;
 }
