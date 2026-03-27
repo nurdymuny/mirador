@@ -9,7 +9,7 @@ module.exports = function handler(req, res) {
     return res.status(204).end();
   }
 
-  const question = decodeURIComponent(req.query.q || '');
+  const question = decodeURIComponent((req.query.q || '').replace(/\+/g, ' '));
   if (!question) {
     return res.status(400).json({ error: 'Missing question in path. Use /v1/ask/your+question+here' });
   }
