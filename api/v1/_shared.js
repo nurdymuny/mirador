@@ -97,6 +97,76 @@ const AGE_MODIFIERS = {
 
 const CSF_TISSUES = new Set(['csf_inflamed', 'csf_uninflamed', 'cns']);
 
+// ── PK sex / hormonal physiology vocabulary ─────────────────────────
+// Categories reflect current physiological state (hormonal milieu,
+// body composition, organ function), not identity.
+// Sources: Soldin & Mattison, Clin Pharmacol Ther 2009 (sex-based PK);
+//          Cirrincione et al., Clin Pharmacokinet 2017 (transgender PK);
+//          Franconi & Campesi, Pharmacol Res 2015 (sex/gender in PK).
+
+// Multi-word pk_sex phrases (checked before single words)
+const NL_PK_SEX_PHRASES = [
+  ['trans woman on hrt','estrogen_dominant'],
+  ['transfeminine hrt','estrogen_dominant'],
+  ['trans man on testosterone','testosterone_dominant'],
+  ['transmasculine hrt','testosterone_dominant'],
+  ['cis woman','estrogen_dominant'],
+  ['cis man','testosterone_dominant'],
+  ['mtf hrt','estrogen_dominant'],
+  ['ftm hrt','testosterone_dominant'],
+  ['early hrt','mixed'],
+];
+
+// Single-word pk_sex vocabulary
+const NL_PK_SEX = {
+  female:'estrogen_dominant',
+  woman:'estrogen_dominant',
+  afab:'estrogen_dominant',
+  male:'testosterone_dominant',
+  man:'testosterone_dominant',
+  amab:'testosterone_dominant',
+  transitioning:'mixed',
+  perimenopause:'mixed',
+  perimenopausal:'mixed',
+  intersex:'intersex',
+  dsd:'intersex',
+  cais:'intersex',
+  cah:'intersex',
+  girl:'prepubertal',
+  boy:'prepubertal',
+};
+
+// PK sex modifiers for the Davis Field Equation.
+// auc_factor — multiplier on AUC (clearance differences from hormonal milieu)
+// vd_factor  — multiplier on Vd (body composition, affects tissue concentrations)
+const PK_SEX_MODIFIERS = {
+  estrogen_dominant: {
+    auc_factor: 1.15,   // ~15% lower clearance
+    vd_factor: 0.85,    // lower lean mass → smaller Vd for hydrophilic drugs
+    confidence: 1.0,
+  },
+  testosterone_dominant: {
+    auc_factor: 1.0,    // baseline (most PK studies on this population)
+    vd_factor: 1.0,
+    confidence: 1.0,
+  },
+  mixed: {
+    auc_factor: 1.07,   // midpoint estimate
+    vd_factor: 0.92,
+    confidence: 0.65,   // less studied, wider uncertainty
+  },
+  intersex: {
+    auc_factor: 1.07,   // midpoint estimate (condition-specific data sparse)
+    vd_factor: 0.92,
+    confidence: 0.45,   // honestly under-studied
+  },
+  prepubertal: {
+    auc_factor: 1.0,    // sex hormone effects minimal; age modifiers dominate
+    vd_factor: 1.0,
+    confidence: 1.0,
+  },
+};
+
 // Human-readable barrier names
 const K_NAMES = {
   k_admet: 'ADMET/absorption',
@@ -126,5 +196,6 @@ module.exports = {
   DISEASE_THRESHOLDS, getThresholdForDisease, NL_DEFAULT_TISSUE,
   NL_DRUGS, NL_DISEASES, NL_TISSUE_PHRASES, NL_TISSUES, K_NAMES,
   NL_AGE_GROUPS, AGE_MODIFIERS, CSF_TISSUES,
+  NL_PK_SEX_PHRASES, NL_PK_SEX, PK_SEX_MODIFIERS,
   describeConfidence, getDominantK,
 };

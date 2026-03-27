@@ -5,6 +5,7 @@
 const {
   NL_DRUGS, NL_DISEASES, NL_TISSUE_PHRASES, NL_TISSUES,
   NL_DEFAULT_TISSUE, NL_AGE_GROUPS,
+  NL_PK_SEX_PHRASES, NL_PK_SEX,
 } = require('./_shared');
 
 function classifyIntent(q) {
@@ -25,32 +26,40 @@ function extractEntities(q) {
   const lower = q.toLowerCase();
   const drugs = [], diseases = [], tissues = [];
   let age_group = null;
+  let pk_sex = null;
   for (const [phrase, mapped] of NL_TISSUE_PHRASES)
     if (lower.includes(phrase) && !tissues.includes(mapped)) tissues.push(mapped);
+  // Multi-word pk_sex phrases (before single-word scan)
+  for (const [phrase, mapped] of NL_PK_SEX_PHRASES)
+    if (lower.includes(phrase)) { pk_sex = mapped; break; }
   const words = lower.replace(/[?.,!;:'"()\u2018\u2019\u201C\u201D]/g, ' ').split(/\s+/);
   for (const w of words) {
     if (NL_DRUGS[w] && !drugs.includes(NL_DRUGS[w])) drugs.push(NL_DRUGS[w]);
     if (NL_DISEASES[w] && !diseases.includes(NL_DISEASES[w])) diseases.push(NL_DISEASES[w]);
     if (NL_TISSUES[w] && !tissues.includes(NL_TISSUES[w])) tissues.push(NL_TISSUES[w]);
     if (!age_group && NL_AGE_GROUPS[w]) age_group = NL_AGE_GROUPS[w];
+    if (!pk_sex && NL_PK_SEX[w]) pk_sex = NL_PK_SEX[w];
   }
-  return { drugs, diseases, tissues: [...new Set(tissues)], age_group };
+  return { drugs, diseases, tissues: [...new Set(tissues)], age_group, pk_sex };
 }
 
 function generateGQL(intent, entities) {
-  const { drugs, diseases, tissues, age_group } = entities;
+  const { drugs, diseases, tissues, age_group, pk_sex } = entities;
   const disease = diseases[0];
   const tissue = tissues[0] || (disease ? NL_DEFAULT_TISSUE[disease] : null);
   const ageClause = age_group ? ` AND age_group = '${age_group}'` : '';
+  const sexClause = pk_sex ? ` AND pk_sex = '${pk_sex}'` : '';
+  const ctxClause = ageClause + sexClause;
   switch (intent) {
     case 'single_drug_check': case 'failure_diagnosis':
       if (!drugs[0] || !tissue) return null;
-      return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'${ageClause}`;
+      return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'${ctxClause}`;
     case 'drug_ranking': case 'cure_feasibility': {
       const w = [];
       if (disease) w.push(`disease = '${disease}'`);
       if (tissue) w.push(`tissue = '${tissue}'`);
       if (age_group) w.push(`age_group = '${age_group}'`);
+      if (pk_sex) w.push(`pk_sex = '${pk_sex}'`);
       return w.length ? `COVER ON mirador_universe WHERE ${w.join(' AND ')} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` : null;
     }
     case 'combination_query': {
@@ -59,27 +68,28 @@ function generateGQL(intent, entities) {
       if (disease) w.push(`disease = '${disease}'`);
       if (tissue) w.push(`tissue = '${tissue}'`);
       if (!w.length) return null;
-      return `COVER ON mirador_universe WHERE ${w.join(' AND ')}${ageClause} COMBINE '${drugs[0]}', '${drugs[1]}' MODE COUPLED SYNERGY 1.2 EVALUATE coherence WITH CONFIDENCE, PROVENANCE`;
+      return `COVER ON mirador_universe WHERE ${w.join(' AND ')}${ctxClause} COMBINE '${drugs[0]}', '${drugs[1]}' MODE COUPLED SYNERGY 1.2 EVALUATE coherence WITH CONFIDENCE, PROVENANCE`;
     }
     case 'comparison':
       if (drugs.length < 2 || !tissue) return null;
-      return `COMPARE [${drugs.map(d => `'${d}'`).join(', ')}] ON mirador_universe WHERE tissue = '${tissue}'${ageClause}`;
+      return `COMPARE [${drugs.map(d => `'${d}'`).join(', ')}] ON mirador_universe WHERE tissue = '${tissue}'${ctxClause}`;
     case 'data_quality':
-      if (drugs[0] && tissue) return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'${ageClause}`;
+      if (drugs[0] && tissue) return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'${ctxClause}`;
       const w2 = [];
       if (disease) w2.push(`disease = '${disease}'`);
       if (tissue) w2.push(`tissue = '${tissue}'`);
       if (age_group) w2.push(`age_group = '${age_group}'`);
+      if (pk_sex) w2.push(`pk_sex = '${pk_sex}'`);
       return w2.length ? `COVER ON mirador_universe WHERE ${w2.join(' AND ')} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` : null;
     case 'predict_unmeasured': {
       const d = drugs[0], t = tissue;
-      if (d && t) return `COMPLETE ON mirador_universe WHERE drug = '${d}' AND tissue = '${t}'${ageClause} METHOD sheaf_extension`;
+      if (d && t) return `COMPLETE ON mirador_universe WHERE drug = '${d}' AND tissue = '${t}'${ctxClause} METHOD sheaf_extension`;
       if (d) return `COMPLETE ON mirador_universe WHERE drug = '${d}' METHOD sheaf_extension`;
       return null;
     }
     case 'cascade_analysis': {
       const d2 = drugs[0], t2 = tissue;
-      if (d2 && t2) return `PROPAGATE ON mirador_universe ASSUMING drug = '${d2}' AND tissue = '${t2}'${ageClause} SHOW newly_determined`;
+      if (d2 && t2) return `PROPAGATE ON mirador_universe ASSUMING drug = '${d2}' AND tissue = '${t2}'${ctxClause} SHOW newly_determined`;
       return null;
     }
     default: return null;

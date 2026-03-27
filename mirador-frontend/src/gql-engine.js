@@ -159,6 +159,7 @@ export function coverEvaluate(universe, filters, options = {}) {
       provenance: r.provenance,
     };
     if (r.age_group) row.age_group = r.age_group;
+    if (r.pk_sex) row.pk_sex = r.pk_sex;
     return row;
   });
 
@@ -171,11 +172,12 @@ export function coverEvaluate(universe, filters, options = {}) {
  * DECOMPOSE: returns the full impedance stack for a single drug at a tissue.
  * Used by AI agents to understand WHY a drug fails or succeeds at a site.
  */
-export function decompose(universe, { drug, tissue, age_group }) {
+export function decompose(universe, { drug, tissue, age_group, pk_sex }) {
   const record = universe.find(r =>
     r.drug.toLowerCase() === drug.toLowerCase() &&
     r.tissue.toLowerCase() === tissue.toLowerCase() &&
-    (!age_group || !r.age_group || r.age_group.toLowerCase() === age_group.toLowerCase())
+    (!age_group || !r.age_group || r.age_group.toLowerCase() === age_group.toLowerCase()) &&
+    (!pk_sex || !r.pk_sex || r.pk_sex.toLowerCase() === pk_sex.toLowerCase())
   );
   if (!record) return null;
 
@@ -217,14 +219,15 @@ export function decompose(universe, { drug, tissue, age_group }) {
  * compareDrugs: rank multiple drugs at the same tissue by coherence.
  * Returns a comparison object with winner, advantage, and per-barrier wins.
  */
-export function compareDrugs(universe, drugNames, tissue, age_group) {
+export function compareDrugs(universe, drugNames, tissue, age_group, pk_sex) {
   if (!drugNames || drugNames.length === 0) return null;
 
   const matched = drugNames.map(name =>
     universe.find(r =>
       r.drug.toLowerCase() === name.toLowerCase() &&
       r.tissue.toLowerCase() === tissue.toLowerCase() &&
-      (!age_group || !r.age_group || r.age_group.toLowerCase() === age_group.toLowerCase())
+      (!age_group || !r.age_group || r.age_group.toLowerCase() === age_group.toLowerCase()) &&
+      (!pk_sex || !r.pk_sex || r.pk_sex.toLowerCase() === pk_sex.toLowerCase())
     )
   ).filter(Boolean);
 
@@ -364,7 +367,7 @@ export function universeGQL(query, universe) {
     const drug = filters.drug;
     const tissue = filters.tissue;
     if (!drug || !tissue) return { error: 'DECOMPOSE requires drug and tissue' };
-    const result = decompose(universe, { drug, tissue, age_group: filters.age_group });
+    const result = decompose(universe, { drug, tissue, age_group: filters.age_group, pk_sex: filters.pk_sex });
     if (!result) return { error: `Drug '${drug}' not found at tissue '${tissue}'` };
     return result;
   }
@@ -383,7 +386,7 @@ export function universeGQL(query, universe) {
       if (cm) filters[cm[1]] = cm[2];
     }
     const tissue = filters.tissue || '';
-    const result = compareDrugs(universe, drugNames, tissue, filters.age_group);
+    const result = compareDrugs(universe, drugNames, tissue, filters.age_group, filters.pk_sex);
     if (!result) return { error: `No matching drugs found at tissue '${tissue}'` };
     return result;
   }
@@ -525,6 +528,35 @@ const AGE_MODIFIERS = {
 
 const CSF_TISSUES = new Set(['csf_inflamed', 'csf_uninflamed', 'cns']);
 
+// PK sex / hormonal physiology vocabulary
+const NL_PK_SEX_PHRASES = [
+  ['trans woman on hrt','estrogen_dominant'],
+  ['transfeminine hrt','estrogen_dominant'],
+  ['trans man on testosterone','testosterone_dominant'],
+  ['transmasculine hrt','testosterone_dominant'],
+  ['cis woman','estrogen_dominant'],
+  ['cis man','testosterone_dominant'],
+  ['mtf hrt','estrogen_dominant'],
+  ['ftm hrt','testosterone_dominant'],
+  ['early hrt','mixed'],
+];
+
+const NL_PK_SEX = {
+  female:'estrogen_dominant', woman:'estrogen_dominant', afab:'estrogen_dominant',
+  male:'testosterone_dominant', man:'testosterone_dominant', amab:'testosterone_dominant',
+  transitioning:'mixed', perimenopause:'mixed', perimenopausal:'mixed',
+  intersex:'intersex', dsd:'intersex', cais:'intersex', cah:'intersex',
+  girl:'prepubertal', boy:'prepubertal',
+};
+
+const PK_SEX_MODIFIERS = {
+  estrogen_dominant:    { auc_factor: 1.15, vd_factor: 0.85, confidence: 1.0 },
+  testosterone_dominant:{ auc_factor: 1.0,  vd_factor: 1.0,  confidence: 1.0 },
+  mixed:               { auc_factor: 1.07, vd_factor: 0.92, confidence: 0.65 },
+  intersex:            { auc_factor: 1.07, vd_factor: 0.92, confidence: 0.45 },
+  prepubertal:         { auc_factor: 1.0,  vd_factor: 1.0,  confidence: 1.0 },
+};
+
 // ── Stage 1: Intent classification ─────────────────────────────────
 
 function classifyIntent(q) {
@@ -556,10 +588,15 @@ function extractEntities(q) {
   const lower = q.toLowerCase();
   const drugs = [], diseases = [], tissues = [];
   let age_group = null;
+  let pk_sex = null;
 
   // Multi-word tissue phrases first
   for (const [phrase, mapped] of NL_TISSUE_PHRASES) {
     if (lower.includes(phrase) && !tissues.includes(mapped)) tissues.push(mapped);
+  }
+  // Multi-word pk_sex phrases (before single-word scan)
+  for (const [phrase, mapped] of NL_PK_SEX_PHRASES) {
+    if (lower.includes(phrase)) { pk_sex = mapped; break; }
   }
 
   // Single-word scans
@@ -569,24 +606,27 @@ function extractEntities(q) {
     if (NL_DISEASES[w] && !diseases.includes(NL_DISEASES[w])) diseases.push(NL_DISEASES[w]);
     if (NL_TISSUES[w] && !tissues.includes(NL_TISSUES[w])) tissues.push(NL_TISSUES[w]);
     if (!age_group && NL_AGE_GROUPS[w]) age_group = NL_AGE_GROUPS[w];
+    if (!pk_sex && NL_PK_SEX[w]) pk_sex = NL_PK_SEX[w];
   }
 
-  return { drugs, diseases, tissues: [...new Set(tissues)], age_group };
+  return { drugs, diseases, tissues: [...new Set(tissues)], age_group, pk_sex };
 }
 
 // ── Stage 3: GQL generation ────────────────────────────────────────
 
 function generateGQL(intent, entities) {
-  const { drugs, diseases, tissues, age_group } = entities;
+  const { drugs, diseases, tissues, age_group, pk_sex } = entities;
   const disease = diseases[0];
   const tissue = tissues[0] || (disease ? NL_DEFAULT_TISSUE[disease] : null);
   const ageClause = age_group ? ` AND age_group = '${age_group}'` : '';
+  const sexClause = pk_sex ? ` AND pk_sex = '${pk_sex}'` : '';
+  const ctxClause = ageClause + sexClause;
 
   switch (intent) {
     case 'single_drug_check':
     case 'failure_diagnosis': {
       if (!drugs[0] || !tissue) return null;
-      return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'${ageClause}`;
+      return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'${ctxClause}`;
     }
     case 'drug_ranking':
     case 'cure_feasibility': {
@@ -594,6 +634,7 @@ function generateGQL(intent, entities) {
       if (disease) w.push(`disease = '${disease}'`);
       if (tissue) w.push(`tissue = '${tissue}'`);
       if (age_group) w.push(`age_group = '${age_group}'`);
+      if (pk_sex) w.push(`pk_sex = '${pk_sex}'`);
       return w.length ? `COVER ON mirador_universe WHERE ${w.join(' AND ')} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` : null;
     }
     case 'combination_query': {
@@ -602,31 +643,32 @@ function generateGQL(intent, entities) {
       if (disease) w.push(`disease = '${disease}'`);
       if (tissue) w.push(`tissue = '${tissue}'`);
       if (!w.length) return null;
-      return `COVER ON mirador_universe WHERE ${w.join(' AND ')}${ageClause} COMBINE '${drugs[0]}', '${drugs[1]}' MODE COUPLED SYNERGY 1.2 EVALUATE coherence WITH CONFIDENCE, PROVENANCE`;
+      return `COVER ON mirador_universe WHERE ${w.join(' AND ')}${ctxClause} COMBINE '${drugs[0]}', '${drugs[1]}' MODE COUPLED SYNERGY 1.2 EVALUATE coherence WITH CONFIDENCE, PROVENANCE`;
     }
     case 'comparison': {
       if (drugs.length < 2 || !tissue) return null;
-      return `COMPARE [${drugs.map(d => `'${d}'`).join(', ')}] ON mirador_universe WHERE tissue = '${tissue}'${ageClause}`;
+      return `COMPARE [${drugs.map(d => `'${d}'`).join(', ')}] ON mirador_universe WHERE tissue = '${tissue}'${ctxClause}`;
     }
     case 'data_quality': {
-      if (drugs[0] && tissue) return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'${ageClause}`;
+      if (drugs[0] && tissue) return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'${ctxClause}`;
       const w = [];
       if (disease) w.push(`disease = '${disease}'`);
       if (tissue) w.push(`tissue = '${tissue}'`);
       if (age_group) w.push(`age_group = '${age_group}'`);
+      if (pk_sex) w.push(`pk_sex = '${pk_sex}'`);
       return w.length ? `COVER ON mirador_universe WHERE ${w.join(' AND ')} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` : null;
     }
     case 'predict_unmeasured': {
       const d = drugs[0];
       const t = tissue;
-      if (d && t) return `COMPLETE ON mirador_universe WHERE drug = '${d}' AND tissue = '${t}'${ageClause} METHOD sheaf_extension`;
+      if (d && t) return `COMPLETE ON mirador_universe WHERE drug = '${d}' AND tissue = '${t}'${ctxClause} METHOD sheaf_extension`;
       if (d) return `COMPLETE ON mirador_universe WHERE drug = '${d}' METHOD sheaf_extension`;
       return null;
     }
     case 'cascade_analysis': {
       const d = drugs[0];
       const t = tissue;
-      if (d && t) return `PROPAGATE ON mirador_universe ASSUMING drug = '${d}' AND tissue = '${t}'${ageClause} SHOW newly_determined`;
+      if (d && t) return `PROPAGATE ON mirador_universe ASSUMING drug = '${d}' AND tissue = '${t}'${ctxClause} SHOW newly_determined`;
       return null;
     }
     default: return null;
@@ -809,15 +851,16 @@ export function nlToGql(question, universe) {
   if (t.status !== 'ok') return t;
 
   // Multi-disease queries: run per-disease, merge results
-  const { diseases, tissues, age_group } = t.entities;
+  const { diseases, tissues, age_group, pk_sex } = t.entities;
   if (diseases.length >= 2 && (t.intent === 'drug_ranking' || t.intent === 'cure_feasibility')) {
     const tissue = tissues[0]; // shared tissue from question (e.g. CSF)
     const ageClause = age_group ? ` AND age_group = '${age_group}'` : '';
+    const sexClause = pk_sex ? ` AND pk_sex = '${pk_sex}'` : '';
     const allRows = [];
     const gqls = [];
     for (const dis of diseases) {
       const tis = tissue || NL_DEFAULT_TISSUE[dis];
-      const gql = `COVER ON mirador_universe WHERE disease = '${dis}'${tis ? ` AND tissue = '${tis}'` : ''}${ageClause} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE`;
+      const gql = `COVER ON mirador_universe WHERE disease = '${dis}'${tis ? ` AND tissue = '${tis}'` : ''}${ageClause}${sexClause} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE`;
       gqls.push(gql);
       const res = universeGQL(gql, universe);
       if (res?.rows) {
@@ -880,6 +923,61 @@ export function expandUniverseWithAge(baseUniverse) {
         K_pathway,
         confidence: 0.85,
         provenance: `Age-adjusted (${ageGroup}): AUC×${mod.auc_factor}${isCsf ? `, R_CSF×${mod.r_csf_factor}` : ''}`,
+        crossesThreshold: C >= thresh,
+        auc_24: auc_eff,
+        r_penetration: r_eff,
+        k_barrier: k_barrier_eff,
+      });
+    }
+  }
+
+  return expanded;
+}
+
+// ── PK-sex-stratified universe expansion ───────────────────────────
+
+/**
+ * Expand a universe with pk_sex-stratified records.
+ * Tags existing records as testosterone_dominant (baseline), then generates
+ * estrogen_dominant, mixed, intersex, and prepubertal variants.
+ * Uses PK_SEX_MODIFIERS: auc_factor (clearance), vd_factor (tissue distribution).
+ * Formula: C = τ × R × (1 − k_admet)
+ */
+export function expandUniverseWithSex(universe) {
+  if (!universe?.length) return universe;
+  // Skip if already expanded
+  if (universe[0]?.pk_sex) return universe;
+
+  const expanded = universe.map(r => ({ ...r, pk_sex: 'testosterone_dominant' }));
+
+  for (const [sexGroup, mod] of Object.entries(PK_SEX_MODIFIERS)) {
+    if (sexGroup === 'testosterone_dominant') continue;
+    for (const record of universe) {
+      let auc_eff, tau_eff;
+      if (record.auc_24 > 0) {
+        auc_eff = +(record.auc_24 * mod.auc_factor).toFixed(2);
+        tau_eff = +(Math.log10(auc_eff / record.mic)).toFixed(4);
+      } else {
+        auc_eff = 0;
+        tau_eff = +(record.tau + Math.log10(mod.auc_factor)).toFixed(4);
+      }
+
+      // vd_factor affects tissue penetration (lower Vd → lower R for hydrophilic drugs)
+      const r_eff = +(record.r_penetration * mod.vd_factor).toFixed(6);
+      const k_barrier_eff = (r_eff > 0 && r_eff < 1) ? +(-Math.log10(r_eff)).toFixed(4) : 0;
+      const K_pathway = +(k_barrier_eff + (record.k_biofilm || 0)).toFixed(4);
+      const C = +(tau_eff * r_eff * (1 - record.k_admet)).toFixed(4);
+      const thresh = DISEASE_THRESHOLDS[record.disease]?.theta ?? 5.0;
+      const confMin = Math.min(record.confidence ?? 1.0, mod.confidence);
+
+      expanded.push({
+        ...record,
+        pk_sex: sexGroup,
+        tau: tau_eff,
+        C,
+        K_pathway,
+        confidence: +confMin.toFixed(2),
+        provenance: (record.provenance || '') + ` | PK-sex (${sexGroup}): AUC×${mod.auc_factor}, Vd×${mod.vd_factor}`,
         crossesThreshold: C >= thresh,
         auc_24: auc_eff,
         r_penetration: r_eff,

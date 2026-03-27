@@ -15,6 +15,7 @@ import {
   fromDHOOM,
   applyPatientContext,
   expandUniverseWithAge,
+  expandUniverseWithSex,
 } from './gql-engine';
 
 // ── WASM init (must run before any buildUniverse call) ─────────────
@@ -1000,6 +1001,149 @@ describe('age context — query execution on expanded universe', () => {
     );
     expect(res.drug).toBe('VAN');
     expect(res.tau).toBeGreaterThan(2.602); // geriatric has higher AUC → higher tau
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// §13  PK sex / hormonal physiology context (base space expansion)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('pk_sex context — extractEntities()', () => {
+  it('extracts "woman" as estrogen_dominant', () => {
+    const r = translateNL('best drugs for meningitis in a woman');
+    expect(r.entities.pk_sex).toBe('estrogen_dominant');
+  });
+
+  it('extracts "male" as testosterone_dominant', () => {
+    const r = translateNL('best drugs for meningitis in a male patient');
+    expect(r.entities.pk_sex).toBe('testosterone_dominant');
+  });
+
+  it('extracts "intersex" as intersex', () => {
+    const r = translateNL('meningitis treatment for intersex patient');
+    expect(r.entities.pk_sex).toBe('intersex');
+  });
+
+  it('returns null pk_sex when no sex keyword', () => {
+    const r = translateNL('best drugs for meningitis');
+    expect(r.entities.pk_sex).toBeNull();
+  });
+
+  it('extracts multi-word "trans woman on hrt" as estrogen_dominant', () => {
+    const r = translateNL('meningitis drugs for a trans woman on hrt');
+    expect(r.entities.pk_sex).toBe('estrogen_dominant');
+  });
+
+  it('extracts "transitioning" as mixed', () => {
+    const r = translateNL('best drugs for mrsa in a transitioning patient');
+    expect(r.entities.pk_sex).toBe('mixed');
+  });
+});
+
+describe('pk_sex context — GQL generation', () => {
+  it('adds pk_sex to COVER WHERE clause when detected', () => {
+    const r = translateNL('best drugs for meningitis in a woman');
+    expect(r.generated_gql).toContain("pk_sex = 'estrogen_dominant'");
+  });
+
+  it('omits pk_sex when not detected', () => {
+    const r = translateNL('best drugs for meningitis');
+    expect(r.generated_gql).not.toContain('pk_sex');
+  });
+
+  it('adds pk_sex to DECOMPOSE ON clause', () => {
+    const r = translateNL('does vancomycin work for meningitis in a male patient');
+    expect(r.generated_gql).toContain("pk_sex = 'testosterone_dominant'");
+  });
+
+  it('combines age_group and pk_sex in same query', () => {
+    const r = translateNL('best drugs for meningitis in elderly woman');
+    expect(r.generated_gql).toContain("age_group = 'geriatric'");
+    expect(r.generated_gql).toContain("pk_sex = 'estrogen_dominant'");
+  });
+});
+
+describe('pk_sex context — expandUniverseWithSex()', () => {
+  let base, ageExpanded, expanded;
+  beforeAll(() => {
+    base = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+    ageExpanded = expandUniverseWithAge(base);
+    expanded = expandUniverseWithSex(ageExpanded);
+  });
+
+  it('tags existing records as testosterone_dominant', () => {
+    const tdom = expanded.filter(r => r.pk_sex === 'testosterone_dominant');
+    expect(tdom.length).toBe(ageExpanded.length);
+  });
+
+  it('creates estrogen_dominant variants', () => {
+    const edom = expanded.filter(r => r.pk_sex === 'estrogen_dominant');
+    expect(edom.length).toBe(ageExpanded.length);
+  });
+
+  it('total records = age-expanded × 5 pk_sex groups', () => {
+    // PK_SEX_MODIFIERS has 5 entries (testosterone_dominant, estrogen_dominant, mixed, intersex, prepubertal)
+    expect(expanded.length).toBe(ageExpanded.length * 5);
+  });
+
+  it('is idempotent — skip if already expanded', () => {
+    const double = expandUniverseWithSex(expanded);
+    expect(double.length).toBe(expanded.length);
+  });
+
+  it('estrogen_dominant records have higher tau (slower clearance)', () => {
+    const tVAN = expanded.find(r => r.drug === 'VAN' && r.age_group === 'adult' && r.pk_sex === 'testosterone_dominant');
+    const eVAN = expanded.find(r => r.drug === 'VAN' && r.age_group === 'adult' && r.pk_sex === 'estrogen_dominant');
+    expect(eVAN.tau).toBeGreaterThan(tVAN.tau);
+  });
+
+  it('intersex records have confidence 0.45', () => {
+    const ix = expanded.filter(r => r.pk_sex === 'intersex' && r.age_group === 'adult');
+    for (const r of ix) expect(r.confidence).toBeLessThanOrEqual(0.45);
+  });
+
+  it('mixed records have confidence 0.65', () => {
+    const mx = expanded.filter(r => r.pk_sex === 'mixed' && r.age_group === 'adult');
+    for (const r of mx) expect(r.confidence).toBeLessThanOrEqual(0.65);
+  });
+});
+
+describe('pk_sex context — query execution on expanded universe', () => {
+  let expanded;
+  beforeAll(() => {
+    const base = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+    expanded = expandUniverseWithSex(expandUniverseWithAge(base));
+  });
+
+  it('COVER with pk_sex filter returns only that pk_sex group', () => {
+    const res = universeGQL(
+      "COVER ON mirador_universe WHERE disease = 'mrsa' AND tissue = 'bone' AND age_group = 'adult' AND pk_sex = 'estrogen_dominant' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE",
+      expanded
+    );
+    expect(res.count).toBe(3); // VAN, RIF, CAR
+    for (const r of res.rows) expect(r.pk_sex).toBe('estrogen_dominant');
+  });
+
+  it('DECOMPOSE with pk_sex finds the right record', () => {
+    const res = universeGQL(
+      "DECOMPOSE mirador_universe ON drug = 'VAN' AND tissue = 'bone' AND age_group = 'adult' AND pk_sex = 'estrogen_dominant'",
+      expanded
+    );
+    expect(res.drug).toBe('VAN');
+    // estrogen_dominant has higher AUC factor (1.15) → higher tau
+    const baseRes = universeGQL(
+      "DECOMPOSE mirador_universe ON drug = 'VAN' AND tissue = 'bone' AND age_group = 'adult' AND pk_sex = 'testosterone_dominant'",
+      expanded
+    );
+    expect(res.tau).toBeGreaterThan(baseRes.tau);
+  });
+
+  it('COVER without pk_sex returns all pk_sex groups', () => {
+    const res = universeGQL(
+      "COVER ON mirador_universe WHERE disease = 'mrsa' AND tissue = 'bone' AND age_group = 'adult' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE",
+      expanded
+    );
+    expect(res.count).toBe(15); // 3 drugs × 5 pk_sex groups
   });
 });
 
