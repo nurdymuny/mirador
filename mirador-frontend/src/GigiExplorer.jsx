@@ -600,9 +600,27 @@ export default function GigiExplorer() {
     const res = nlToGql(q, DEMO_DB.mirador_universe);
     setNlAnswer(res);
     if (res.generated_gql) {
-      animateGQL(res.generated_gql, null);
+      // Show the GQL in the query box (animated) but set the result directly
+      // from nlToGql instead of re-running through demoGQL.
+      if (nlTypingRef.current) clearInterval(nlTypingRef.current);
+      setNlActive(null); setQuery(''); setError(null);
+      // Set the result from the NL engine directly
+      const execResult = universeGQL(res.generated_gql, DEMO_DB.mirador_universe);
+      if (execResult) {
+        setResult(execResult);
+      }
+      // Animate the GQL text into the query box (display only, no re-execution)
+      let i = 0;
+      nlTypingRef.current = setInterval(() => {
+        i++;
+        setQuery(res.generated_gql.slice(0, i));
+        if (i >= res.generated_gql.length) {
+          clearInterval(nlTypingRef.current);
+          nlTypingRef.current = null;
+        }
+      }, 14);
     }
-  }, [nlQuestion, animateGQL]);
+  }, [nlQuestion]);
 
   const resultData = result?.rows ?? result?.bundles ?? result?.data ?? (result?.value !== undefined ? [{value: result.value}] : null);
   const resultMeta = result?.meta ?? (result?.count !== undefined ? {count: result.count} : null);
