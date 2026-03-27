@@ -364,7 +364,7 @@ function ResultTable({ data }) {
     return String(v);
   };
 
-  // Build a reference URL from provenance string + row context
+  // Build reference link(s) for provenance / reference columns
   const provenanceUrl = (prov, row) => {
     if (!prov || typeof prov !== 'string') return null;
     if (/WHO/i.test(prov)) return 'https://www.whocc.no/atc_ddd_index/';
@@ -375,6 +375,35 @@ function ResultTable({ data }) {
       return `https://pubmed.ncbi.nlm.nih.gov/?term=${drug}+AUC+MIC${disease ? '+' + disease : ''}`;
     }
     return null;
+  };
+
+  // Parse "Author, Journal Year; Author2, Journal2 Year2" into per-citation PubMed links
+  const refLinks = (val) => {
+    if (!val || typeof val !== 'string') return null;
+    const cites = val.split(/;\s*/).filter(Boolean);
+    if (!cites.length) return null;
+    return cites.map((cite, i) => {
+      const q = encodeURIComponent(cite.trim());
+      const url = `https://pubmed.ncbi.nlm.nih.gov/?term=${q}`;
+      return <span key={i}>{i > 0 && '; '}<a href={url} target="_blank" rel="noopener noreferrer"
+        onClick={e => e.stopPropagation()}
+        style={{ color: '#22d3ee', textDecoration: 'underline', textUnderlineOffset: 2 }}>{cite.trim()}</a></span>;
+    });
+  };
+
+  // Render a cell value, making provenance/reference columns clickable
+  const renderCell = (col, val, row) => {
+    if (val === null || val === undefined) return <span style={{ color: '#334155' }}>—</span>;
+    if (col === 'provenance') {
+      const url = provenanceUrl(val, row);
+      return url ? <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+        style={{ color: '#22d3ee', textDecoration: 'underline', textUnderlineOffset: 2 }}>{fmt(val)}</a> : fmt(val);
+    }
+    if (col === 'reference') {
+      const links = refLinks(val);
+      return links || fmt(val);
+    }
+    return fmt(val);
   };
 
   // Color-code numeric values by magnitude (tau / pchembl / etc)
@@ -420,14 +449,10 @@ function ResultTable({ data }) {
                   onMouseOut={e => { if (!isExp) e.currentTarget.style.background = i % 2 === 0 ? '#0a0a14' : '#0f0f1a'; }}>
                   {cols.map(c => {
                     const v = row[c];
-                    const pUrl = c === 'provenance' ? provenanceUrl(v, row) : null;
                     return (
                       <td key={c} style={{ padding: '5px 10px', color: numColor(c, v), borderBottom: isExp ? 'none' : '1px solid #1a1a2e',
-                        whiteSpace: 'nowrap', fontVariantNumeric: typeof v === 'number' ? 'tabular-nums' : undefined }}>
-                        {v === null || v === undefined ? <span style={{ color: '#334155' }}>—</span>
-                          : pUrl ? <a href={pUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                              style={{ color: '#22d3ee', textDecoration: 'underline', textUnderlineOffset: 2 }}>{fmt(v)}</a>
-                          : fmt(v)}
+                        whiteSpace: c === 'reference' ? 'normal' : 'nowrap', fontVariantNumeric: typeof v === 'number' ? 'tabular-nums' : undefined }}>
+                        {renderCell(c, v, row)}
                       </td>
                     );
                   })}
@@ -441,16 +466,12 @@ function ResultTable({ data }) {
                           fontWeight: 700, marginBottom: 4 }}>ROW DETAIL — click header to sort, click row to collapse</div>
                         {cols.map(c => {
                           const v = row[c];
-                          const pUrl = c === 'provenance' ? provenanceUrl(v, row) : null;
                           return (
                             <div key={c}>
                               <div style={{ fontSize: 8, color: '#475569', letterSpacing: 1, marginBottom: 2 }}>{c.toUpperCase()}</div>
                               <div style={{ fontSize: 12, color: numColor(c, v), fontWeight: typeof v === 'number' ? 700 : 400,
                                 wordBreak: 'break-word', whiteSpace: 'normal' }}>
-                                {v === null || v === undefined ? <span style={{ color: '#334155' }}>—</span>
-                                  : pUrl ? <a href={pUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                                      style={{ color: '#22d3ee', textDecoration: 'underline', textUnderlineOffset: 2 }}>{fmt(v)}</a>
-                                  : fmt(v)}
+                                {renderCell(c, v, row)}
                               </div>
                             </div>
                           );
