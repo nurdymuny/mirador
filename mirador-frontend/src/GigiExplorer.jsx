@@ -536,15 +536,25 @@ export default function GigiExplorer() {
     setLoading(true); setError(null); setResult(null); setElapsed(null);
     const t0 = performance.now();
 
+    // Universe queries always run locally — the GIGI server doesn't handle them
+    const isUniverseQ = /^COVER\s+ON\s+mirador_universe\b/i.test(queryText) ||
+                        /^(DECOMPOSE|COMPARE|COMPLETE|PROPAGATE|COMBINE)\b/i.test(queryText);
+    if (isUniverseQ) {
+      await new Promise(r => setTimeout(r, 15));
+      const dt = performance.now() - t0;
+      setElapsed(dt);
+      const res = universeGQL(queryText, DEMO_DB.mirador_universe) || {error:'Universe query could not be evaluated'};
+      if (res.error) setError(res.error); else setResult(res);
+      setHistory(prev => [{ query: queryText, time: new Date().toISOString(), elapsed: dt, demo: true }, ...prev].slice(0, 50));
+      setLoading(false);
+      return;
+    }
+
     if (demoMode || !connected) {
       await new Promise(r => setTimeout(r, 15));
       const dt = performance.now() - t0;
       setElapsed(dt);
-      // Route universe queries directly — bypass demoGQL entirely
-      const isUniverseQ = /^COVER\s+ON\s+mirador_universe\b/i.test(queryText);
-      const res = isUniverseQ
-        ? (universeGQL(queryText, DEMO_DB.mirador_universe) || {error:'Universe query could not be evaluated'})
-        : demoGQL(queryText);
+      const res = demoGQL(queryText);
       if (res.error) setError(res.error); else setResult(res);
       setHistory(prev => [{ query: queryText, time: new Date().toISOString(), elapsed: dt, demo: true }, ...prev].slice(0, 50));
       setLoading(false);
