@@ -6,6 +6,7 @@ import {
   initEngineSync,
   buildUniverse, coverEvaluate, combineDrugs, universeGQL,
   decompose, compareDrugs, batchGQL,
+  translateNL, nlToGql,
 } from './gql-engine';
 
 // ── WASM init (must run before any buildUniverse call) ─────────────
@@ -507,5 +508,140 @@ describe('universeGQL() — new verbs', () => {
     const q = "COMPARE ['NOPE'] ON mirador_universe WHERE tissue = 'bone';";
     const result = universeGQL(q, universe);
     expect(result).toHaveProperty('error');
+  });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// §9  Natural Language → GQL (3-stage pipeline)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('translateNL() – Stage 1-3 (no execution)', () => {
+  it('classifies single drug check intent', () => {
+    const r = translateNL('Can vancomycin reach MRSA in bone?');
+    expect(r.status).toBe('ok');
+    expect(r.intent).toBe('single_drug_check');
+    expect(r.entities.drugs).toContain('VAN');
+    expect(r.entities.diseases).toContain('mrsa');
+    expect(r.entities.tissues).toContain('bone');
+    expect(r.generated_gql).toMatch(/DECOMPOSE.*VAN.*bone/);
+  });
+
+  it('classifies drug ranking intent', () => {
+    const r = translateNL('Which drug is best for MRSA in bone?');
+    expect(r.status).toBe('ok');
+    expect(r.intent).toBe('drug_ranking');
+    expect(r.generated_gql).toMatch(/COVER ON mirador_universe/);
+    expect(r.generated_gql).toMatch(/RANK BY coherence DESC/);
+  });
+
+  it('classifies failure diagnosis intent', () => {
+    const r = translateNL('Why does vancomycin fail in bone?');
+    expect(r.status).toBe('ok');
+    expect(r.intent).toBe('failure_diagnosis');
+    expect(r.generated_gql).toMatch(/DECOMPOSE.*VAN.*bone/);
+  });
+
+  it('classifies comparison intent', () => {
+    const r = translateNL('Compare vancomycin vs rifampin at bone');
+    expect(r.status).toBe('ok');
+    expect(r.intent).toBe('comparison');
+    expect(r.generated_gql).toMatch(/COMPARE.*VAN.*RIF.*bone/);
+  });
+
+  it('classifies combination intent', () => {
+    const r = translateNL('What combination of VAN plus RIF for MRSA?');
+    expect(r.status).toBe('ok');
+    expect(r.intent).toBe('combination_query');
+    expect(r.generated_gql).toMatch(/COMBINE.*VAN.*RIF/);
+  });
+
+  it('extracts multi-word tissue phrases', () => {
+    const r = translateNL('Can DTG cross the blood-brain barrier for HIV?');
+    expect(r.status).toBe('ok');
+    expect(r.entities.tissues).toContain('cns');
+  });
+
+  it('defaults tissue from disease when tissue omitted', () => {
+    const r = translateNL('Which drug is best for MRSA?');
+    expect(r.status).toBe('ok');
+    expect(r.generated_gql).toMatch(/tissue = 'bone'/);
+  });
+
+  it('returns clarification when question is vague', () => {
+    const r = translateNL('Tell me about drugs');
+    expect(r.status).toBe('clarification_needed');
+    expect(r.options).toBeDefined();
+    expect(r.options.length).toBeGreaterThan(0);
+  });
+
+  it('downgrades combination to ranking when < 2 drugs', () => {
+    const r = translateNL('What combination for MRSA?');
+    expect(r.status).toBe('ok');
+    expect(r.intent).toBe('drug_ranking');
+  });
+
+  it('returns error for empty question', () => {
+    const r = translateNL('');
+    expect(r.status).toBe('error');
+  });
+
+  it('handles drug abbreviations (3-letter codes)', () => {
+    const r = translateNL('Does LZD work for MRSA in bone?');
+    expect(r.entities.drugs).toContain('LZD');
+  });
+
+  it('maps full drug names case-insensitively', () => {
+    const r = translateNL('does Daptomycin reach bone?');
+    expect(r.entities.drugs).toContain('DAP');
+  });
+});
+
+describe('nlToGql() – Full pipeline with execution', () => {
+  let universe;
+  beforeAll(() => { universe = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS); });
+
+  it('returns answer for single drug check', () => {
+    const r = nlToGql('Can vancomycin reach MRSA in bone?', universe);
+    expect(r.status).toBe('ok');
+    expect(r.answer).toBeDefined();
+    expect(r.answer.length).toBeGreaterThan(10);
+    expect(r.verdict).toMatch(/threshold/);
+    expect(r.generated_gql).toBeDefined();
+  });
+
+  it('returns ranking with drug list', () => {
+    const r = nlToGql('Which drug is best for MRSA at bone?', universe);
+    expect(r.status).toBe('ok');
+    expect(r.answer).toMatch(/drug/i);
+    expect(r.result.rows).toBeDefined();
+    expect(r.result.rows.length).toBeGreaterThan(0);
+  });
+
+  it('returns failure diagnosis with impedance breakdown', () => {
+    const r = nlToGql('Why does vancomycin fail in bone?', universe);
+    expect(r.status).toBe('ok');
+    expect(r.answer).toMatch(/k_/i);
+    expect(r.verdict).toMatch(/threshold/);
+  });
+
+  it('returns comparison with winner', () => {
+    const r = nlToGql('Compare VAN vs RIF in bone', universe);
+    expect(r.status).toBe('ok');
+    expect(r.answer).toMatch(/Winner/);
+  });
+
+  it('generates follow-up queries', () => {
+    const r = nlToGql('Can vancomycin reach MRSA in bone?', universe);
+    expect(r.follow_ups).toBeDefined();
+    expect(r.follow_ups.length).toBeGreaterThan(0);
+    for (const f of r.follow_ups) {
+      expect(f.label).toBeDefined();
+      expect(f.gql).toBeDefined();
+    }
+  });
+
+  it('returns error for null universe', () => {
+    const r = nlToGql('Can vancomycin reach bone?', null);
+    expect(r.status).toBe('error');
   });
 });

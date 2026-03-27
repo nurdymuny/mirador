@@ -302,3 +302,278 @@ export function universeGQL(query, universe) {
 
   return null; // Not a universe query — fall through to base engine
 }
+
+// ── Natural Language → GQL (3-stage pipeline per spec §NL) ─────────
+
+// Controlled vocabulary: drug natural language → universe drug code
+const NL_DRUGS = {
+  vancomycin:'VAN', vanco:'VAN',
+  rifampin:'RIF', rifampicin:'RIF',
+  linezolid:'LZD', ceftriaxone:'CRO', daptomycin:'DAP',
+  ceftaroline:'CAR', clindamycin:'CLI', clinda:'CLI',
+  dolutegravir:'DTG', tenofovir:'TFV', emtricitabine:'FTC',
+  darunavir:'DRV', efavirenz:'EFV',
+  isoniazid:'INH', pyrazinamide:'PZA', ethambutol:'EMB',
+  moxifloxacin:'MXF', bedaquiline:'BDQ',
+  // abbreviations
+  van:'VAN', rif:'RIF', lzd:'LZD', cro:'CRO', dap:'DAP',
+  car:'CAR', cli:'CLI', dtg:'DTG', tfv:'TFV', ftc:'FTC',
+  drv:'DRV', efv:'EFV', inh:'INH', pza:'PZA', emb:'EMB',
+  mxf:'MXF', bdq:'BDQ',
+};
+
+// Controlled vocabulary: disease / pathogen
+const NL_DISEASES = {
+  mrsa:'mrsa', staph:'mrsa', staphylococcus:'mrsa', 'methicillin-resistant':'mrsa',
+  tb:'tb', tuberculosis:'tb', mycobacterium:'mrsa',
+  hiv:'hiv', 'hiv-1':'hiv', aids:'hiv',
+  meningitis:'meningitis', meningococcal:'meningitis',
+};
+
+// Multi-word tissue phrases (checked first)
+const NL_TISSUE_PHRASES = [
+  ['blood-brain barrier','cns'], ['blood brain barrier','cns'],
+  ['cerebrospinal fluid','csf_inflamed'], ['central nervous system','cns'],
+  ['bone marrow','bone_marrow'], ['lymph node','lymph_node'],
+  ['genital tract','genital_tract'],
+];
+
+// Single-word tissue vocabulary
+const NL_TISSUES = {
+  bone:'bone', osseous:'bone', osteomyelitis:'bone',
+  csf:'csf_inflamed', spinal:'csf_inflamed',
+  cns:'cns', brain:'cns', bbb:'cns', 'blood-brain':'cns',
+  lymph:'lymph_node',
+  lung:'granuloma_lung', pulmonary:'granuloma_lung', granuloma:'granuloma_lung',
+  caseum:'granuloma_necrotic', caseous:'granuloma_necrotic', necrotic:'granuloma_necrotic',
+  cavity:'granuloma_cavity', cavitary:'granuloma_cavity',
+  genital:'genital_tract',
+  gut:'galt', galt:'galt', intestinal:'galt',
+  blood:'planktonic', serum:'planktonic', planktonic:'planktonic',
+};
+
+// Default tissue when disease is known but tissue omitted
+const NL_DEFAULT_TISSUE = {
+  mrsa:'bone', tb:'granuloma_lung', hiv:'cns', meningitis:'csf_inflamed',
+};
+
+// ── Stage 1: Intent classification ─────────────────────────────────
+
+function classifyIntent(q) {
+  const l = q.toLowerCase();
+  if (/why\s+(does|doesn'?t|isn'?t|can'?t|won'?t|did)\b/.test(l) || /why\s+fail/.test(l) || /why\s+not\s+work/.test(l))
+    return 'failure_diagnosis';
+  if (/\bvs\.?\b|\bversus\b|\bcompare\b|\bbetter\s+than\b/.test(l))
+    return 'comparison';
+  if (/\bcombination\b|\bcombo\b|\bplus\b|\bcombine\b|\badd(ing)?\s+\w/.test(l))
+    return 'combination_query';
+  if (/\bbest\b|\brank\b|\bwhich\s+drug|\btop\b|\bmost\s+(effective|potent)/.test(l) || /what\s+(kills|works|treats|reaches|penetrates)/.test(l))
+    return 'drug_ranking';
+  if (/\bcan\s+\w+\s+(reach|treat|work|penetrate)\b/.test(l) || /\bdoes\s+\w+\s+work/.test(l) || /\bhow\s+(well|much|effective)/.test(l))
+    return 'single_drug_check';
+  if (/\breliable\b|\bstudies\s+agree\b|\bconsistency\b|\bconfidence\b|\bagree\b/.test(l))
+    return 'data_quality';
+  if (/\bcure\b|\bcurable\b|\beradicate\b/.test(l))
+    return 'cure_feasibility';
+  return null; // resolved by fallback in nlToGql
+}
+
+// ── Stage 2: Entity extraction ─────────────────────────────────────
+
+function extractEntities(q) {
+  const lower = q.toLowerCase();
+  const drugs = [], diseases = [], tissues = [];
+
+  // Multi-word tissue phrases first
+  for (const [phrase, mapped] of NL_TISSUE_PHRASES) {
+    if (lower.includes(phrase) && !tissues.includes(mapped)) tissues.push(mapped);
+  }
+
+  // Single-word scans
+  const words = lower.replace(/[?.,!;:'"()]/g, ' ').split(/\s+/);
+  for (const w of words) {
+    if (NL_DRUGS[w] && !drugs.includes(NL_DRUGS[w])) drugs.push(NL_DRUGS[w]);
+    if (NL_DISEASES[w] && !diseases.includes(NL_DISEASES[w])) diseases.push(NL_DISEASES[w]);
+    if (NL_TISSUES[w] && !tissues.includes(NL_TISSUES[w])) tissues.push(NL_TISSUES[w]);
+  }
+
+  return { drugs, diseases, tissues: [...new Set(tissues)] };
+}
+
+// ── Stage 3: GQL generation ────────────────────────────────────────
+
+function generateGQL(intent, entities) {
+  const { drugs, diseases, tissues } = entities;
+  const disease = diseases[0];
+  const tissue = tissues[0] || (disease ? NL_DEFAULT_TISSUE[disease] : null);
+
+  switch (intent) {
+    case 'single_drug_check':
+    case 'failure_diagnosis': {
+      if (!drugs[0] || !tissue) return null;
+      return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'`;
+    }
+    case 'drug_ranking':
+    case 'cure_feasibility': {
+      const w = [];
+      if (disease) w.push(`disease = '${disease}'`);
+      if (tissue) w.push(`tissue = '${tissue}'`);
+      return w.length ? `COVER ON mirador_universe WHERE ${w.join(' AND ')} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` : null;
+    }
+    case 'combination_query': {
+      if (drugs.length < 2) return null;
+      const w = [];
+      if (disease) w.push(`disease = '${disease}'`);
+      if (tissue) w.push(`tissue = '${tissue}'`);
+      if (!w.length) return null;
+      return `COVER ON mirador_universe WHERE ${w.join(' AND ')} COMBINE '${drugs[0]}', '${drugs[1]}' MODE COUPLED SYNERGY 1.2 EVALUATE coherence WITH CONFIDENCE, PROVENANCE`;
+    }
+    case 'comparison': {
+      if (drugs.length < 2 || !tissue) return null;
+      return `COMPARE [${drugs.map(d => `'${d}'`).join(', ')}] ON mirador_universe WHERE tissue = '${tissue}'`;
+    }
+    case 'data_quality': {
+      if (drugs[0] && tissue) return `DECOMPOSE mirador_universe ON drug = '${drugs[0]}' AND tissue = '${tissue}'`;
+      const w = [];
+      if (disease) w.push(`disease = '${disease}'`);
+      if (tissue) w.push(`tissue = '${tissue}'`);
+      return w.length ? `COVER ON mirador_universe WHERE ${w.join(' AND ')} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` : null;
+    }
+    default: return null;
+  }
+}
+
+// ── Answer generation ──────────────────────────────────────────────
+
+const K_LABELS = { k_admet:'ADMET/absorption', k_barrier:'tissue penetration', k_biofilm:'biofilm resistance' };
+
+function generateAnswer(question, intent, entities, gql, result) {
+  if (!result || result.error) {
+    return { status:'error', question, answer: result?.error || 'Could not execute query.', generated_gql: gql };
+  }
+
+  const thresh = 5.0;
+  let answer = '', verdict = '';
+
+  if (intent === 'single_drug_check' || intent === 'failure_diagnosis') {
+    const C = result.C, passes = C >= thresh;
+    verdict = passes ? 'meets_threshold' : 'fails_threshold';
+    const dom = result.dominant_barrier;
+    const label = K_LABELS[dom] || dom;
+    if (intent === 'failure_diagnosis') {
+      answer = `${result.drug} achieves C = ${C.toFixed(2)} at ${result.tissue}, ${passes ? 'above' : 'below'} threshold θ = ${thresh}. ` +
+        `The dominant impedance is ${label} (${dom} = ${result.decomposition[dom].toFixed(4)}). ` +
+        `Full: k_admet=${result.decomposition.k_admet.toFixed(4)}, k_barrier=${result.decomposition.k_barrier.toFixed(4)}, k_biofilm=${result.decomposition.k_biofilm.toFixed(4)}.`;
+    } else {
+      answer = `${passes ? 'Yes' : 'No'}. ${result.drug} achieves C = ${C.toFixed(2)} at ${result.tissue}, ${passes ? 'above' : 'below'} θ = ${thresh}. ` +
+        `Dominant barrier: ${label} (${dom} = ${result.decomposition[dom].toFixed(4)}).`;
+    }
+  } else if (intent === 'drug_ranking' || intent === 'cure_feasibility') {
+    const rows = result.rows || [];
+    if (!rows.length) { answer = 'No drugs found matching the criteria.'; verdict = 'no_data'; }
+    else {
+      const top = rows[0], passing = rows.filter(r => r['≥θ'] === 'yes');
+      verdict = passing.length ? 'drugs_available' : 'no_drugs_pass';
+      answer = `${rows.length} drug(s) found. Top: ${top.drug} (C = ${top.C.toFixed(4)}${top['≥θ'] === 'yes' ? ', meets threshold' : ', below threshold'}). ` +
+        `${passing.length}/${rows.length} meet θ = ${thresh}.`;
+      if (rows.length > 1) answer += ' Ranking: ' + rows.map((r, i) => `${i + 1}. ${r.drug} C=${r.C.toFixed(4)}`).join(', ') + '.';
+    }
+  } else if (intent === 'combination_query') {
+    const combo = result.rows?.[0];
+    if (combo) {
+      const names = combo.drugs?.map(d => d.drug || d).join(' + ') || 'combo';
+      answer = `Combination ${names}: K_combo = ${(combo.K_combo ?? 0).toFixed(4)}, synergy applied.`;
+      verdict = 'combination_computed';
+    } else { answer = 'Could not compute combination.'; verdict = 'error'; }
+  } else if (intent === 'comparison') {
+    answer = `Winner: ${result.winner} (${result.advantage}). ` +
+      result.drugs.map(d => `${d.drug}: C=${d.C.toFixed(4)} #${d.rank}`).join('; ') + '.';
+    verdict = 'comparison_done';
+  } else if (intent === 'data_quality') {
+    if (result.C !== undefined) {
+      answer = `${result.drug} at ${result.tissue}: C = ${result.C.toFixed(4)}, confidence = ${result.confidence ?? 'N/A'}.`;
+    } else {
+      answer = JSON.stringify(result).slice(0, 200);
+    }
+    verdict = 'data_quality';
+  } else {
+    answer = JSON.stringify(result).slice(0, 200); verdict = 'raw';
+  }
+
+  // Follow-up suggestions
+  const follow_ups = [];
+  const disease = entities.diseases[0];
+  const tissue = entities.tissues[0] || (disease ? NL_DEFAULT_TISSUE[disease] : null);
+  if (intent !== 'drug_ranking' && disease) {
+    follow_ups.push({ label: `Rank all ${disease.toUpperCase()} drugs${tissue ? ' at ' + tissue : ''}`,
+      gql: `COVER ON mirador_universe WHERE disease = '${disease}'${tissue ? ` AND tissue = '${tissue}'` : ''} EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE` });
+  }
+  if (intent !== 'failure_diagnosis' && entities.drugs[0] && tissue) {
+    follow_ups.push({ label: `Why does ${entities.drugs[0]} fail at ${tissue}?`,
+      gql: `DECOMPOSE mirador_universe ON drug = '${entities.drugs[0]}' AND tissue = '${tissue}'` });
+  }
+  if (entities.drugs.length >= 2 && tissue && intent !== 'comparison') {
+    follow_ups.push({ label: `Compare ${entities.drugs[0]} vs ${entities.drugs[1]}`,
+      gql: `COMPARE ['${entities.drugs[0]}', '${entities.drugs[1]}'] ON mirador_universe WHERE tissue = '${tissue}'` });
+  }
+
+  return { status: 'ok', question, answer, verdict, generated_gql: gql, result, follow_ups };
+}
+
+// ── Public API ─────────────────────────────────────────────────────
+
+/**
+ * Translate NL → GQL only (stages 1-3, no execution).
+ * Usable server-side without WASM.
+ */
+export function translateNL(question) {
+  if (!question) return { status: 'error', message: 'No question provided.' };
+
+  const entities = extractEntities(question);
+  let intent = classifyIntent(question);
+
+  // Fallback intent from entities
+  if (!intent) {
+    if (entities.drugs.length >= 2) intent = 'comparison';
+    else if (entities.drugs.length === 1 && (entities.tissues.length || entities.diseases.length)) intent = 'single_drug_check';
+    else if (entities.diseases.length || entities.tissues.length) intent = 'drug_ranking';
+  }
+
+  if (!intent) {
+    return {
+      status: 'clarification_needed', question,
+      message: "Which infection or drug are you asking about?",
+      options: [
+        { label: "Bone MRSA", gql: "COVER ON mirador_universe WHERE disease = 'mrsa' AND tissue = 'bone' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE" },
+        { label: "Pulmonary TB", gql: "COVER ON mirador_universe WHERE disease = 'tb' AND tissue = 'granuloma_lung' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE" },
+        { label: "HIV CNS", gql: "COVER ON mirador_universe WHERE disease = 'hiv' AND tissue = 'cns' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE" },
+        { label: "Meningitis", gql: "COVER ON mirador_universe WHERE disease = 'meningitis' AND tissue = 'csf_inflamed' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE" },
+      ],
+    };
+  }
+
+  // Downgrade intent if insufficient entities
+  if (intent === 'combination_query' && entities.drugs.length < 2) intent = 'drug_ranking';
+  if (intent === 'comparison' && entities.drugs.length < 2) intent = entities.drugs.length === 1 ? 'single_drug_check' : 'drug_ranking';
+
+  const gql = generateGQL(intent, entities);
+  if (!gql) {
+    return { status: 'clarification_needed', question, message: `Intent '${intent}' needs more context (drug, disease, or tissue).`, entities };
+  }
+
+  return { status: 'ok', question, intent, entities, generated_gql: gql };
+}
+
+/**
+ * Full NL→GQL pipeline: translate + execute + answer.
+ * Requires a pre-built universe (from buildUniverse()).
+ */
+export function nlToGql(question, universe) {
+  if (!question || !universe) return { status: 'error', answer: 'Question and universe required.', generated_gql: null };
+
+  const t = translateNL(question);
+  if (t.status !== 'ok') return t;
+
+  const result = universeGQL(t.generated_gql, universe);
+  return generateAnswer(question, t.intent, t.entities, t.generated_gql, result);
+}

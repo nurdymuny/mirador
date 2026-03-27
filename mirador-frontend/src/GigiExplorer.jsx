@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { initEngine, buildUniverse, universeGQL } from './gql-engine';
+import { initEngine, buildUniverse, universeGQL, nlToGql } from './gql-engine';
 
 const FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 const DEFAULT_HOST = 'https://gigi-stream.fly.dev';
@@ -479,6 +479,8 @@ export default function GigiExplorer() {
   const highlightRef = useRef(null);
   const [nlActive, setNlActive] = useState(null);
   const nlTypingRef = useRef(null);
+  const [nlQuestion, setNlQuestion] = useState('');
+  const [nlAnswer, setNlAnswer] = useState(null);
   const [isMob, setIsMob] = useState(() => window.innerWidth < 640);
   const [wasmReady, setWasmReady] = useState(false);
 
@@ -584,6 +586,17 @@ export default function GigiExplorer() {
       }
     }, 14);
   }, [runQuery]);
+
+  const handleNlSubmit = useCallback(() => {
+    const q = nlQuestion.trim();
+    if (!q || !DEMO_DB?.mirador_universe) return;
+    setNlAnswer(null);
+    const res = nlToGql(q, DEMO_DB.mirador_universe);
+    setNlAnswer(res);
+    if (res.generated_gql) {
+      animateGQL(res.generated_gql, null);
+    }
+  }, [nlQuestion, animateGQL]);
 
   const resultData = result?.rows ?? result?.bundles ?? result?.data ?? (result?.value !== undefined ? [{value: result.value}] : null);
   const resultMeta = result?.meta ?? (result?.count !== undefined ? {count: result.count} : null);
@@ -740,6 +753,67 @@ export default function GigiExplorer() {
               <span style={{ fontSize: 9, color: '#2a3a50' }}>→</span>
               <span style={{ fontSize: 9, color: '#334155' }}>translated to GQL & executed against {demoMode ? 'demo engine' : '5.5M live records'}</span>
             </div>
+
+            {/* Free-text NL input */}
+            <div style={{ padding: '10px 14px', display: 'flex', gap: 8, borderBottom: '1px solid #1a1a2e', background: '#08081a' }}>
+              <input
+                type="text" value={nlQuestion}
+                onChange={e => setNlQuestion(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleNlSubmit(); } }}
+                placeholder="e.g. Can vancomycin reach MRSA in bone?"
+                style={{ flex: 1, background: '#0f0f1e', border: '1px solid #1e2e48', borderRadius: 6, padding: '8px 12px',
+                  color: '#e2e8f0', fontSize: 12, fontFamily: FONT, outline: 'none', caretColor: '#64b5f6' }}
+              />
+              <button onClick={handleNlSubmit} disabled={!nlQuestion.trim()}
+                style={{ background: nlQuestion.trim() ? '#1e3a5f' : '#0f0f1e', color: nlQuestion.trim() ? '#64b5f6' : '#334155',
+                  border: '1px solid #2a4a6f', borderRadius: 6, padding: '8px 16px', fontSize: 10, fontFamily: FONT,
+                  fontWeight: 700, cursor: nlQuestion.trim() ? 'pointer' : 'default', letterSpacing: 1, transition: 'all 0.15s' }}>
+                ASK
+              </button>
+            </div>
+
+            {/* NL answer panel */}
+            {nlAnswer && nlAnswer.status === 'ok' && (
+              <div style={{ padding: '10px 14px', borderBottom: '1px solid #1a1a2e', background: '#0a1020' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 8, color: '#22d3ee', letterSpacing: 1, fontWeight: 700 }}>ANSWER</span>
+                  <span style={{ fontSize: 8, color: nlAnswer.verdict === 'meets_threshold' || nlAnswer.verdict === 'drugs_available' ? '#22c55e' : '#f59e0b',
+                    letterSpacing: 1, fontWeight: 700 }}>{nlAnswer.verdict?.toUpperCase().replace(/_/g, ' ')}</span>
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.6 }}>{nlAnswer.answer}</div>
+                {nlAnswer.follow_ups?.length > 0 && (
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 8, color: '#475569', letterSpacing: 1, alignSelf: 'center' }}>FOLLOW-UP:</span>
+                    {nlAnswer.follow_ups.map((f, i) => (
+                      <button key={i} onClick={() => animateGQL(f.gql, null)}
+                        style={{ background: '#0f0f20', border: '1px solid #1e2e48', borderRadius: 4, padding: '4px 10px',
+                          color: '#64b5f6', fontSize: 9, fontFamily: FONT, cursor: 'pointer' }}>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {nlAnswer && nlAnswer.status === 'clarification_needed' && (
+              <div style={{ padding: '10px 14px', borderBottom: '1px solid #1a1a2e', background: '#0a1020' }}>
+                <div style={{ fontSize: 8, color: '#f59e0b', letterSpacing: 1, fontWeight: 700, marginBottom: 6 }}>CLARIFICATION NEEDED</div>
+                <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.6, marginBottom: 8 }}>{nlAnswer.message}</div>
+                {nlAnswer.options && (
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {nlAnswer.options.map((o, i) => (
+                      <button key={i} onClick={() => { setNlAnswer(null); animateGQL(o.gql, null); }}
+                        style={{ background: '#0f0f20', border: '1px solid #1e2e48', borderRadius: 4, padding: '5px 12px',
+                          color: '#64b5f6', fontSize: 10, fontFamily: FONT, cursor: 'pointer' }}>
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Preset NL question cards */}
             {NL_GROUPS.map((group, gi) => {
               const groupStart = NL_GROUPS.slice(0, gi).reduce((s, g) => s + g.questions.length, 0);
               return (
