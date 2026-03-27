@@ -16,6 +16,7 @@ import {
   applyPatientContext,
   expandUniverseWithAge,
   expandUniverseWithSex,
+  NL_GROUPS,
 } from './gql-engine';
 
 // ── WASM init (must run before any buildUniverse call) ─────────────
@@ -1252,4 +1253,40 @@ describe('v1.0 — multi-disease co-infection queries', () => {
     expect(r.answer).toMatch(/Cross-disease/i);
     expect(r.result.meta.multi_disease).toBe(true);
   });
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// §14  Sample card GQL validation — every card's gql must parse
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+describe('NL_GROUPS sample cards — GQL validation', () => {
+  let expanded;
+  const allQuestions = NL_GROUPS.flatMap(g => g.questions);
+  const universeCards = allQuestions.filter(c => c.gql.includes('mirador_universe'));
+
+  beforeAll(() => {
+    const base = buildUniverse(SAMPLE_DRUGS, SAMPLE_THRESHOLDS, SAMPLE_REGIMENS);
+    expanded = expandUniverseWithSex(expandUniverseWithAge(base));
+  });
+
+  it('NL_GROUPS has at least 5 groups', () => {
+    expect(NL_GROUPS.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('every card has q, gql, tag, and why', () => {
+    for (const card of allQuestions) {
+      expect(card.q).toBeTruthy();
+      expect(card.gql).toBeTruthy();
+      expect(card.tag).toBeTruthy();
+      expect(card.why).toBeTruthy();
+    }
+  });
+
+  for (const card of allQuestions.filter(c => c.gql.includes('mirador_universe'))) {
+    it(`parses without error: "${card.q}"`, () => {
+      const result = universeGQL(card.gql, expanded);
+      expect(result).not.toBeNull();
+      expect(result.error).toBeUndefined();
+    });
+  }
 });

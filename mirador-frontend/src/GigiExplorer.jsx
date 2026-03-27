@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { initEngine, buildUniverse, universeGQL, nlToGql, expandUniverseWithAge, expandUniverseWithSex } from './gql-engine';
+import { initEngine, buildUniverse, universeGQL, nlToGql, expandUniverseWithAge, expandUniverseWithSex, NL_GROUPS } from './gql-engine';
 
 const FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 const DEFAULT_HOST = 'https://gigi-stream.fly.dev';
@@ -246,94 +246,6 @@ const PRESETS_UNIVERSE = [
   { label: '📐 τ by organism',        gql: 'INTEGRATE mirador_drugs OVER organism MEASURE avg(tau), count(*);' },
 ];
 
-// ── Plain-English → GQL demo questions ─────────────────────────────
-const NL_GROUPS = [
-  {
-    label: 'CLINICAL QUESTIONS', color: '#64b5f6',
-    questions: [
-      { q: "Which HIV drugs cross the blood-brain barrier?",
-        gql: "COVER mirador_drugs ON disease = 'hiv' AND compartment = 'cns';",
-        tag: "HIV · CNS", why: "CNS penetration is the #1 barrier to HIV cure — τ ranks drugs by geometric BBB permeability in one fiber scan" },
-      { q: "What kills MRSA inside bone tissue?",
-        gql: "COVER mirador_drugs ON disease = 'mrsa' AND compartment = 'bone';",
-        tag: "MRSA · bone", why: "Osteomyelitis needs drugs that survive bone matrix AND biofilm — τ(bone) + k_biofilm surfaced in a single bundle traversal" },
-      { q: "Which meningitis drugs reach inflamed CSF?",
-        gql: "COVER mirador_drugs ON disease = 'meningitis' AND compartment = 'csf_inflamed';",
-        tag: "meningitis · CSF", why: "Inflamed vs uninflamed BBB can differ 10-40× — csf_inflamed compartment uses peak penetration ratios from Nau 2010. Compare vs csf_uninflamed to see the difference" },
-      { q: "Show all EUCAST/CLSI resistance breakpoints",
-        gql: "COVER mirador_thresholds ALL;",
-        tag: "EUCAST · CLSI", why: "Standard MIC S/I/R breakpoints encoded as geometric fiber data — the whole drug-resistance landscape in one statement" },
-    ],
-  },
-  {
-    label: 'FOR EVERYONE', color: '#4ade80',
-    questions: [
-      { q: "What's the best drug combo for a knee implant infection?",
-        gql: "COVER mirador_regimens ON disease = 'mrsa';",
-        tag: "MRSA · regimens", why: "Prosthetic joint infections need drugs that penetrate biofilm AND bone. Bundle traversal ranks every clinical regimen by synergy score + cure rate in <5ms — months of literature review in one query" },
-      { q: "Which drugs have above 90% cure rates?",
-        gql: "COVER mirador_regimens ON clinical_efficacy > 0.9;",
-        tag: "efficacy · >90%", why: "Clinical efficacy is a validated trial outcome — filtering 1,378 clinical records by a single geometric inequality returns only the elite regimens instantly" },
-      { q: "Which drugs can beat drug-resistant TB?",
-        gql: "COVER mirador_drugs ON disease = 'tb' AND tau > 4;",
-        tag: "XDR-TB · high τ", why: "τ > 4 means AUC₂₄ is 10,000× the MIC — only drugs at this geometric threshold reliably sterilize TB granulomas. Traditional methods take 6-month animal studies to learn this" },
-      { q: "What drug resistance mechanisms are we fighting?",
-        gql: "COVER mirador_resistance ALL;",
-        tag: "resistance · library", why: "Every known resistance mechanism encoded as a geometric fiber — from efflux pumps to enzyme modification. Clinicians can see the full resistance landscape in a single scan" },
-    ],
-  },
-  {
-    label: 'CHEMBL · 5.5M RECORDS', color: '#a78bfa',
-    questions: [
-      { q: "Find the 50 most potent ChEMBL drug hits",
-        gql: "COVER chembl_activities ON potency_class = 'potent' FIRST 50;",
-        tag: "ChEMBL · 4.9M", why: "Scanning 4.9M bioactivity records for potent hits would take ETL pipelines days — COVER returns 50 in <100ms" },
-      { q: "Which human proteins do drugs target most?",
-        gql: "COVER chembl_drug_target ON organism = 'Homo sapiens' FIRST 50;",
-        tag: "drug-target · 690K", why: "690K drug-target fibers traversed without a JOIN — bundle structure replaces relational joins with geometric projection" },
-      { q: "How does potency vary by EC50 vs IC50 vs Ki?",
-        gql: "INTEGRATE chembl_activities OVER standard_type MEASURE avg(tau), count(*);",
-        tag: "assay type · τ", why: "INTEGRATE is a fiber-bundle integral operator — collapses 4.9M assays into mean τ by assay type, no GROUP BY clause needed" },
-      { q: "Rank TB drug efficacy across all compartments",
-        gql: "INTEGRATE mirador_drugs OVER compartment MEASURE avg(tau), count(*);",
-        tag: "TB · INTEGRATE", why: "TB granulomas have 5 distinct pharmacological barriers — INTEGRATE collapses them all into a ranked τ-summary in <2ms" },
-    ],
-  },
-  {
-    label: 'PK / PHARMACOMETRICS', color: '#f0e68c',
-    questions: [
-      { q: "Rank CNS drugs by AUC:MIC geometric potency index",
-        gql: "COVER mirador_drugs ON compartment = 'cns';",
-        tag: "CNS · AUC:MIC τ", why: "τ = log₁₀(AUC₂₄/MIC) is the fiber-bundle coordinate for drug potency — sorting CNS drugs by τ takes one scan vs weeks of PK modelling" },
-      { q: "Which drug classes have the lowest gut absorption barrier?",
-        gql: "INTEGRATE mirador_drugs OVER drug_class MEASURE avg(k_admet), count(*);",
-        tag: "k_admet · ADMET", why: "k_admet encodes gut-wall permeability as a geometric curvature coefficient — INTEGRATE collapses the entire ADMET landscape into a ranked class summary" },
-      { q: "Find regimens with true pharmacological synergy (FIC < 0.05)",
-        gql: "COVER mirador_regimens ON fic_index < 0.05;",
-        tag: "FIC · synergy", why: "FIC < 0.5 = synergy, < 0.1 = strong synergy — filtering 1,378 regimens by this single geometric threshold surfaces the genuinely synergistic combos that reduce resistance risk" },
-      { q: "Compare average pChEMBL potency by target organism",
-        gql: "INTEGRATE chembl_drug_target OVER organism MEASURE avg(avg_pchembl), count(*);",
-        tag: "pChEMBL · organism", why: "pChEMBL = −log₁₀(IC₅₀ in mol/L) — INTEGRATE projects 690K drug-target pairs onto the organism fiber, producing a cross-species potency ranking impossible to compute in SQL without multiple CTEs" },
-    ],
-  },
-  {
-    label: 'PATIENT CONTEXT', color: '#f9a8d4',
-    questions: [
-      { q: "Which meningitis drugs work best in children?",
-        gql: "COVER ON mirador_universe WHERE disease = 'meningitis' AND age_group = 'pediatric' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE",
-        tag: "pediatric · meningitis", why: "Pediatric patients clear drugs faster (AUC factor 0.85) — the age-stratified universe adjusts every drug's τ and coherence score for a child's physiology, surfacing different rankings than adults" },
-      { q: "Best MRSA drugs for an elderly woman?",
-        gql: "COVER ON mirador_universe WHERE disease = 'mrsa' AND tissue = 'bone' AND age_group = 'geriatric' AND pk_sex = 'estrogen_dominant' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE",
-        tag: "geriatric · female · MRSA", why: "Two patient dimensions compose: geriatric physiology (AUC ×1.40, slower clearance) + estrogen-dominant PK (AUC ×1.15, lower Vd) — the geometric framework adjusts τ for both simultaneously, no manual PK calculation needed" },
-      { q: "How does vancomycin differ between men and women for MRSA?",
-        gql: "DECOMPOSE mirador_universe ON drug = 'VAN' AND tissue = 'bone' AND age_group = 'adult' AND pk_sex = 'estrogen_dominant'",
-        tag: "sex · VAN comparison", why: "Estrogen-dominant physiology has 15% higher AUC and 15% lower volume of distribution — DECOMPOSE shows the full impedance stack for VAN under estrogen-dominant PK. Run again with pk_sex = 'testosterone_dominant' to see how the τ and coherence values differ" },
-      { q: "What's the best HIV drug for a trans woman on HRT?",
-        gql: "COVER ON mirador_universe WHERE disease = 'hiv' AND pk_sex = 'estrogen_dominant' EVALUATE coherence RANK BY coherence DESC WITH CONFIDENCE, PROVENANCE",
-        tag: "trans · HIV · HRT", why: "Trans women on established HRT have estrogen-dominant pharmacokinetics — the system maps 'trans woman on hrt' to the correct PK category automatically, using the same clearance and Vd adjustments as cis women. No separate category needed — physiology, not identity, determines PK" },
-    ],
-  },
-];
 const NL_QUESTIONS = NL_GROUPS.flatMap(g => g.questions);
 
 // ── Syntax highlighting (minimal) ──────────────────────────────────
