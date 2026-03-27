@@ -2,6 +2,14 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { background: #000; width: 100%; }
 
+@keyframes gigi-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.gigi-spinner { display: inline-block; animation: gigi-spin 0.7s linear infinite; }
+@keyframes gigi-blink { 0%,100%{opacity:1} 50%{opacity:0.35} }
+.gigi-blink { animation: gigi-blink 1s ease-in-out infinite; }
+
 h1,
 h2 {
   font-family: var(--heading);

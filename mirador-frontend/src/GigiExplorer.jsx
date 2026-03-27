@@ -581,10 +581,10 @@ export default function GigiExplorer() {
               <span style={{ fontSize: 9, color: '#2a3a50' }}>→</span>
               <span style={{ fontSize: 9, color: '#334155' }}>translated to GQL & executed against {demoMode ? 'demo engine' : '5.5M live records'}</span>
             </div>
-            <div style={{ display: 'flex', overflowX: 'auto', gap: 8, padding: '10px 14px', scrollbarWidth: 'none' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, padding: '10px 14px' }}>
               {NL_QUESTIONS.map((nq, i) => (
                 <button key={i} onClick={() => animateGQL(nq.gql, i)}
-                  style={{ flexShrink: 0, maxWidth: 190, background: nlActive === i ? '#0d2040' : '#0f0f1e', border: `1px solid ${nlActive === i ? '#2a5a9f' : '#1e1e32'}`, borderRadius: 6, padding: '9px 12px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s' }}
+                  style={{ background: nlActive === i ? '#0d2040' : '#0f0f1e', border: `1px solid ${nlActive === i ? '#2a5a9f' : '#1e1e32'}`, borderRadius: 6, padding: '9px 12px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s' }}
                   onMouseOver={e => { if (nlActive !== i) { e.currentTarget.style.background = '#13132a'; e.currentTarget.style.borderColor = '#2a2a50'; } }}
                   onMouseOut={e => { if (nlActive !== i) { e.currentTarget.style.background = '#0f0f1e'; e.currentTarget.style.borderColor = '#1e1e32'; } }}>
                   <div style={{ fontSize: 10, color: nlActive === i ? '#e2e8f0' : '#94a3b8', lineHeight: 1.45, marginBottom: 5 }}>{nq.q}</div>
@@ -610,7 +610,7 @@ export default function GigiExplorer() {
                   style={{ background: loading ? '#1a1a2e' : '#1e3a5f', color: loading ? '#475569' : '#64b5f6', border: '1px solid #2a4a6f', borderRadius: 4, padding: '4px 16px', fontSize: 10, fontFamily: FONT, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', letterSpacing: 1, transition: 'all 0.15s' }}
                   onMouseOver={e => { if (!loading) e.currentTarget.style.background = '#2a4a7f'; }}
                   onMouseOut={e => { if (!loading) e.currentTarget.style.background = '#1e3a5f'; }}>
-                  {loading ? '⟳ RUNNING…' : '▶ RUN'}
+                  {loading ? <><span className="gigi-spinner">⟳</span><span className="gigi-blink"> RUNNING…</span></> : '▶ RUN'}
                 </button>
               </div>
             </div>
