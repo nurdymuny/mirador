@@ -294,13 +294,9 @@ const PRESETS_PGX = [
 ];
 const PRESETS_CHEMBL = [
   { label: '📋 Describe activities',  gql: 'DESCRIBE chembl_activities;' },
-  { label: '⚗️ Potent hits',          gql: "COVER chembl_activities ON potency_class = 'potent' FIRST 50;" },
-  { label: '📊 EC50 measurements',    gql: "COVER chembl_activities ON standard_type = 'EC50' FIRST 50;" },
-  { label: '🔬 Human targets',        gql: "COVER chembl_drug_target ON organism = 'Homo sapiens' FIRST 50;" },
-  { label: '🧪 Drug-target fibers',   gql: 'COVER chembl_drug_target ALL FIRST 50;' },
-  { label: '📋 Describe drug-target',  gql: 'DESCRIBE chembl_drug_target;' },
-  { label: '📐 τ by potency',         gql: 'INTEGRATE chembl_activities OVER potency_class MEASURE avg(tau), count(*);' },
-  { label: '📊 τ by assay type',      gql: 'INTEGRATE chembl_activities OVER standard_type MEASURE avg(tau), count(*);' },
+  { label: '⚗️ Browse activities',     gql: 'COVER chembl_activities ALL FIRST 50;' },
+  { label: '🔬 Describe drug-target',  gql: 'DESCRIBE chembl_drug_target;' },
+  { label: '🧪 Browse drug-target',    gql: 'COVER chembl_drug_target ALL FIRST 50;' },
 ];
 const PRESETS_UNIVERSE = [
   { label: '🌐 All drugs overview',   gql: 'DESCRIBE mirador_drugs;' },
@@ -858,11 +854,11 @@ export default function GigiExplorer() {
             ))}
           </div>
 
-          <div style={{ fontSize: 9, color: demoMode ? '#5a4f8a' : '#a78bfa', letterSpacing: 2, marginTop: 16, marginBottom: 6, fontWeight: 700 }}>CHEMBL BIOACTIVITY {demoMode && <span style={{ fontSize: 7, color: '#475569' }}>🔒 LIVE</span>}</div>
+          <div style={{ fontSize: 9, color: '#5a4f8a', letterSpacing: 2, marginTop: 16, marginBottom: 6, fontWeight: 700 }}>CHEMBL BIOACTIVITY <span style={{ fontSize: 7, color: '#475569' }}>⚠ 0 records</span></div>
           <div style={{ fontSize: 8, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
-            ChEMBL v36 bioactivity data (requires re-ingestion)
+            ChEMBL v36 — bundles exist but need re-ingestion (0 records on server)
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, opacity: demoMode ? 0.45 : 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, opacity: 0.35 }}>
             {PRESETS_CHEMBL.map((p, i) => (
               <button key={'ch'+i}
                 onClick={() => { setQuery(p.gql); runQuery(p.gql); }}

@@ -280,3 +280,126 @@ describe('Aggregate totals for UI', () => {
     expect(total).toBeGreaterThanOrEqual(1_500_000);
   });
 });
+
+// ── 7. NL_GROUPS — every server-targeted preset query must return rows ─
+
+describe('NL preset queries (server-targeted)', () => {
+
+  // Group 1: CLINICAL QUESTIONS — one server query
+  it('EUCAST/CLSI breakpoints → COVER mirador_thresholds ALL', async () => {
+    const res = await gql('COVER mirador_thresholds ALL;');
+    expect(res.rows.length).toBeGreaterThanOrEqual(100);
+  });
+
+  // Group 2: FOR EVERYONE — server queries
+  it('MRSA regimens → COVER mirador_regimens ON disease', async () => {
+    const res = await gql("COVER mirador_regimens ON disease = 'mrsa';");
+    expect(res.rows.length).toBeGreaterThan(0);
+  });
+
+  it('efficacy > 0.9 → COVER mirador_regimens ON clinical_efficacy', async () => {
+    const res = await gql('COVER mirador_regimens ON clinical_efficacy > 0.9;');
+    expect(res.rows.length).toBeGreaterThan(0);
+  });
+
+  it('resistance library → COVER mirador_resistance ALL', async () => {
+    const res = await gql('COVER mirador_resistance ALL;');
+    expect(res.rows.length).toBeGreaterThan(0);
+  });
+
+  // Group 3: BINDINGDB — all server queries
+  it('BindingDB potent hits FIRST 50', async () => {
+    const res = await gql("COVER bindingdb_binding ON potency_class = 'potent' FIRST 50;", LONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThan(0);
+    expect(res.rows.length).toBeLessThanOrEqual(50);
+  }, LONG);
+
+  it('BindingDB DISTINCT target_source_org', async () => {
+    const res = await gql('COVER bindingdb_binding DISTINCT target_source_org;', LONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThan(0);
+  }, LONG);
+
+  it('BindingDB DISTINCT potency_class', async () => {
+    const res = await gql('COVER bindingdb_binding DISTINCT potency_class;', LONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThanOrEqual(2);
+  }, LONG);
+
+  it('INTEGRATE mirador_drugs OVER compartment', async () => {
+    const res = await gql('INTEGRATE mirador_drugs OVER compartment MEASURE avg(tau), count(*);');
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThan(0);
+  });
+
+  // Group 4: CLINICAL TRIALS — all server queries
+  it('ClinTrials Phase 3 FIRST 25', async () => {
+    const res = await gql("COVER clintrials_studies ON phase = 'PHASE3' FIRST 25;", LONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThan(0);
+    expect(res.rows.length).toBeLessThanOrEqual(25);
+  }, LONG);
+
+  it('ClinTrials Interventional FIRST 25', async () => {
+    const res = await gql("COVER clintrials_studies ON study_type = 'INTERVENTIONAL' FIRST 25;", LONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThan(0);
+  }, LONG);
+
+  it('ClinTrials DISTINCT phase', async () => {
+    const res = await gql('COVER clintrials_studies DISTINCT phase;', LONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThanOrEqual(3);
+  }, LONG);
+
+  it('ClinTrials DISTINCT study_type', async () => {
+    const res = await gql('COVER clintrials_studies DISTINCT study_type;', LONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThanOrEqual(2);
+  }, LONG);
+
+  // Group 5: PHARMACOGENOMICS — all server queries
+  it('PGx DISTINCT gene', async () => {
+    const res = await gql('COVER pgx_variants DISTINCT gene;');
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('PGx CYP2D6 variants FIRST 25', async () => {
+    const res = await gql("COVER pgx_variants ON gene = 'CYP2D6' FIRST 25;");
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThan(0);
+  });
+
+  it('PGx drug labels FIRST 25', async () => {
+    const res = await gql('COVER pgx_drug_labels ALL FIRST 25;');
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThan(0);
+  });
+
+  it('PGx clinical annotations FIRST 25', async () => {
+    const res = await gql('COVER pgx_clinical ALL FIRST 25;');
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThan(0);
+  });
+
+  // Group 6: PK / PHARMACOMETRICS — server queries
+  it('INTEGRATE mirador_drugs OVER drug_class', async () => {
+    const res = await gql('INTEGRATE mirador_drugs OVER drug_class MEASURE avg(k_admet), count(*);');
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThan(0);
+  });
+
+  it('FIC < 0.05 synergy → mirador_regimens', async () => {
+    const res = await gql('COVER mirador_regimens ON fic_index < 0.05;');
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThan(0);
+  });
+
+  it('INTEGRATE bindingdb_binding OVER target_source_org', async () => {
+    const res = await gql('INTEGRATE bindingdb_binding OVER target_source_org MEASURE avg(tau), count(*);', LONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThan(0);
+  }, LONG);
+});
