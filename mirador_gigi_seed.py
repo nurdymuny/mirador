@@ -79,8 +79,16 @@ class GigiClient:
         print(f"  ✓ Bundle '{name}' created")
         return result
 
+    BATCH_SIZE = 10_000  # Fly.io memory safety — never exceed 10k per POST
+
     def insert(self, bundle, records):
-        result = self._req("POST", f"/v1/bundles/{bundle}/insert", {"records": records})
+        """Insert records in batches of BATCH_SIZE to avoid Fly.io OOM."""
+        result = None
+        for i in range(0, len(records), self.BATCH_SIZE):
+            chunk = records[i : i + self.BATCH_SIZE]
+            result = self._req("POST", f"/v1/bundles/{bundle}/insert", {"records": chunk})
+            if len(records) > self.BATCH_SIZE:
+                print(f"    batch {i // self.BATCH_SIZE + 1}: {len(chunk)} records")
         self._stats["records"] += len(records)
         return result
 
@@ -584,6 +592,184 @@ MRSA_DRUGS = [
 ]
 
 
+# ── Endocarditis drugs (vegetation diffusion model) ─────────────────
+# Sources: Cremieux 1989, Xiong 2011 (review), Bayer AS studies
+# K_ADMET = 0.1 for all drugs in this panel
+
+ENDOCARDITIS_DRUGS = [
+    {
+        "drug_name": "NAF", "disease": "endocarditis",
+        "auc_24": 200.0, "mic": 0.5,
+        "k_admet": 0.10,
+        "R_vegetation": 0.20,
+        "source_pk": "Bayer AS, experimental models; FDA DailyMed",
+    },
+    {
+        "drug_name": "CEF", "disease": "endocarditis",
+        "auc_24": 350.0, "mic": 1.0,
+        "k_admet": 0.10,
+        "R_vegetation": 0.15,
+        "source_pk": "Cremieux 1989; FDA DailyMed",
+    },
+    {
+        "drug_name": "VAN", "disease": "endocarditis",
+        "auc_24": 400.0, "mic": 1.0,
+        "k_admet": 0.10,
+        "R_vegetation": 0.10,
+        "source_pk": "Cremieux 1989; Xiong 2011; FDA DailyMed",
+    },
+    {
+        "drug_name": "DAP", "disease": "endocarditis",
+        "auc_24": 750.0, "mic": 0.5,
+        "k_admet": 0.10,
+        "R_vegetation": 0.15,
+        "source_pk": "Xiong 2011; FDA DailyMed",
+    },
+    {
+        "drug_name": "GEN", "disease": "endocarditis",
+        "auc_24": 70.0, "mic": 0.5,
+        "k_admet": 0.10,
+        "R_vegetation": 0.05,
+        "source_pk": "Bayer AS; Xiong 2011; FDA DailyMed",
+    },
+    {
+        "drug_name": "RIF", "disease": "endocarditis",
+        "auc_24": 60.0, "mic": 0.008,
+        "k_admet": 0.10,
+        "R_vegetation": 0.50,
+        "source_pk": "Cremieux 1989; Xiong 2011; FDA DailyMed",
+    },
+    {
+        "drug_name": "CRO", "disease": "endocarditis",
+        "auc_24": 550.0, "mic": 2.0,
+        "k_admet": 0.10,
+        "R_vegetation": 0.12,
+        "source_pk": "Cremieux 1989; FDA DailyMed",
+    },
+    {
+        "drug_name": "LZD", "disease": "endocarditis",
+        "auc_24": 200.0, "mic": 2.0,
+        "k_admet": 0.10,
+        "R_vegetation": 0.35,
+        "source_pk": "Xiong 2011; Bayer studies; FDA DailyMed",
+    },
+]
+
+
+# ── Meningitis + Dexamethasone drugs (dynamic BBB model) ────────────
+# Sources: Nau 2010 (Clin Micro Rev), Ricard 2007, Lutsar 1998
+# K_ADMET = 0.1 for all drugs in this panel
+
+MENINGITIS_DEX_DRUGS = [
+    {
+        "drug_name": "CRO", "disease": "meningitis_dex",
+        "auc_24": 550.0, "mic": 0.5,
+        "k_admet": 0.10,
+        "R_inflamed": 0.15, "R_dex": 0.10,
+        "source_pk": "Nau R, Clin Pharmacokinet 2010; FDA DailyMed",
+    },
+    {
+        "drug_name": "VAN", "disease": "meningitis_dex",
+        "auc_24": 400.0, "mic": 0.5,
+        "k_admet": 0.10,
+        "R_inflamed": 0.10, "R_dex": 0.04,
+        "source_pk": "Ricard 2007; Paris 2008; FDA DailyMed",
+    },
+    {
+        "drug_name": "MER", "disease": "meningitis_dex",
+        "auc_24": 200.0, "mic": 0.25,
+        "k_admet": 0.10,
+        "R_inflamed": 0.10, "R_dex": 0.05,
+        "source_pk": "Nau R, Clin Pharmacokinet 2010; FDA DailyMed",
+    },
+    {
+        "drug_name": "AMP", "disease": "meningitis_dex",
+        "auc_24": 150.0, "mic": 0.25,
+        "k_admet": 0.10,
+        "R_inflamed": 0.10, "R_dex": 0.05,
+        "source_pk": "Nau R, Clin Pharmacokinet 2010; FDA DailyMed",
+    },
+    {
+        "drug_name": "RIF", "disease": "meningitis_dex",
+        "auc_24": 60.0, "mic": 0.03,
+        "k_admet": 0.10,
+        "R_inflamed": 0.20, "R_dex": 0.15,
+        "source_pk": "Nau R, Clin Pharmacokinet 2010; Lutsar 1998; FDA DailyMed",
+    },
+    {
+        "drug_name": "PEN", "disease": "meningitis_dex",
+        "auc_24": 180.0, "mic": 0.03,
+        "k_admet": 0.10,
+        "R_inflamed": 0.08, "R_dex": 0.03,
+        "source_pk": "Nau R, Clin Pharmacokinet 2010; Lutsar 1998; FDA DailyMed",
+    },
+]
+
+
+# ── Intra-abdominal abscess drugs (two-compartment model) ───────────
+# Sources: Wittau 2010, Joiner 1981, Wagner 2006, SIS 2010
+# K_ADMET = 0.1 for all drugs in this panel
+
+ABSCESS_DRUGS = [
+    {
+        "drug_name": "MET", "disease": "abscess",
+        "auc_24": 130.0, "mic": 1.0,
+        "k_admet": 0.10,
+        "R_peritoneal": 0.80, "R_abscess": 0.12,
+        "source_pk": "Wittau 2010; Joiner 1981; FDA DailyMed",
+    },
+    {
+        "drug_name": "CLI", "disease": "abscess",
+        "auc_24": 30.0, "mic": 0.25,
+        "k_admet": 0.10,
+        "R_peritoneal": 0.60, "R_abscess": 0.08,
+        "source_pk": "Wittau 2010; FDA DailyMed",
+    },
+    {
+        "drug_name": "CIP", "disease": "abscess",
+        "auc_24": 30.0, "mic": 0.06,
+        "k_admet": 0.10,
+        "R_peritoneal": 0.70, "R_abscess": 0.06,
+        "source_pk": "Wittau 2010; FDA DailyMed",
+    },
+    {
+        "drug_name": "MER", "disease": "abscess",
+        "auc_24": 200.0, "mic": 0.25,
+        "k_admet": 0.10,
+        "R_peritoneal": 0.30, "R_abscess": 0.03,
+        "source_pk": "Wittau 2010; FDA DailyMed",
+    },
+    {
+        "drug_name": "TZP", "disease": "abscess",
+        "auc_24": 250.0, "mic": 0.5,
+        "k_admet": 0.10,
+        "R_peritoneal": 0.20, "R_abscess": 0.02,
+        "source_pk": "Wittau 2010; FDA DailyMed",
+    },
+    {
+        "drug_name": "CRO", "disease": "abscess",
+        "auc_24": 550.0, "mic": 0.06,
+        "k_admet": 0.10,
+        "R_peritoneal": 0.15, "R_abscess": 0.02,
+        "source_pk": "Wittau 2010; FDA DailyMed",
+    },
+    {
+        "drug_name": "GEN", "disease": "abscess",
+        "auc_24": 70.0, "mic": 0.5,
+        "k_admet": 0.10,
+        "R_peritoneal": 0.10, "R_abscess": 0.01,
+        "source_pk": "Wittau 2010; Wagner 2006; FDA DailyMed",
+    },
+    {
+        "drug_name": "VAN", "disease": "abscess",
+        "auc_24": 400.0, "mic": 1.0,
+        "k_admet": 0.10,
+        "R_peritoneal": 0.10, "R_abscess": 0.01,
+        "source_pk": "Wittau 2010; Wagner 2006; FDA DailyMed",
+    },
+]
+
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # BUNDLE DEFINITIONS & SEEDING
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -783,6 +969,117 @@ def seed_tb(db: GigiClient):
             })
     result = db.insert("mirador_drugs", records)
     print(f"  Inserted {len(records)} TB sections")
+    return records
+
+
+def seed_endocarditis(db: GigiClient):
+    """Seed endocarditis drug sections (vegetation NVE + PVE with biofilm)."""
+    print("\n── Seeding endocarditis drugs (8 drugs × 2 compartments = 16 sections) ──")
+    records = []
+    for cid, drug in enumerate(ENDOCARDITIS_DRUGS, start=500):
+        t = tau(drug["auc_24"], drug["mic"])
+        R = drug["R_vegetation"]
+        kb = k_barrier(R)
+        # NVE — vegetation only, no biofilm
+        records.append({
+            "compound_id": cid,
+            "compartment": "vegetation",
+            "drug_name": drug["drug_name"],
+            "drug_class": "antibiotic",
+            "disease": "endocarditis",
+            "auc_24": drug["auc_24"],
+            "mic": drug["mic"],
+            "tau": t,
+            "k_admet": drug["k_admet"],
+            "r_penetration": R,
+            "k_barrier": kb,
+            "k_phenotype": 0.0,
+            "k_reservoir": 0.0,
+            "k_biofilm": 0.0,
+            "reference": drug["source_pk"],
+        })
+        # PVE — vegetation + prosthetic biofilm (K_biofilm = 2.0)
+        records.append({
+            "compound_id": cid,
+            "compartment": "vegetation_pve",
+            "drug_name": drug["drug_name"],
+            "drug_class": "antibiotic",
+            "disease": "endocarditis",
+            "auc_24": drug["auc_24"],
+            "mic": drug["mic"],
+            "tau": t,
+            "k_admet": drug["k_admet"],
+            "r_penetration": R,
+            "k_barrier": kb,
+            "k_phenotype": 0.0,
+            "k_reservoir": 0.0,
+            "k_biofilm": 2.0,
+            "reference": drug["source_pk"],
+        })
+    result = db.insert("mirador_drugs", records)
+    print(f"  Inserted {len(records)} endocarditis sections")
+    return records
+
+
+def seed_meningitis_dex(db: GigiClient):
+    """Seed meningitis + dexamethasone drug sections (inflamed + dex BBB)."""
+    print("\n── Seeding meningitis+dex drugs (6 drugs × 2 states = 12 sections) ──")
+    records = []
+    for cid, drug in enumerate(MENINGITIS_DEX_DRUGS, start=600):
+        t = tau(drug["auc_24"], drug["mic"])
+        for state, R in [("csf_inflamed", drug["R_inflamed"]),
+                         ("csf_dex", drug["R_dex"])]:
+            kb = k_barrier(R)
+            records.append({
+                "compound_id": cid,
+                "compartment": state,
+                "drug_name": drug["drug_name"],
+                "drug_class": "antibiotic",
+                "disease": "meningitis_dex",
+                "auc_24": drug["auc_24"],
+                "mic": drug["mic"],
+                "tau": t,
+                "k_admet": drug["k_admet"],
+                "r_penetration": R,
+                "k_barrier": kb,
+                "k_phenotype": 0.0,
+                "k_reservoir": 0.0,
+                "k_biofilm": 0.0,
+                "reference": drug["source_pk"],
+            })
+    result = db.insert("mirador_drugs", records)
+    print(f"  Inserted {len(records)} meningitis+dex sections")
+    return records
+
+
+def seed_abscess(db: GigiClient):
+    """Seed intra-abdominal abscess drug sections (phlegmon + abscess capsule)."""
+    print("\n── Seeding abscess drugs (8 drugs × 2 compartments = 16 sections) ──")
+    records = []
+    for cid, drug in enumerate(ABSCESS_DRUGS, start=700):
+        t = tau(drug["auc_24"], drug["mic"])
+        for comp, R in [("peritoneal", drug["R_peritoneal"]),
+                        ("abscess_capsule", drug["R_abscess"])]:
+            kb = k_barrier(R)
+            records.append({
+                "compound_id": cid,
+                "compartment": comp,
+                "drug_name": drug["drug_name"],
+                "drug_class": "antibiotic",
+                "disease": "abscess",
+                "auc_24": drug["auc_24"],
+                "mic": drug["mic"],
+                "tau": t,
+                "k_admet": drug["k_admet"],
+                "r_penetration": R,
+                "k_barrier": kb,
+                "k_phenotype": 0.0,
+                "k_reservoir": 0.0,
+                "k_biofilm": 0.0,
+                "reference": drug["source_pk"],
+            })
+    result = db.insert("mirador_drugs", records)
+    print(f"  Inserted {len(records)} abscess sections")
     return records
 
 
@@ -1032,6 +1329,9 @@ def main():
     seed_meningitis(db)
     seed_mrsa(db)
     seed_tb(db)
+    seed_endocarditis(db)
+    seed_meningitis_dex(db)
+    seed_abscess(db)
     seed_thresholds(db)
     seed_regimens(db)
     seed_provenance(db)
@@ -1044,9 +1344,11 @@ def main():
     print(f"  Records: {total}")
     print(f"{'═' * 70}")
 
-    expected = 25 + 8 + 12 + 28 + (10 + 7) + len(REGIMEN_DATA) + (len(FDA_AUC_DATA) + len(HIV_DRUGS) + len(TB_DRUGS))
+    n_drugs = 25 + 8 + 12 + 28 + 16 + 12 + 16  # HIV + Men + MRSA + TB + Endo + MenDex + Abscess
+    expected = n_drugs + (10 + 7) + len(REGIMEN_DATA) + (len(FDA_AUC_DATA) + len(HIV_DRUGS) + len(TB_DRUGS))
     print(f"\n  Expected breakdown:")
-    print(f"    mirador_drugs:      25 (HIV) + 8 (meningitis) + 12 (MRSA) + 28 (TB) = 73")
+    print(f"    mirador_drugs:      25 (HIV) + 8 (meningitis) + 12 (MRSA) + 28 (TB)")
+    print(f"                      + 16 (endocarditis) + 12 (meningitis+dex) + 16 (abscess) = {n_drugs}")
     print(f"    mirador_thresholds: 10 (EUCAST/CLSI) + 7 (WHO CC) = 17")
     print(f"    mirador_regimens:   {len(REGIMEN_DATA)}")
     print(f"    mirador_sources:    {len(FDA_AUC_DATA)} (AUC) + {len(HIV_DRUGS)} (IC50) + {len(TB_DRUGS)} (WHO CC) = {len(FDA_AUC_DATA) + len(HIV_DRUGS) + len(TB_DRUGS)}")
