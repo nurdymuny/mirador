@@ -40,6 +40,34 @@ const TB_RAW = [
   { cid:405, d:'BDQ',    ka:0.30, tN:4.00, m7:0.03, m5:0.06, g:{lung:5.00,cellular:4.00,necrotic:2.00,cavity:3.00} },
   { cid:406, d:'LZD_TB', ka:0.15, tN:4.00, m7:0.50, m5:1.0,  g:{lung:1.20,cellular:1.00,necrotic:0.60,cavity:0.80} },
 ];
+const ENDO_RAW = [
+  { cid:500, d:'NAF', a:200,  m:0.5,   ka:0.10, Rv:0.20 },
+  { cid:501, d:'CEF', a:350,  m:1.0,   ka:0.10, Rv:0.15 },
+  { cid:502, d:'VAN', a:400,  m:1.0,   ka:0.10, Rv:0.10 },
+  { cid:503, d:'DAP', a:750,  m:0.5,   ka:0.10, Rv:0.15 },
+  { cid:504, d:'GEN', a:70,   m:0.5,   ka:0.10, Rv:0.05 },
+  { cid:505, d:'RIF', a:60,   m:0.008, ka:0.10, Rv:0.50 },
+  { cid:506, d:'CRO', a:550,  m:2.0,   ka:0.10, Rv:0.12 },
+  { cid:507, d:'LZD', a:200,  m:2.0,   ka:0.10, Rv:0.35 },
+];
+const MENDEX_RAW = [
+  { cid:600, d:'CRO', a:550,  m:0.5,  ka:0.10, Ri:0.15, Rd:0.10 },
+  { cid:601, d:'VAN', a:400,  m:0.5,  ka:0.10, Ri:0.10, Rd:0.04 },
+  { cid:602, d:'MER', a:200,  m:0.25, ka:0.10, Ri:0.10, Rd:0.05 },
+  { cid:603, d:'AMP', a:150,  m:0.25, ka:0.10, Ri:0.10, Rd:0.05 },
+  { cid:604, d:'RIF', a:60,   m:0.03, ka:0.10, Ri:0.20, Rd:0.15 },
+  { cid:605, d:'PEN', a:180,  m:0.03, ka:0.10, Ri:0.08, Rd:0.03 },
+];
+const ABS_RAW = [
+  { cid:700, d:'MET', a:130,  m:1.0,  ka:0.10, Rp:0.80, Ra:0.12 },
+  { cid:701, d:'CLI', a:30,   m:0.25, ka:0.10, Rp:0.60, Ra:0.08 },
+  { cid:702, d:'CIP', a:30,   m:0.06, ka:0.10, Rp:0.70, Ra:0.06 },
+  { cid:703, d:'MER', a:200,  m:0.25, ka:0.10, Rp:0.30, Ra:0.03 },
+  { cid:704, d:'TZP', a:250,  m:0.5,  ka:0.10, Rp:0.20, Ra:0.02 },
+  { cid:705, d:'CRO', a:550,  m:0.06, ka:0.10, Rp:0.15, Ra:0.02 },
+  { cid:706, d:'GEN', a:70,   m:0.5,  ka:0.10, Rp:0.10, Ra:0.01 },
+  { cid:707, d:'VAN', a:400,  m:1.0,  ka:0.10, Rp:0.10, Ra:0.01 },
+];
 
 function _buildDrugs() {
   const R = [];
@@ -56,6 +84,18 @@ function _buildDrugs() {
   TB_RAW.forEach(x => { Object.entries(x.g).forEach(([s,r]) => {
     const mic = ['cellular','necrotic'].includes(s)&&x.m5!=null ? x.m5 : (x.m7??x.m5??0);
     R.push({compound_id:x.cid,compartment:'granuloma_'+s,drug_name:x.d,drug_class:'anti-TB',disease:'tb',auc_24:0,mic,tau:x.tN??0,k_admet:x.ka,r_penetration:r,k_barrier:_kb(r),k_biofilm:0});
+  });});
+  ENDO_RAW.forEach(x => { const t = _tau(x.a, x.m);
+    [['vegetation',0],['vegetation_pve',2.0]].forEach(([s,bio]) => {
+      R.push({compound_id:x.cid,compartment:s,drug_name:x.d,drug_class:'antibiotic',disease:'endocarditis',auc_24:x.a,mic:x.m,tau:t,k_admet:x.ka,r_penetration:x.Rv,k_barrier:_kb(x.Rv),k_biofilm:bio});
+  });});
+  MENDEX_RAW.forEach(x => { const t = _tau(x.a, x.m);
+    [['csf_inflamed',x.Ri],['csf_dex',x.Rd]].forEach(([s,r]) => {
+      R.push({compound_id:x.cid,compartment:s,drug_name:x.d,drug_class:'antibiotic',disease:'meningitis_dex',auc_24:x.a,mic:x.m,tau:t,k_admet:x.ka,r_penetration:r,k_barrier:_kb(r),k_biofilm:0});
+  });});
+  ABS_RAW.forEach(x => { const t = _tau(x.a, x.m);
+    [['peritoneal',x.Rp],['abscess_capsule',x.Ra]].forEach(([s,r]) => {
+      R.push({compound_id:x.cid,compartment:s,drug_name:x.d,drug_class:'antibiotic',disease:'abscess',auc_24:x.a,mic:x.m,tau:t,k_admet:x.ka,r_penetration:r,k_barrier:_kb(r),k_biofilm:0});
   });});
   return R;
 }
@@ -218,6 +258,9 @@ const PRESETS_CLINICAL = [
   { label: '🦠 MRSA drugs',          gql: "COVER mirador_drugs ON disease = 'mrsa';" },
   { label: '🫁 TB drugs',            gql: "COVER mirador_drugs ON disease = 'tb';" },
   { label: '🧠 Meningitis drugs',    gql: "COVER mirador_drugs ON disease = 'meningitis';" },
+  { label: '❤‍🩹 Endocarditis drugs', gql: "COVER mirador_drugs ON disease = 'endocarditis';" },
+  { label: '💉 Meningitis + Dex',    gql: "COVER mirador_drugs ON disease = 'meningitis_dex';" },
+  { label: '🧫 Abscess drugs',       gql: "COVER mirador_drugs ON disease = 'abscess';" },
   { label: '📊 τ by compartment',    gql: 'INTEGRATE mirador_drugs OVER compartment MEASURE avg(tau), count(*);' },
   { label: '📏 Breakpoints',         gql: 'COVER mirador_thresholds ALL;' },
   { label: '💊 Regimens',            gql: 'COVER mirador_regimens ALL;' },
@@ -241,6 +284,9 @@ const PRESETS_UNIVERSE = [
   { label: '🧬 HIV @ CNS',            gql: "COVER mirador_drugs ON disease = 'hiv' AND compartment = 'cns';" },
   { label: '🫁 TB @ granuloma',       gql: "COVER mirador_drugs ON disease = 'tb';" },
   { label: '🧠 Meningitis @ CSF',     gql: "COVER mirador_drugs ON disease = 'meningitis' AND compartment = 'csf';" },
+  { label: '❤‍🩹 Endo @ vegetation',   gql: "COVER mirador_drugs ON disease = 'endocarditis' AND compartment = 'vegetation';" },
+  { label: '💉 Dex @ CSF',            gql: "COVER mirador_drugs ON disease = 'meningitis_dex' AND compartment = 'csf_dex';" },
+  { label: '🧫 Abscess @ capsule',    gql: "COVER mirador_drugs ON disease = 'abscess' AND compartment = 'abscess_capsule';" },
   { label: '🔬 Resistance library',   gql: 'COVER mirador_resistance ALL;' },
   { label: '📈 PK studies',           gql: 'COVER mirador_pk_studies ALL;' },
   { label: '📐 τ by organism',        gql: 'INTEGRATE mirador_drugs OVER organism MEASURE avg(tau), count(*);' },
