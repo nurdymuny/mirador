@@ -269,7 +269,7 @@
     {
       "name": "K_ADMET=0: bottom 4 unchanged",
       "passed": true,
-      "detail": "got {'TMP-SMX', 'Vancomycin', 'Ceftaroline', 'Daptomycin'}"
+      "detail": "got {'TMP-SMX', 'Ceftaroline', 'Vancomycin', 'Daptomycin'}"
     },
     {
       "name": "K_ADMET=0: Daptomycin still last",
@@ -284,7 +284,7 @@
     {
       "name": "K_ADMET=0: top 3 still RIF/LZD/CIP",
       "passed": true,
-      "detail": "got {'Ciprofloxacin', 'Rifampin', 'Linezolid'}"
+      "detail": "got {'Rifampin', 'Ciprofloxacin', 'Linezolid'}"
     },
     {
       "name": "R_prosthetic sensitivity: VAN always \u22656th",
@@ -524,7 +524,7 @@
     {
       "name": "Concentrating set correct",
       "passed": true,
-      "detail": "got {'Trimethoprim', 'Azithromycin', 'Levofloxacin', 'Norfloxacin', 'Ciprofloxacin'}"
+      "detail": "got {'Ciprofloxacin', 'Levofloxacin', 'Azithromycin', 'Trimethoprim', 'Norfloxacin'}"
     },
     {
       "name": "Ciprofloxacin: R \u2265 1 for concentrating",
@@ -1513,10 +1513,566 @@
       "name": "K_lesion \u2265 -1: EMB (cavity)",
       "passed": true,
       "detail": "K_lesion = 2.333"
+    },
+    {
+      "name": "\u03c4 NVP",
+      "passed": true,
+      "computed": 3.90309,
+      "expected": 3.903,
+      "diff": 9e-05
+    },
+    {
+      "name": "\u03c4 FTC",
+      "passed": true,
+      "computed": 2.69897,
+      "expected": 2.699,
+      "diff": 3e-05
+    },
+    {
+      "name": "\u03c4 ABC",
+      "passed": true,
+      "computed": 2.30103,
+      "expected": 2.301,
+      "diff": 3e-05
+    },
+    {
+      "name": "\u03c4 ZDV",
+      "passed": true,
+      "computed": 2.0,
+      "expected": 2.0,
+      "diff": 0.0
+    },
+    {
+      "name": "\u03c4 3TC",
+      "passed": true,
+      "computed": 2.30103,
+      "expected": 2.301,
+      "diff": 3e-05
+    },
+    {
+      "name": "\u03c4 RAL",
+      "passed": true,
+      "computed": 3.860338,
+      "expected": 3.86,
+      "diff": 0.000338
+    },
+    {
+      "name": "\u03c4 TFV",
+      "passed": true,
+      "computed": 1.662758,
+      "expected": 1.663,
+      "diff": 0.000242
+    },
+    {
+      "name": "\u03c4 DRV",
+      "passed": true,
+      "computed": 4.90309,
+      "expected": 4.903,
+      "diff": 9e-05
+    },
+    {
+      "name": "\u03c4 ATV",
+      "passed": true,
+      "computed": 4.255273,
+      "expected": 4.255,
+      "diff": 0.000273
+    },
+    {
+      "name": "\u03c4 EFV",
+      "passed": true,
+      "computed": 4.763428,
+      "expected": 4.763,
+      "diff": 0.000428
+    },
+    {
+      "name": "\u03c4 DTG",
+      "passed": true,
+      "computed": 5.025306,
+      "expected": 5.025,
+      "diff": 0.000306
+    },
+    {
+      "name": "\u03c4 LPV",
+      "passed": true,
+      "computed": 3.90309,
+      "expected": 3.903,
+      "diff": 9e-05
+    },
+    {
+      "name": "K_total NVP",
+      "passed": true,
+      "computed": 1.322222,
+      "expected": 1.322,
+      "diff": 0.000222
+    },
+    {
+      "name": "C NVP",
+      "passed": true,
+      "computed": 2.951917,
+      "expected": 2.952,
+      "diff": 8.3e-05
+    },
+    {
+      "name": "K_total FTC",
+      "passed": true,
+      "computed": 1.273913,
+      "expected": 1.274,
+      "diff": 8.7e-05
+    },
+    {
+      "name": "C FTC",
+      "passed": true,
+      "computed": 2.118645,
+      "expected": 2.119,
+      "diff": 0.000355
+    },
+    {
+      "name": "K_total ABC",
+      "passed": true,
+      "computed": 2.433333,
+      "expected": 2.433,
+      "diff": 0.000333
+    },
+    {
+      "name": "C ABC",
+      "passed": true,
+      "computed": 0.945629,
+      "expected": 0.946,
+      "diff": 0.000371
+    },
+    {
+      "name": "K_total ZDV",
+      "passed": true,
+      "computed": 4.982353,
+      "expected": 4.982,
+      "diff": 0.000353
+    },
+    {
+      "name": "C ZDV",
+      "passed": true,
+      "computed": 0.401417,
+      "expected": 0.401,
+      "diff": 0.000417
+    },
+    {
+      "name": "K_total 3TC",
+      "passed": true,
+      "computed": 15.766667,
+      "expected": 15.767,
+      "diff": 0.000333
+    },
+    {
+      "name": "C 3TC",
+      "passed": true,
+      "computed": 0.145943,
+      "expected": 0.146,
+      "diff": 5.7e-05
+    },
+    {
+      "name": "K_total RAL",
+      "passed": true,
+      "computed": 32.433333,
+      "expected": 32.433,
+      "diff": 0.000333
+    },
+    {
+      "name": "C RAL",
+      "passed": true,
+      "computed": 0.119024,
+      "expected": 0.119,
+      "diff": 2.4e-05
+    },
+    {
+      "name": "K_total TFV",
+      "passed": true,
+      "computed": 19.1,
+      "expected": 19.1,
+      "diff": 0.0
+    },
+    {
+      "name": "C TFV",
+      "passed": true,
+      "computed": 0.087055,
+      "expected": 0.087,
+      "diff": 5.5e-05
+    },
+    {
+      "name": "K_total DRV",
+      "passed": true,
+      "computed": 99.1,
+      "expected": 99.1,
+      "diff": 0.0
+    },
+    {
+      "name": "C DRV",
+      "passed": true,
+      "computed": 0.049476,
+      "expected": 0.049,
+      "diff": 0.000476
+    },
+    {
+      "name": "K_total ATV",
+      "passed": true,
+      "computed": 99.1,
+      "expected": 99.1,
+      "diff": 0.0
+    },
+    {
+      "name": "C ATV",
+      "passed": true,
+      "computed": 0.042939,
+      "expected": 0.043,
+      "diff": 6.1e-05
+    },
+    {
+      "name": "K_total EFV",
+      "passed": true,
+      "computed": 199.1,
+      "expected": 199.1,
+      "diff": 0.0
+    },
+    {
+      "name": "C EFV",
+      "passed": true,
+      "computed": 0.023925,
+      "expected": 0.024,
+      "diff": 7.5e-05
+    },
+    {
+      "name": "K_total DTG",
+      "passed": true,
+      "computed": 165.766667,
+      "expected": 165.767,
+      "diff": 0.000333
+    },
+    {
+      "name": "C DTG",
+      "passed": true,
+      "computed": 0.030316,
+      "expected": 0.03,
+      "diff": 0.000316
+    },
+    {
+      "name": "K_total LPV",
+      "passed": true,
+      "computed": 499.1,
+      "expected": 499.1,
+      "diff": 0.0
+    },
+    {
+      "name": "C LPV",
+      "passed": true,
+      "computed": 0.00782,
+      "expected": 0.008,
+      "diff": 0.00018
+    },
+    {
+      "name": "Rank 1 = NVP",
+      "passed": true,
+      "detail": "got NVP"
+    },
+    {
+      "name": "Rank 2 = FTC",
+      "passed": true,
+      "detail": "got FTC"
+    },
+    {
+      "name": "Rank 3 = ABC",
+      "passed": true,
+      "detail": "got ABC"
+    },
+    {
+      "name": "Rank 4 = ZDV",
+      "passed": true,
+      "detail": "got ZDV"
+    },
+    {
+      "name": "Rank 5 = 3TC",
+      "passed": true,
+      "detail": "got 3TC"
+    },
+    {
+      "name": "Rank 6 = RAL",
+      "passed": true,
+      "detail": "got RAL"
+    },
+    {
+      "name": "Rank 7 = TFV",
+      "passed": true,
+      "detail": "got TFV"
+    },
+    {
+      "name": "Rank 8 = DRV",
+      "passed": true,
+      "detail": "got DRV"
+    },
+    {
+      "name": "Rank 9 = ATV",
+      "passed": true,
+      "detail": "got ATV"
+    },
+    {
+      "name": "Rank 10 = DTG",
+      "passed": true,
+      "detail": "got DTG"
+    },
+    {
+      "name": "Rank 11 = EFV",
+      "passed": true,
+      "detail": "got EFV"
+    },
+    {
+      "name": "Rank 12 = LPV",
+      "passed": true,
+      "detail": "got LPV"
+    },
+    {
+      "name": "NVP is #1 (best CNS penetrator)",
+      "passed": true,
+      "detail": "C = 2.952"
+    },
+    {
+      "name": "NVP C > 2.0 (strong penetrator)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "LPV is last (worst CNS penetrator)",
+      "passed": true,
+      "detail": "C = 0.0078"
+    },
+    {
+      "name": "LPV C < 0.01 (nearly excluded)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "EFV \u03c4 > 4.5 (very potent)",
+      "passed": true,
+      "detail": "\u03c4 = 4.763"
+    },
+    {
+      "name": "EFV C < 0.05 (CSF-excluded despite potency)",
+      "passed": true,
+      "detail": "C = 0.0239"
+    },
+    {
+      "name": "TFV matches CPE = 1 (lowest tier)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "TFV C < 0.1 (poor penetrator)",
+      "passed": true,
+      "detail": "C = 0.0871"
+    },
+    {
+      "name": "FTC is #2 (overlooked penetrator)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "FTC C > 1.0",
+      "passed": true,
+      "detail": "C = 2.119"
+    },
+    {
+      "name": "DTG has highest \u03c4 in panel",
+      "passed": true,
+      "detail": "\u03c4 = 5.025"
+    },
+    {
+      "name": "DTG C < 0.05 (excluded despite potency)",
+      "passed": true,
+      "detail": "C = 0.0303"
+    },
+    {
+      "name": "PI DRV C < 0.1 (CSF-excluded)",
+      "passed": true,
+      "detail": "C = 0.0495"
+    },
+    {
+      "name": "PI ATV C < 0.1 (CSF-excluded)",
+      "passed": true,
+      "detail": "C = 0.0429"
+    },
+    {
+      "name": "PI LPV C < 0.1 (CSF-excluded)",
+      "passed": true,
+      "detail": "C = 0.0078"
+    },
+    {
+      "name": "6 drugs at CSF viral escape risk (C < 0.1)",
+      "passed": true,
+      "detail": "got {'DTG', 'ATV', 'DRV', 'EFV', 'TFV', 'LPV'}"
+    },
+    {
+      "name": "Top-4 R/C overlap \u2265 3",
+      "passed": true,
+      "detail": "overlap = 4, R_top4={'ABC', 'FTC', 'NVP', 'ZDV'}, C_top4={'ABC', 'FTC', 'NVP', 'ZDV'}"
+    },
+    {
+      "name": "Bottom-4 R/C match exactly",
+      "passed": true,
+      "detail": "R_bot4={'LPV', 'DTG', 'ATV', 'EFV'}, C_bot4={'LPV', 'DTG', 'ATV', 'EFV'}"
+    },
+    {
+      "name": "Spearman \u03c1(R, C) > 0.95",
+      "passed": true,
+      "detail": "\u03c1 = 0.986"
+    },
+    {
+      "name": "K_ADMET=0: NVP still #1",
+      "passed": true,
+      "detail": "got NVP"
+    },
+    {
+      "name": "K_ADMET=0: LPV still last",
+      "passed": true,
+      "detail": "got LPV"
+    },
+    {
+      "name": "K_ADMET=0: full ranking unchanged",
+      "passed": true,
+      "detail": "changed at: []"
+    },
+    {
+      "name": "NVP C at R=0.29",
+      "passed": true,
+      "computed": 1.531659,
+      "expected": 1.531,
+      "diff": 0.000659
+    },
+    {
+      "name": "NVP drops to #2 at R=0.29 (FTC C=2.12 > 1.53)",
+      "passed": true,
+      "detail": "NVP=1.532, FTC=2.119"
+    },
+    {
+      "name": "NVP is #1 at R=0.45 (used value)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "NVP is #1 at R=0.63",
+      "passed": true,
+      "detail": "NVP=5.679, FTC=2.119"
+    },
+    {
+      "name": "NVP/FTC breakpoint R",
+      "passed": true,
+      "computed": 0.364663,
+      "expected": 0.365,
+      "diff": 0.000337
+    },
+    {
+      "name": "NVP always top-2 across range (0.29-0.63)",
+      "passed": true,
+      "detail": "NVP(R=0.29)=1.532 > ABC=0.946"
+    },
+    {
+      "name": "EFV at R=0.005: stays bottom half",
+      "passed": true,
+      "detail": "C = 0.0239"
+    },
+    {
+      "name": "EFV at R=0.01: stays bottom half",
+      "passed": true,
+      "detail": "C = 0.0481"
+    },
+    {
+      "name": "EFV needs R > 0.05 for top half",
+      "passed": true,
+      "detail": "C(R=0.05) = 0.249"
+    },
+    {
+      "name": "K_ADMET < 0.2% of K_total for EFV",
+      "passed": true,
+      "detail": "K_ADMET/K_total = 0.050%"
+    },
+    {
+      "name": "K_ADMET < 0.2% of K_total for DTG",
+      "passed": true,
+      "detail": "K_ADMET/K_total = 0.060%"
+    },
+    {
+      "name": "K_ADMET < 0.2% of K_total for LPV",
+      "passed": true,
+      "detail": "K_ADMET/K_total = 0.020%"
+    },
+    {
+      "name": "K_ADMET < 0.2% of K_total for DRV",
+      "passed": true,
+      "detail": "K_ADMET/K_total = 0.101%"
+    },
+    {
+      "name": "K_ADMET < 0.2% of K_total for ATV",
+      "passed": true,
+      "detail": "K_ADMET/K_total = 0.101%"
+    },
+    {
+      "name": "K_BBB \u2265 -1 for NVP",
+      "passed": true,
+      "detail": "K_BBB = 1.222"
+    },
+    {
+      "name": "K_BBB \u2265 -1 for FTC",
+      "passed": true,
+      "detail": "K_BBB = 1.174"
+    },
+    {
+      "name": "K_BBB \u2265 -1 for ABC",
+      "passed": true,
+      "detail": "K_BBB = 2.333"
+    },
+    {
+      "name": "K_BBB \u2265 -1 for ZDV",
+      "passed": true,
+      "detail": "K_BBB = 4.882"
+    },
+    {
+      "name": "K_BBB \u2265 -1 for 3TC",
+      "passed": true,
+      "detail": "K_BBB = 15.667"
+    },
+    {
+      "name": "K_BBB \u2265 -1 for RAL",
+      "passed": true,
+      "detail": "K_BBB = 32.333"
+    },
+    {
+      "name": "K_BBB \u2265 -1 for TFV",
+      "passed": true,
+      "detail": "K_BBB = 19.000"
+    },
+    {
+      "name": "K_BBB \u2265 -1 for DRV",
+      "passed": true,
+      "detail": "K_BBB = 99.000"
+    },
+    {
+      "name": "K_BBB \u2265 -1 for ATV",
+      "passed": true,
+      "detail": "K_BBB = 99.000"
+    },
+    {
+      "name": "K_BBB \u2265 -1 for EFV",
+      "passed": true,
+      "detail": "K_BBB = 199.000"
+    },
+    {
+      "name": "K_BBB \u2265 -1 for DTG",
+      "passed": true,
+      "detail": "K_BBB = 165.667"
+    },
+    {
+      "name": "K_BBB \u2265 -1 for LPV",
+      "passed": true,
+      "detail": "K_BBB = 499.000"
     }
   ],
-  "total": 260,
-  "passed": 260,
+  "total": 356,
+  "passed": 356,
   "failed": 0,
   "pass_rate": "100.0%"
 }
