@@ -1047,6 +1047,23 @@ export const NL_GROUPS = [
     ],
   },
   {
+    label: 'CHEMBL · 9.2M RECORDS', color: '#f472b6',
+    questions: [
+      { q: "Browse ChEMBL bioactivity measurements",
+        gql: "COVER chembl_activities ALL FIRST 50;",
+        tag: "ChEMBL · activities", why: "4.9M drug-target activity measurements from ChEMBL v36 — Ki, IC50, EC50, Kd all encoded as geometric fiber coordinates with τ potency" },
+      { q: "Which drug targets are in ChEMBL?",
+        gql: "COVER chembl_targets ALL FIRST 50;",
+        tag: "ChEMBL · targets", why: "18K validated drug targets from ChEMBL — proteins, cell lines, organisms, each a base point in the pharmacological fiber bundle" },
+      { q: "Explore drug-target interaction network",
+        gql: "COVER chembl_drug_target ALL FIRST 50;",
+        tag: "drug-target · 690K", why: "690K drug-target interactions link compounds to their molecular targets — the edges of the pharmacological network encoded as fiber bundle sections" },
+      { q: "Browse ChEMBL compound library",
+        gql: "COVER chembl_compounds ALL FIRST 50;",
+        tag: "compounds · 1.66M", why: "1.66M unique chemical compounds from ChEMBL v36 — each compound is a point in chemical space with SMILES, molecular properties, and clinical phase" },
+    ],
+  },
+  {
     label: 'CLINICAL TRIALS · 578K STUDIES', color: '#38bdf8',
     questions: [
       { q: "Find Phase 3 clinical trials",

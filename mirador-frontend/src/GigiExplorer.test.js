@@ -1,9 +1,9 @@
 /**
- * GigiExplorer — TDD tests for new live-server queries
- * =====================================================
- * Tests exercise the GIGI REST API to verify that the new data bundles
- * (BindingDB, ClinTrials, PharmGKB) are queryable and return expected
- * shapes. Also validates the aggregate totals shown in the Explorer UI.
+ * GigiExplorer — TDD tests for live-server queries
+ * ==================================================
+ * Tests exercise the GIGI REST API to verify that data bundles
+ * (ChEMBL, BindingDB, ClinTrials, PharmGKB) are queryable and return
+ * expected shapes. Also validates the aggregate totals shown in the Explorer UI.
  *
  * Run:  npx vitest run src/GigiExplorer.test.js
  *
@@ -15,6 +15,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 
 const HOST = 'https://gigi-stream.fly.dev';
 const LONG = 30_000; // 30s timeout for large bundle queries
+const XLONG = 90_000; // 90s timeout for ChEMBL 5M+ scans
 
 // ── Helper: execute GQL against the live GIGI server ──────────────
 async function gql(query, timeout = 15_000) {
@@ -51,8 +52,8 @@ describe('Server health & totals', () => {
     expect(info.bundles).toBeGreaterThanOrEqual(16);
   });
 
-  it('has ≥ 1.5M total records', () => {
-    expect(info.total_records).toBeGreaterThanOrEqual(1_500_000);
+  it('has ≥ 9M total records', () => {
+    expect(info.total_records).toBeGreaterThanOrEqual(9_000_000);
   });
 });
 
@@ -74,6 +75,11 @@ describe('SHOW BUNDLES', () => {
     'mirador_drugs',
     'mirador_thresholds',
     'mirador_regimens',
+    'chembl_activities',
+    'chembl_compounds',
+    'chembl_assays',
+    'chembl_drug_target',
+    'chembl_targets',
   ];
 
   for (const name of EXPECTED_BUNDLES) {
@@ -275,13 +281,88 @@ describe('Aggregate totals for UI', () => {
     expect(pgxC + pgxV + pgxL).toBeGreaterThanOrEqual(14_000);
   });
 
-  it('total across all bundles ≥ 1.5M', () => {
+  it('total across all bundles ≥ 9M', () => {
     const total = bundles.reduce((sum, b) => sum + (b.records ?? 0), 0);
-    expect(total).toBeGreaterThanOrEqual(1_500_000);
+    expect(total).toBeGreaterThanOrEqual(9_000_000);
+  });
+
+  it('ChEMBL activities has ≥ 4M records', () => {
+    const ca = bundles.find(b => b.name === 'chembl_activities');
+    expect(ca).toBeDefined();
+    expect(ca.records).toBeGreaterThanOrEqual(4_000_000);
+  });
+
+  it('ChEMBL compounds has ≥ 1M records', () => {
+    const cc = bundles.find(b => b.name === 'chembl_compounds');
+    expect(cc).toBeDefined();
+    expect(cc.records).toBeGreaterThanOrEqual(1_000_000);
+  });
+
+  it('ChEMBL assays has ≥ 1M records', () => {
+    const ca = bundles.find(b => b.name === 'chembl_assays');
+    expect(ca).toBeDefined();
+    expect(ca.records).toBeGreaterThanOrEqual(1_000_000);
+  });
+
+  it('ChEMBL drug_target has ≥ 500K records', () => {
+    const dt = bundles.find(b => b.name === 'chembl_drug_target');
+    expect(dt).toBeDefined();
+    expect(dt.records).toBeGreaterThanOrEqual(500_000);
+  });
+
+  it('ChEMBL targets has ≥ 15K records', () => {
+    const ct = bundles.find(b => b.name === 'chembl_targets');
+    expect(ct).toBeDefined();
+    expect(ct.records).toBeGreaterThanOrEqual(15_000);
   });
 });
 
-// ── 7. NL_GROUPS — every server-targeted preset query must return rows ─
+// ── 7. ChEMBL queries ────────────────────────────────────────────
+
+describe('ChEMBL preset queries', () => {
+  it('DESCRIBE chembl_activities returns metadata', async () => {
+    const res = await gql('DESCRIBE chembl_activities', XLONG);
+    expect(res).toBeDefined();
+  }, XLONG);
+
+  it('browse first 50 activities', async () => {
+    const res = await gql('COVER chembl_activities ALL FIRST 50', XLONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBe(50);
+  }, XLONG);
+
+  it('browse first 50 compounds', async () => {
+    const res = await gql('COVER chembl_compounds ALL FIRST 50', XLONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBe(50);
+  }, XLONG);
+
+  it('browse first 50 targets', async () => {
+    const res = await gql('COVER chembl_targets ALL FIRST 50', LONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBe(50);
+  }, LONG);
+
+  it('browse first 50 assays', async () => {
+    const res = await gql('COVER chembl_assays ALL FIRST 50', XLONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBe(50);
+  }, XLONG);
+
+  it('browse first 50 drug-target interactions', async () => {
+    const res = await gql('COVER chembl_drug_target ALL FIRST 50', XLONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBe(50);
+  }, XLONG);
+
+  it('distinct target types', async () => {
+    const res = await gql('COVER chembl_targets DISTINCT target_type', LONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBeGreaterThanOrEqual(2);
+  }, LONG);
+});
+
+// ── 8. NL_GROUPS — every server-targeted preset query must return rows ─
 
 describe('NL preset queries (server-targeted)', () => {
 
@@ -332,6 +413,31 @@ describe('NL preset queries (server-targeted)', () => {
     expect(res.rows).toBeDefined();
     expect(res.rows.length).toBeGreaterThan(0);
   });
+
+  // Group 3b: CHEMBL — all server queries
+  it('ChEMBL activities FIRST 50', async () => {
+    const res = await gql('COVER chembl_activities ALL FIRST 50;', XLONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBe(50);
+  }, XLONG);
+
+  it('ChEMBL targets FIRST 50', async () => {
+    const res = await gql('COVER chembl_targets ALL FIRST 50;', LONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBe(50);
+  }, LONG);
+
+  it('ChEMBL drug-target FIRST 50', async () => {
+    const res = await gql('COVER chembl_drug_target ALL FIRST 50;', XLONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBe(50);
+  }, XLONG);
+
+  it('ChEMBL compounds FIRST 50', async () => {
+    const res = await gql('COVER chembl_compounds ALL FIRST 50;', XLONG);
+    expect(res.rows).toBeDefined();
+    expect(res.rows.length).toBe(50);
+  }, XLONG);
 
   // Group 4: CLINICAL TRIALS — all server queries
   it('ClinTrials Phase 3 FIRST 25', async () => {
