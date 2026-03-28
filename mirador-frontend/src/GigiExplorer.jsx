@@ -268,6 +268,30 @@ const PRESETS_CLINICAL = [
   { label: '📐 τ by disease',        gql: 'INTEGRATE mirador_drugs OVER disease MEASURE avg(tau), count(*);' },
   { label: '📈 High τ drugs',        gql: 'COVER mirador_drugs ON tau > 4;' },
 ];
+const PRESETS_BINDINGDB = [
+  { label: '📋 Describe BindingDB',     gql: 'DESCRIBE bindingdb_binding;' },
+  { label: '🔬 Browse bindings',        gql: 'COVER bindingdb_binding ALL FIRST 25;' },
+  { label: '🎯 Potency classes',        gql: 'COVER bindingdb_binding DISTINCT potency_class;' },
+  { label: '🧬 Target organisms',       gql: 'COVER bindingdb_binding DISTINCT target_source_org;' },
+];
+const PRESETS_CLINTRIALS = [
+  { label: '📋 Describe trials',         gql: 'DESCRIBE clintrials_studies;' },
+  { label: '🔬 Interventional',          gql: "COVER clintrials_studies ON study_type = 'INTERVENTIONAL' FIRST 25;" },
+  { label: '📊 Phase 3 trials',          gql: "COVER clintrials_studies ON phase = 'PHASE3' FIRST 25;" },
+  { label: '✅ Completed trials',        gql: "COVER clintrials_studies ON status = 'COMPLETED' FIRST 25;" },
+  { label: '📈 Distinct phases',         gql: 'COVER clintrials_studies DISTINCT phase;' },
+  { label: '📐 Distinct study types',    gql: 'COVER clintrials_studies DISTINCT study_type;' },
+  { label: '🔍 Browse trials',           gql: 'COVER clintrials_studies ALL FIRST 25;' },
+];
+const PRESETS_PGX = [
+  { label: '🧬 CYP2D6 variants',        gql: "COVER pgx_variants ON gene = 'CYP2D6' FIRST 25;" },
+  { label: '🧬 CYP2C19 variants',       gql: "COVER pgx_variants ON gene = 'CYP2C19' FIRST 25;" },
+  { label: '📊 Distinct PGx genes',      gql: 'COVER pgx_variants DISTINCT gene;' },
+  { label: '💊 Drug labels',             gql: 'COVER pgx_drug_labels ALL FIRST 25;' },
+  { label: '🏷️ Label sources',           gql: 'COVER pgx_drug_labels DISTINCT source;' },
+  { label: '📐 Testing levels',          gql: 'COVER pgx_drug_labels DISTINCT testing_level;' },
+  { label: '🔬 Clinical annotations',    gql: 'COVER pgx_clinical ALL FIRST 25;' },
+];
 const PRESETS_CHEMBL = [
   { label: '📋 Describe activities',  gql: 'DESCRIBE chembl_activities;' },
   { label: '⚗️ Potent hits',          gql: "COVER chembl_activities ON potency_class = 'potent' FIRST 50;" },
@@ -717,8 +741,8 @@ export default function GigiExplorer() {
               FIBER BUNDLE<br/>EXPLORER
             </div>
             {!isMob && <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5, maxWidth: 480, borderLeft: '1px solid #1a1a2e', paddingLeft: 14 }}>
-              Explore <span style={{ color: '#22d3ee' }}>3M+</span> pharmacological records stored as <span style={{ color: '#a78bfa' }}>fiber bundles</span> — not flat tables.
-              Clinical PK/PD data (EUCAST/CLSI) plus ChEMBL v36 bioactivities, compounds & targets.
+              Explore <span style={{ color: '#22d3ee' }}>1.6M+</span> pharmacological records stored as <span style={{ color: '#a78bfa' }}>fiber bundles</span> — not flat tables.
+              BindingDB binding data, 578K clinical trials, PharmGKB pharmacogenomics, plus clinical PK/PD seed data.
               Each record carries a geometric potency coordinate <span style={{ color: '#f0e68c' }}>τ</span> that encodes drug-target affinity on a manifold — enabling
               {' '}<code style={{ color: '#a78bfa', background: '#a78bfa12', padding: '1px 4px', borderRadius: 3 }}>CURVATURE</code>,
               {' '}<code style={{ color: '#a78bfa', background: '#a78bfa12', padding: '1px 4px', borderRadius: 3 }}>SECTION</code>, and
@@ -738,7 +762,7 @@ export default function GigiExplorer() {
                 background: connected === true ? '#22c55e' : demoMode ? '#f59e0b' : connected === false ? '#ef4444' : '#64748b',
                 boxShadow: connected === true ? '0 0 8px #22c55e55' : demoMode ? '0 0 8px #f59e0b33' : 'none' }} />
               <span style={{ fontSize: 9, color: '#64748b', letterSpacing: 1 }}>
-                {connected === true ? 'LIVE · 3M+ RECORDS' : demoMode ? `${DEMO_DB.mirador_drugs.length} CLINICAL · ${DEMO_DB.mirador_universe.length} UNIVERSE` : connected === false ? 'OFFLINE' : 'CHECKING…'}
+                {connected === true ? 'LIVE · 16 BUNDLES · 1.6M+ RECORDS' : demoMode ? `${DEMO_DB.mirador_drugs.length} CLINICAL · ${DEMO_DB.mirador_universe.length} UNIVERSE` : connected === false ? 'OFFLINE' : 'CHECKING…'}
               </span>
             </div>
             <input value={host} onChange={e => setHost(e.target.value)}
@@ -786,9 +810,57 @@ export default function GigiExplorer() {
             ))}
           </div>
 
+          <div style={{ fontSize: 9, color: demoMode ? '#3a5f3a' : '#4ade80', letterSpacing: 2, marginTop: 16, marginBottom: 6, fontWeight: 700 }}>BINDINGDB BINDING {demoMode && <span style={{ fontSize: 7, color: '#475569' }}>🔒 LIVE</span>}</div>
+          <div style={{ fontSize: 8, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
+            1M+ binding measurements — Ki, IC50, Kd, EC50 with τ & potency class
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, opacity: demoMode ? 0.45 : 1 }}>
+            {PRESETS_BINDINGDB.map((p, i) => (
+              <button key={'bdb'+i}
+                onClick={() => { setQuery(p.gql); runQuery(p.gql); }}
+                style={{ background: 'transparent', border: '1px solid transparent', borderRadius: 4, padding: '7px 10px', color: '#94a3b8', fontSize: 10, fontFamily: FONT, textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                onMouseOver={e => { e.currentTarget.style.background = '#1a1a2e'; e.currentTarget.style.color = '#e2e8f0'; e.currentTarget.style.borderColor = '#2a2a44'; }}
+                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'transparent'; }}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 9, color: demoMode ? '#3a4f6a' : '#38bdf8', letterSpacing: 2, marginTop: 16, marginBottom: 6, fontWeight: 700 }}>CLINICAL TRIALS {demoMode && <span style={{ fontSize: 7, color: '#475569' }}>🔒 LIVE</span>}</div>
+          <div style={{ fontSize: 8, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
+            578K studies from ClinicalTrials.gov — phases, conditions, interventions
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, opacity: demoMode ? 0.45 : 1 }}>
+            {PRESETS_CLINTRIALS.map((p, i) => (
+              <button key={'ct'+i}
+                onClick={() => { setQuery(p.gql); runQuery(p.gql); }}
+                style={{ background: 'transparent', border: '1px solid transparent', borderRadius: 4, padding: '7px 10px', color: '#94a3b8', fontSize: 10, fontFamily: FONT, textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                onMouseOver={e => { e.currentTarget.style.background = '#1a1a2e'; e.currentTarget.style.color = '#e2e8f0'; e.currentTarget.style.borderColor = '#2a2a44'; }}
+                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'transparent'; }}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 9, color: demoMode ? '#5a3f6a' : '#c084fc', letterSpacing: 2, marginTop: 16, marginBottom: 6, fontWeight: 700 }}>PHARMACOGENOMICS {demoMode && <span style={{ fontSize: 7, color: '#475569' }}>🔒 LIVE</span>}</div>
+          <div style={{ fontSize: 8, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
+            14K+ PharmGKB records — CYP variants, drug labels, clinical annotations
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, opacity: demoMode ? 0.45 : 1 }}>
+            {PRESETS_PGX.map((p, i) => (
+              <button key={'pgx'+i}
+                onClick={() => { setQuery(p.gql); runQuery(p.gql); }}
+                style={{ background: 'transparent', border: '1px solid transparent', borderRadius: 4, padding: '7px 10px', color: '#94a3b8', fontSize: 10, fontFamily: FONT, textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                onMouseOver={e => { e.currentTarget.style.background = '#1a1a2e'; e.currentTarget.style.color = '#e2e8f0'; e.currentTarget.style.borderColor = '#2a2a44'; }}
+                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'transparent'; }}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+
           <div style={{ fontSize: 9, color: demoMode ? '#5a4f8a' : '#a78bfa', letterSpacing: 2, marginTop: 16, marginBottom: 6, fontWeight: 700 }}>CHEMBL BIOACTIVITY {demoMode && <span style={{ fontSize: 7, color: '#475569' }}>🔒 LIVE</span>}</div>
           <div style={{ fontSize: 8, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
-            4.9M activities + 690K drug-target fibers from ChEMBL v36
+            ChEMBL v36 bioactivity data (requires re-ingestion)
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, opacity: demoMode ? 0.45 : 1 }}>
             {PRESETS_CHEMBL.map((p, i) => (
@@ -844,7 +916,7 @@ export default function GigiExplorer() {
             <div style={{ padding: '8px 14px', borderBottom: '1px solid #1a1a2e', display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 9, color: '#64748b', letterSpacing: 2, fontWeight: 700 }}>ASK IN PLAIN ENGLISH</span>
               <span style={{ fontSize: 9, color: '#2a3a50' }}>→</span>
-              <span style={{ fontSize: 9, color: '#334155' }}>translated to GQL & executed against {demoMode ? 'demo engine' : '5.5M live records'}</span>
+              <span style={{ fontSize: 9, color: '#334155' }}>translated to GQL & executed against {demoMode ? 'demo engine' : '1.6M+ live records'}</span>
             </div>
 
             {/* Free-text NL input */}
@@ -1019,7 +1091,7 @@ export default function GigiExplorer() {
               <div style={{ fontSize: 48, marginBottom: 16 }}>⟐</div>
               <div style={{ fontSize: 12, letterSpacing: 2 }}>ENTER A GQL QUERY OR CLICK A PRESET</div>
               <div style={{ fontSize: 10, color: '#1e293b', marginTop: 8 }}>
-                {demoMode ? `⚡ Demo mode — ${DEMO_DB.mirador_drugs.length} clinical drug sections in-browser · ChEMBL queries need live server` : 'Connected — 3M+ records across clinical PK/PD & ChEMBL bioactivity bundles'}
+                {demoMode ? `⚡ Demo mode — ${DEMO_DB.mirador_drugs.length} clinical drug sections in-browser · server queries need live connection` : 'Connected — 1.6M+ records across BindingDB, ClinTrials, PharmGKB & clinical PK/PD bundles'}
               </div>
             </div>
           )}
@@ -1030,9 +1102,9 @@ export default function GigiExplorer() {
       <div style={{ borderTop: '1px solid #1a1a2e', padding: isMob ? '12px 12px' : '12px 32px', display: 'flex', justifyContent: 'center', gap: isMob ? 10 : 24, fontSize: 9, color: '#334155', flexWrap: 'wrap' }}>
         <span>GIGI Fiber Bundle Database</span>
         <span>•</span>
-        <span>Clinical PK/PD + ChEMBL v36</span>
+<span>BindingDB + ClinTrials + PharmGKB + Clinical PK/PD</span>
         <span>•</span>
-        <span>{demoMode ? 'In-Browser Demo Engine' : '3M+ records · POST /v1/gql'}</span>
+        <span>{demoMode ? 'In-Browser Demo Engine' : '1.6M+ records · POST /v1/gql'}</span>
       </div>
     </div>
   );
