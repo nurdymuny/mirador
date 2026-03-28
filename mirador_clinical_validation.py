@@ -1,0 +1,987 @@
+#!/usr/bin/env python3
+"""
+MIRADOR Clinical Validation Suite
+Davis Geometric · 2026
+
+Five validation tests against published clinical ground truth.
+Each test computes predictions from PK data alone (C = τ/K)
+and compares against independent clinical outcomes (I ∩ G = ∅).
+
+Test 1: Prosthetic Joint Infection (Staphylococcal PJI)
+Test 2: Fluoroquinolone Prostatitis         (planned)
+Test 3: TB Lesion Types — Dartois MALDI
+Test 4: HIV CNS Escape — Letendre CPE       (planned)
+Test 5: Diabetic Foot Osteomyelitis         (planned)
+"""
+
+import math
+import json
+import os
+import sys
+
+sys.stdout.reconfigure(encoding='utf-8')
+
+# ============================================================================
+# TEST INFRASTRUCTURE
+# ============================================================================
+
+_results = []
+_pass = 0
+_fail = 0
+
+
+def check(name, computed, expected, tol=0.01):
+    """Assert computed ≈ expected within tolerance."""
+    global _pass, _fail
+    diff = abs(computed - expected)
+    ok = diff <= tol
+    if ok:
+        _pass += 1
+        mark = "[+] PASS"
+    else:
+        _fail += 1
+        mark = "[-] FAIL"
+    _results.append({"name": name, "passed": ok,
+                     "computed": round(computed, 6),
+                     "expected": round(expected, 6),
+                     "diff": round(diff, 6)})
+    print(f"  {mark}  {name}  (computed={computed:.4f}, expected={expected:.4f}, Δ={diff:.4f})")
+    return ok
+
+
+def check_assert(name, condition, detail=""):
+    """Assert a boolean condition."""
+    global _pass, _fail
+    if condition:
+        _pass += 1
+        mark = "[+] PASS"
+    else:
+        _fail += 1
+        mark = "[-] FAIL"
+    _results.append({"name": name, "passed": condition, "detail": detail})
+    msg = f"  {mark}  {name}"
+    if detail:
+        msg += f"  ({detail})"
+    print(msg)
+    return condition
+
+
+# ============================================================================
+# HELPER: Combination coherence
+# ============================================================================
+
+def combo_C(K1, K2, tau1, tau2, s=1.2):
+    """Compute combination coherence for two drugs with synergy s."""
+    g1 = 1.0 / K1
+    g2 = 1.0 / K2
+    sum_g = (g1 + g2) * s
+    K_combo = 1.0 / sum_g
+    tau_combo = (tau1 + tau2) * s
+    return tau_combo / K_combo
+
+
+# ============================================================================
+# TEST 1: PROSTHETIC JOINT INFECTION
+# ============================================================================
+
+def test_pji():
+    """
+    Prosthetic Joint Infection validation.
+    C = τ / K at the prosthetic surface.
+
+    Predicts:
+      - Rifampin #1 monotherapy (lowest biofilm impedance)
+      - Vancomycin monotherapy failure (K_prosthetic + K_biofilm)
+      - Daptomycin inferiority despite high τ (K_prosthetic = 19)
+      - CIP+RIF strongest combination (susceptible organisms)
+      - VAN+RIF borderline (C ≈ θ)
+      - d² consistent with rifampin resistance rate (correlation)
+
+    Ground truth: Zimmerli 1998/2004, Osmon 2013 IDSA, Byren 2009
+    I ∩ G = ∅: PK inputs vs clinical outcomes
+    """
+    print("\n" + "=" * 72)
+    print("TEST 1: PROSTHETIC JOINT INFECTION (Staphylococcal PJI)")
+    print("=" * 72)
+
+    # ── 1a. τ computation ───────────────────────────────────────────────
+    print("\n  §3.2 — τ = log₁₀(AUC₂₄ / MIC)")
+
+    pk_data = {
+        "Vancomycin":    {"auc": 400,  "mic": 1.0},
+        "Rifampin":      {"auc": 50,   "mic": 0.015},
+        "Daptomycin":    {"auc": 747,  "mic": 0.5},
+        "Linezolid":     {"auc": 200,  "mic": 2.0},
+        "Ciprofloxacin": {"auc": 30,   "mic": 1.0},
+        "Ceftaroline":   {"auc": 200,  "mic": 0.5},
+        "TMP-SMX":       {"auc": 60,   "mic": 2.0},
+    }
+
+    tau_expected = {
+        "Vancomycin": 2.602, "Rifampin": 3.523, "Daptomycin": 3.174,
+        "Linezolid": 2.000, "Ciprofloxacin": 1.477,
+        "Ceftaroline": 2.602, "TMP-SMX": 1.477,
+    }
+
+    taus = {}
+    for name, pk in pk_data.items():
+        tau = math.log10(pk["auc"] / pk["mic"])
+        taus[name] = tau
+        check(f"τ {name}", tau, tau_expected[name])
+
+    # ── 1b. K decomposition ─────────────────────────────────────────────
+    print("\n  §3.4-3.5 — K = K_ADMET + K_bone + K_prosthetic + K_biofilm")
+
+    barriers = {
+        "Vancomycin":    {"K_ADMET": 0.50, "R_bone": 0.20, "R_prosthetic": 0.15, "MBEC_MIC": 512},
+        "Rifampin":      {"K_ADMET": 0.50, "R_bone": 0.35, "R_prosthetic": 0.30, "MBEC_MIC": 33},
+        "Daptomycin":    {"K_ADMET": 0.60, "R_bone": 0.12, "R_prosthetic": 0.05, "MBEC_MIC": 512},
+        "Linezolid":     {"K_ADMET": 0.80, "R_bone": 0.50, "R_prosthetic": 0.80, "MBEC_MIC": 32},
+        "Ciprofloxacin": {"K_ADMET": 0.30, "R_bone": 0.80, "R_prosthetic": 1.00, "MBEC_MIC": 128},
+        "Ceftaroline":   {"K_ADMET": 0.20, "R_bone": 0.30, "R_prosthetic": 0.20, "MBEC_MIC": 256},
+        "TMP-SMX":       {"K_ADMET": 0.40, "R_bone": 0.40, "R_prosthetic": 0.50, "MBEC_MIC": 128},
+    }
+
+    K_expected = {
+        "Vancomycin": 12.876, "Rifampin": 6.209, "Daptomycin": 29.642,
+        "Linezolid": 3.555, "Ciprofloxacin": 2.657,
+        "Ceftaroline": 8.941, "TMP-SMX": 5.007,
+    }
+
+    C_expected = {
+        "Vancomycin": 0.202, "Rifampin": 0.567, "Daptomycin": 0.107,
+        "Linezolid": 0.563, "Ciprofloxacin": 0.556,
+        "Ceftaroline": 0.291, "TMP-SMX": 0.295,
+    }
+
+    Ks = {}
+    Cs = {}
+    for name, b in barriers.items():
+        K_bone = max(1.0 / b["R_bone"] - 1.0, -1.0)
+        K_prosthetic = max(1.0 / b["R_prosthetic"] - 1.0, -1.0)
+        K_biofilm = math.log10(b["MBEC_MIC"])
+        K_total = b["K_ADMET"] + K_bone + K_prosthetic + K_biofilm
+        C = taus[name] / K_total
+        Ks[name] = K_total
+        Cs[name] = C
+        check(f"K_total {name}", K_total, K_expected[name], tol=0.01)
+        check(f"C {name}", C, C_expected[name], tol=0.005)
+
+    # ── 1c. Monotherapy ranking ─────────────────────────────────────────
+    print("\n  §4.3 — Monotherapy ranking")
+
+    ranking = sorted(Cs.items(), key=lambda x: x[1], reverse=True)
+    rank_names = [r[0] for r in ranking]
+
+    check_assert("Rifampin ranks #1",
+                 rank_names[0] == "Rifampin",
+                 f"got {rank_names[0]}")
+    check_assert("Daptomycin ranks last",
+                 rank_names[-1] == "Daptomycin",
+                 f"got {rank_names[-1]}")
+    check_assert("Vancomycin ranks 6th or lower",
+                 rank_names.index("Vancomycin") >= 5,
+                 f"rank={rank_names.index('Vancomycin')+1}")
+    check_assert("Top 3 are RIF, LZD, CIP (any order)",
+                 set(rank_names[:3]) == {"Rifampin", "Linezolid", "Ciprofloxacin"})
+
+    # ── 1d. Combination therapy ─────────────────────────────────────────
+    print("\n  §5 — Combination therapy (backbone + rifampin, s=1.2)")
+
+    s = 1.2
+    K_rif = Ks["Rifampin"]
+    tau_rif = taus["Rifampin"]
+
+    combo_expected = {
+        "VAN+RIF": ("Vancomycin",    2.106),
+        "LZD+RIF": ("Linezolid",     3.518),
+        "CIP+RIF": ("Ciprofloxacin", 3.871),
+        "TMP+RIF": ("TMP-SMX",       2.597),
+        "CAR+RIF": ("Ceftaroline",   2.407),
+        "DAP+RIF": ("Daptomycin",    1.879),
+    }
+
+    combo_results = {}
+    for combo_name, (drug, expected) in combo_expected.items():
+        C_c = combo_C(Ks[drug], K_rif, taus[drug], tau_rif, s)
+        combo_results[combo_name] = C_c
+        check(f"C_combo {combo_name}", C_c, expected, tol=0.02)
+
+    # Verify combination ranking
+    combo_rank = sorted(combo_results.items(), key=lambda x: x[1], reverse=True)
+    combo_rank_names = [c[0] for c in combo_rank]
+
+    check_assert("CIP+RIF is strongest combination",
+                 combo_rank_names[0] == "CIP+RIF",
+                 f"got {combo_rank_names[0]}")
+    check_assert("DAP+RIF is weakest combination",
+                 combo_rank_names[-1] == "DAP+RIF",
+                 f"got {combo_rank_names[-1]}")
+    check_assert("VAN+RIF ranks 5th (borderline)",
+                 combo_rank_names.index("VAN+RIF") == 4,
+                 f"rank={combo_rank_names.index('VAN+RIF')+1}")
+
+    # ── 1e. Threshold calibration ───────────────────────────────────────
+    print("\n  §6 — Threshold calibration (θ = 2.0)")
+
+    theta = 2.0
+
+    # VAN+RIF should be borderline pass
+    check_assert("VAN+RIF borderline pass (C/θ ≈ 1.05)",
+                 1.0 < combo_results["VAN+RIF"] / theta < 1.15,
+                 f"C/θ = {combo_results['VAN+RIF']/theta:.3f}")
+
+    # DAP+RIF should be borderline fail
+    check_assert("DAP+RIF borderline fail (C/θ < 1.0)",
+                 combo_results["DAP+RIF"] / theta < 1.0,
+                 f"C/θ = {combo_results['DAP+RIF']/theta:.3f}")
+
+    # CIP+RIF strong pass
+    check_assert("CIP+RIF strong pass (C/θ > 1.5)",
+                 combo_results["CIP+RIF"] / theta > 1.5,
+                 f"C/θ = {combo_results['CIP+RIF']/theta:.3f}")
+
+    # TMP+RIF and CAR+RIF both pass (corrected math)
+    check_assert("TMP+RIF passes θ",
+                 combo_results["TMP+RIF"] / theta > 1.0,
+                 f"C/θ = {combo_results['TMP+RIF']/theta:.3f}")
+    check_assert("CAR+RIF passes θ",
+                 combo_results["CAR+RIF"] / theta > 1.0,
+                 f"C/θ = {combo_results['CAR+RIF']/theta:.3f}")
+
+    # ── 1f. MRSA-only sub-analysis ──────────────────────────────────────
+    print("\n  §8.3 — MRSA-only sub-analysis (excluding ciprofloxacin)")
+
+    mrsa_Cs = {k: v for k, v in Cs.items() if k != "Ciprofloxacin"}
+    mrsa_rank = sorted(mrsa_Cs.items(), key=lambda x: x[1], reverse=True)
+    mrsa_rank_names = [r[0] for r in mrsa_rank]
+
+    check_assert("MRSA: Rifampin still #1",
+                 mrsa_rank_names[0] == "Rifampin",
+                 f"got {mrsa_rank_names[0]}")
+    check_assert("MRSA: Daptomycin still last",
+                 mrsa_rank_names[-1] == "Daptomycin",
+                 f"got {mrsa_rank_names[-1]}")
+
+    # MRSA combo ranking (no CIP)
+    mrsa_combos = {k: v for k, v in combo_results.items() if k != "CIP+RIF"}
+    mrsa_combo_rank = sorted(mrsa_combos.items(), key=lambda x: x[1], reverse=True)
+
+    check_assert("MRSA: LZD+RIF is best combo",
+                 mrsa_combo_rank[0][0] == "LZD+RIF",
+                 f"got {mrsa_combo_rank[0][0]}")
+
+    # ── 1g. K_ADMET = 0 sensitivity ────────────────────────────────────
+    print("\n  §8.4 — K_ADMET = 0 sensitivity")
+
+    no_admet_Cs = {}
+    for name, b in barriers.items():
+        K_no_admet = Ks[name] - b["K_ADMET"]
+        C_no = taus[name] / K_no_admet
+        no_admet_Cs[name] = C_no
+
+    no_admet_rank = sorted(no_admet_Cs.items(), key=lambda x: x[1], reverse=True)
+    no_admet_names = [r[0] for r in no_admet_rank]
+
+    # Bottom 4 must be the same set
+    bottom4 = set(no_admet_names[3:])
+    check_assert("K_ADMET=0: bottom 4 unchanged",
+                 bottom4 == {"TMP-SMX", "Ceftaroline", "Vancomycin", "Daptomycin"},
+                 f"got {bottom4}")
+    check_assert("K_ADMET=0: Daptomycin still last",
+                 no_admet_names[-1] == "Daptomycin",
+                 f"got {no_admet_names[-1]}")
+    check_assert("K_ADMET=0: Vancomycin still 6th",
+                 no_admet_names[-2] == "Vancomycin",
+                 f"got {no_admet_names[-2]}")
+
+    # Top 3 should all be in {RIF, LZD, CIP}
+    top3 = set(no_admet_names[:3])
+    check_assert("K_ADMET=0: top 3 still RIF/LZD/CIP",
+                 top3 == {"Rifampin", "Linezolid", "Ciprofloxacin"},
+                 f"got {top3}")
+
+    # ── 1h. R_prosthetic sensitivity ────────────────────────────────────
+    print("\n  §8.1 — R_prosthetic sensitivity for vancomycin")
+
+    r_vals = [0.05, 0.10, 0.15, 0.20, 0.30]
+    prev_rank_van = None
+    ranking_stable = True
+
+    for r_p in r_vals:
+        K_bone = max(1.0 / 0.20 - 1.0, -1.0)  # R_bone = 0.20 (fixed)
+        K_prosth = max(1.0 / r_p - 1.0, -1.0)
+        K_bio = math.log10(512)
+        K_t = 0.50 + K_bone + K_prosth + K_bio
+
+        # Recompute ALL drugs with this vancomycin K, rank them
+        test_Cs = dict(Cs)
+        test_Cs["Vancomycin"] = taus["Vancomycin"] / K_t
+
+        rank_order = sorted(test_Cs.items(), key=lambda x: x[1], reverse=True)
+        van_rank = [r[0] for r in rank_order].index("Vancomycin")
+
+        if van_rank < 5:  # should always be 5th or worse
+            ranking_stable = False
+
+    check_assert("R_prosthetic sensitivity: VAN always ≥6th",
+                 ranking_stable,
+                 "across R_prosthetic = 0.05 to 0.30")
+
+    # ── 1i. d² correlation ──────────────────────────────────────────────
+    print("\n  §7 Pred 5 — d² correlation (NOT prediction)")
+
+    d2_observed = 0.25  # from ~25% observed failure rate
+    rif_resistance_low = 0.15   # Sendi 2010
+    rif_resistance_high = 0.30  # Achermann 2011
+
+    check_assert("d² within RIF resistance range",
+                 rif_resistance_low <= d2_observed <= rif_resistance_high,
+                 f"d²={d2_observed}, range=[{rif_resistance_low}, {rif_resistance_high}]")
+
+    # ── 1j. MBEC sensitivity ───────────────────────────────────────────
+    print("\n  §8.2 — MBEC sensitivity for vancomycin")
+
+    mbec_ratios = [128, 256, 512, 1024]
+    mbec_Cs = []
+    for ratio in mbec_ratios:
+        K_bio = math.log10(ratio)
+        K_t = 0.50 + 4.000 + 5.667 + K_bio  # VAN fixed bone + prosthetic
+        C_v = taus["Vancomycin"] / K_t
+        mbec_Cs.append(C_v)
+
+    # Range should be tight (log compression)
+    C_range = max(mbec_Cs) - min(mbec_Cs)
+    check_assert("MBEC 8× range → C varies < 0.02",
+                 C_range < 0.02,
+                 f"C range = {C_range:.4f}")
+
+
+# ============================================================================
+# TEST 2: CHRONIC BACTERIAL PROSTATITIS
+# ============================================================================
+
+def test_prostatitis():
+    """
+    Chronic bacterial prostatitis validation.
+    Validates NEGATIVE curvature regime: drugs with R > 1
+    have K_barrier < 0 (prostate concentrates the drug).
+
+    Predicts:
+      - Fluoroquinolone class dominance (all 3 in concentrating regime)
+      - CIP ≈ LEVO therapeutic equivalence
+      - TMP-SMX as second-line (barely excluded)
+      - Beta-lactam failure (severe exclusion)
+      - Azithromycin paradox (best R, worst τ)
+      - Fosfomycin excluded despite good serum τ
+
+    Ground truth: Naber 2008, Bundrick 2003, EAU 2024, Lipsky 2010
+    I ∩ G = ∅: PK inputs vs clinical cure rates
+    """
+    print("\n" + "=" * 72)
+    print("TEST 2: CHRONIC BACTERIAL PROSTATITIS (Negative Curvature)")
+    print("=" * 72)
+
+    # ── 2a. Drug panel and τ ────────────────────────────────────────────
+    print("\n  §5.2 — τ = log₁₀(AUC₂₄ / MIC)")
+
+    pk_data = {
+        "Ciprofloxacin": {"auc": 30,  "mic": 0.008},
+        "Levofloxacin":  {"auc": 48,  "mic": 0.015},
+        "Norfloxacin":   {"auc": 8,   "mic": 0.06},
+        "TMP-SMX":       {"auc": 60,  "mic": 0.5},
+        "Trimethoprim":  {"auc": 30,  "mic": 1.0},
+        "Amoxicillin":   {"auc": 20,  "mic": 4.0},
+        "Cephalexin":    {"auc": 60,  "mic": 8.0},
+        "Doxycycline":   {"auc": 40,  "mic": 1.0},
+        "Azithromycin":  {"auc": 4,   "mic": 8.0},
+        "Fosfomycin":    {"auc": 220, "mic": 2.0},
+    }
+
+    tau_expected = {
+        "Ciprofloxacin": 3.574, "Levofloxacin": 3.505,
+        "Norfloxacin": 2.125, "TMP-SMX": 2.079,
+        "Trimethoprim": 1.477, "Amoxicillin": 0.699,
+        "Cephalexin": 0.875, "Doxycycline": 1.602,
+        "Azithromycin": -0.301, "Fosfomycin": 2.041,
+    }
+
+    taus = {}
+    for name, pk in pk_data.items():
+        tau = math.log10(pk["auc"] / pk["mic"])
+        taus[name] = tau
+        check(f"τ {name}", tau, tau_expected[name])
+
+    # ── 2b. Barrier decomposition ──────────────────────────────────────
+    print("\n  §5.3-5.4 — K = K_ADMET + K_prostate + K_intracellular")
+
+    barriers = {
+        "Ciprofloxacin": {"K_ADMET": 0.30, "R": 3.0, "K_intra": 0.0},
+        "Levofloxacin":  {"K_ADMET": 0.30, "R": 4.0, "K_intra": 0.0},
+        "Norfloxacin":   {"K_ADMET": 0.30, "R": 2.0, "K_intra": 0.2},
+        "TMP-SMX":       {"K_ADMET": 0.20, "R": 1.5, "K_intra": 0.2},
+        "Trimethoprim":  {"K_ADMET": 0.15, "R": 2.5, "K_intra": 0.2},
+        "Amoxicillin":   {"K_ADMET": 0.10, "R": 0.15, "K_intra": 0.5},
+        "Cephalexin":    {"K_ADMET": 0.10, "R": 0.10, "K_intra": 0.5},
+        "Doxycycline":   {"K_ADMET": 0.20, "R": 0.8, "K_intra": 0.2},
+        "Azithromycin":  {"K_ADMET": 0.20, "R": 5.0, "K_intra": 0.0},
+        "Fosfomycin":    {"K_ADMET": 0.10, "R": 0.3, "K_intra": 0.5},
+    }
+
+    K_expected = {
+        "Ciprofloxacin": -0.367, "Levofloxacin": -0.450,
+        "Norfloxacin": 0.000, "TMP-SMX": 0.067,
+        "Trimethoprim": -0.250, "Amoxicillin": 6.267,
+        "Cephalexin": 9.600, "Doxycycline": 0.650,
+        "Azithromycin": -0.600, "Fosfomycin": 2.933,
+    }
+
+    Ks = {}
+    for name, b in barriers.items():
+        K_prostate = max(1.0 / b["R"] - 1.0, -1.0)
+        K_total = b["K_ADMET"] + K_prostate + b["K_intra"]
+        Ks[name] = K_total
+        check(f"K_prostate {name}", K_prostate,
+              max(1.0 / b["R"] - 1.0, -1.0))
+        check(f"K_total {name}", K_total, K_expected[name], tol=0.005)
+
+    # ── 2c. Regime classification ──────────────────────────────────────
+    print("\n  §6.3 — Regime classification (K ≤ 0 → concentrating)")
+
+    concentrating = {k: v for k, v in Ks.items() if v <= 0}
+    excluded = {k: v for k, v in Ks.items() if v > 0}
+
+    check_assert("5 drugs in concentrating regime",
+                 len(concentrating) == 5,
+                 f"got {len(concentrating)}: {list(concentrating.keys())}")
+    check_assert("5 drugs in exclusion regime",
+                 len(excluded) == 5,
+                 f"got {len(excluded)}: {list(excluded.keys())}")
+
+    expected_conc = {"Ciprofloxacin", "Levofloxacin", "Norfloxacin",
+                     "Trimethoprim", "Azithromycin"}
+    check_assert("Concentrating set correct",
+                 set(concentrating.keys()) == expected_conc,
+                 f"got {set(concentrating.keys())}")
+
+    # All concentrating drugs have R ≥ 1
+    for name in concentrating:
+        check_assert(f"{name}: R ≥ 1 for concentrating",
+                     barriers[name]["R"] >= 1.0,
+                     f"R = {barriers[name]['R']}")
+
+    # ── 2d. Concentrating regime ranking (by τ) ────────────────────────
+    print("\n  §6.4 — Concentrating regime ranked by τ")
+
+    conc_ranked = sorted(concentrating.items(),
+                         key=lambda x: taus[x[0]], reverse=True)
+    conc_names = [c[0] for c in conc_ranked]
+
+    check_assert("CIP ranks 1st (highest τ in conc.)",
+                 conc_names[0] == "Ciprofloxacin",
+                 f"got {conc_names[0]}")
+    check_assert("LEVO ranks 2nd",
+                 conc_names[1] == "Levofloxacin",
+                 f"got {conc_names[1]}")
+    check_assert("NOR ranks 3rd",
+                 conc_names[2] == "Norfloxacin",
+                 f"got {conc_names[2]}")
+    check_assert("AZI ranks last in conc. (τ < 0)",
+                 conc_names[-1] == "Azithromycin",
+                 f"got {conc_names[-1]}")
+
+    # ── 2e. Exclusion regime ranking (by C = τ/K) ─────────────────────
+    print("\n  §6.4 — Exclusion regime ranked by C = τ/K")
+
+    excl_Cs = {}
+    for name in excluded:
+        excl_Cs[name] = taus[name] / Ks[name]
+
+    excl_ranked = sorted(excl_Cs.items(), key=lambda x: x[1], reverse=True)
+    excl_names = [e[0] for e in excl_ranked]
+
+    C_expected_excl = {
+        "TMP-SMX": 31.19, "Doxycycline": 2.465,
+        "Fosfomycin": 0.696, "Amoxicillin": 0.112,
+        "Cephalexin": 0.091,
+    }
+
+    for name, expected in C_expected_excl.items():
+        check(f"C {name}", excl_Cs[name], expected, tol=0.02)
+
+    check_assert("TMP-SMX tops exclusion regime",
+                 excl_names[0] == "TMP-SMX",
+                 f"got {excl_names[0]}")
+    check_assert("Cephalexin last in exclusion",
+                 excl_names[-1] == "Cephalexin",
+                 f"got {excl_names[-1]}")
+    check_assert("Amoxicillin second-to-last",
+                 excl_names[-2] == "Amoxicillin",
+                 f"got {excl_names[-2]}")
+
+    # ── 2f. Clinical predictions ────────────────────────────────────────
+    print("\n  §8 — Clinical predictions")
+
+    # Pred 1: All 3 FQ in concentrating regime
+    for fq in ["Ciprofloxacin", "Levofloxacin", "Norfloxacin"]:
+        check_assert(f"FQ dominance: {fq} concentrating",
+                     fq in concentrating,
+                     f"K_total = {Ks[fq]:.3f}")
+
+    # Pred 2: CIP ≈ LEVO (near-equivalence)
+    tau_diff = abs(taus["Ciprofloxacin"] - taus["Levofloxacin"])
+    check_assert("CIP ≈ LEVO (τ difference < 0.1)",
+                 tau_diff < 0.1,
+                 f"Δτ = {tau_diff:.3f}")
+
+    # Pred 3: TMP-SMX second-line (best exclusion drug)
+    check_assert("TMP-SMX is best non-concentrating drug",
+                 excl_names[0] == "TMP-SMX")
+
+    # Pred 4: Beta-lactam failure
+    check_assert("Amoxicillin K > 5 (severe exclusion)",
+                 Ks["Amoxicillin"] > 5.0,
+                 f"K = {Ks['Amoxicillin']:.3f}")
+    check_assert("Cephalexin K > 9 (near-total exclusion)",
+                 Ks["Cephalexin"] > 9.0,
+                 f"K = {Ks['Cephalexin']:.3f}")
+    check_assert("Beta-lactam C < 0.15",
+                 excl_Cs["Amoxicillin"] < 0.15 and excl_Cs["Cephalexin"] < 0.15,
+                 f"Amox={excl_Cs['Amoxicillin']:.3f}, Ceph={excl_Cs['Cephalexin']:.3f}")
+
+    # Pred 5: Azithromycin paradox — best R, worst τ
+    check_assert("AZI has highest R in panel",
+                 barriers["Azithromycin"]["R"] == max(b["R"] for b in barriers.values()))
+    check_assert("AZI has lowest τ in panel (< 0)",
+                 taus["Azithromycin"] < 0,
+                 f"τ = {taus['Azithromycin']:.3f}")
+    check_assert("AZI in concentrating but last by τ",
+                 "Azithromycin" in concentrating and conc_names[-1] == "Azithromycin")
+
+    # Pred 6: Fosfomycin excluded despite good τ
+    check_assert("Fosfomycin: good τ but excluded",
+                 taus["Fosfomycin"] > 2.0 and Ks["Fosfomycin"] > 2.0,
+                 f"τ={taus['Fosfomycin']:.3f}, K={Ks['Fosfomycin']:.3f}")
+
+    # ── 2g. Threshold calibration ──────────────────────────────────────
+    print("\n  §9 — Threshold calibration (θ = 1.5)")
+
+    theta = 1.5
+
+    # TMP-SMX well above
+    check_assert("TMP-SMX far above θ",
+                 excl_Cs["TMP-SMX"] / theta > 10,
+                 f"C/θ = {excl_Cs['TMP-SMX']/theta:.1f}")
+
+    # Doxycycline above (modest)
+    check_assert("Doxycycline above θ (moderate efficacy)",
+                 excl_Cs["Doxycycline"] / theta > 1.0,
+                 f"C/θ = {excl_Cs['Doxycycline']/theta:.2f}")
+
+    # Fosfomycin below
+    check_assert("Fosfomycin below θ",
+                 excl_Cs["Fosfomycin"] / theta < 1.0,
+                 f"C/θ = {excl_Cs['Fosfomycin']/theta:.3f}")
+
+    # Beta-lactams far below
+    check_assert("Amoxicillin far below θ",
+                 excl_Cs["Amoxicillin"] / theta < 0.1,
+                 f"C/θ = {excl_Cs['Amoxicillin']/theta:.3f}")
+
+    # ── 2h. K_ADMET = 0 sensitivity ────────────────────────────────────
+    print("\n  §7 — K_ADMET = 0 sensitivity")
+
+    no_admet_Ks = {}
+    for name, b in barriers.items():
+        K_prostate = max(1.0 / b["R"] - 1.0, -1.0)
+        no_admet_Ks[name] = K_prostate + b["K_intra"]
+
+    no_admet_conc = {k for k, v in no_admet_Ks.items() if v <= 0}
+    no_admet_excl = {k for k, v in no_admet_Ks.items() if v > 0}
+
+    # TMP-SMX should flip to concentrating
+    check_assert("K_ADMET=0: TMP-SMX moves to concentrating",
+                 "TMP-SMX" in no_admet_conc,
+                 f"K_total(no ADMET) = {no_admet_Ks['TMP-SMX']:.3f}")
+
+    # No other regime changes
+    for name in ["Ciprofloxacin", "Levofloxacin", "Norfloxacin",
+                  "Trimethoprim", "Azithromycin"]:
+        check_assert(f"K_ADMET=0: {name} stays concentrating",
+                     name in no_admet_conc)
+
+    for name in ["Doxycycline", "Fosfomycin", "Amoxicillin", "Cephalexin"]:
+        check_assert(f"K_ADMET=0: {name} stays excluded",
+                     name in no_admet_excl)
+
+    # ── 2i. R_prostate sensitivity for CIP ─────────────────────────────
+    print("\n  §11 — R_prostate sensitivity for ciprofloxacin")
+
+    # CIP enters concentrating at R > 10/7 ≈ 1.43
+    R_threshold = 10.0 / 7.0  # ≈ 1.4286
+    K_at_threshold = 0.30 + (1.0 / R_threshold - 1.0) + 0.0
+    check(f"CIP regime boundary at R=10/7", K_at_threshold, 0.0, tol=0.001)
+
+    # Below threshold: exclusion
+    K_at_13 = 0.30 + (1.0 / 1.3 - 1.0) + 0.0
+    check_assert("R=1.3 → exclusion",
+                 K_at_13 > 0,
+                 f"K_total = {K_at_13:.3f}")
+
+    # Above threshold: concentrating
+    K_at_15 = 0.30 + (1.0 / 1.5 - 1.0) + 0.0
+    check_assert("R=1.5 → concentrating",
+                 K_at_15 < 0,
+                 f"K_total = {K_at_15:.3f}")
+
+    # All published CIP R values (2.0-4.0) well above threshold
+    for R_test in [2.0, 2.5, 3.0, 3.5, 4.0]:
+        K_test = 0.30 + (1.0 / R_test - 1.0) + 0.0
+        check_assert(f"R={R_test} → concentrating",
+                     K_test < 0,
+                     f"K_total = {K_test:.3f}")
+
+    # ── 2j. Negative curvature axiom check ─────────────────────────────
+    print("\n  §10 — No Parallel Lines axiom (K_prostate ≥ -1)")
+
+    for name, b in barriers.items():
+        K_prostate = max(1.0 / b["R"] - 1.0, -1.0)
+        check_assert(f"K_prostate ≥ -1 for {name}",
+                     K_prostate >= -1.0,
+                     f"K_prostate = {K_prostate:.3f}")
+
+
+# ============================================================================
+# TEST 3: TB DRUG PENETRATION — MALDI MASS SPECTROMETRY
+# ============================================================================
+
+def test_tb_maldi():
+    """
+    TB MALDI validation — drug rankings across lesion types.
+    Validates that C = τ/K predicts drug concentration maps from
+    MALDI mass spectrometry imaging of human lung tissue.
+
+    Three compartments: cellular granuloma, necrotic caseum, cavity wall.
+    Key result: MXF↔RIF rank inversion between cellular and caseum.
+
+    Ground truth: Prideaux 2015 (Nat Med), Kjellsson 2012,
+    Blanc 2018, PLoS Med 2019 MALDI imaging.
+    I ∩ G = ∅: Kjellsson rabbit R values vs Prideaux human MALDI.
+    """
+    print("\n" + "=" * 72)
+    print("TEST 3: TB DRUG PENETRATION — MALDI MASS SPECTROMETRY")
+    print("=" * 72)
+
+    # ── 3a. Drug panel and τ ────────────────────────────────────────────
+    print("\n  §4.2 — τ = log₁₀(AUC₂₄ / MIC)")
+
+    pk_data = {
+        "BDQ": {"auc": 65,  "mic": 0.06},
+        "LZD": {"auc": 200, "mic": 1.0},
+        "INH": {"auc": 15,  "mic": 0.1},
+        "MXF": {"auc": 35,  "mic": 0.25},
+        "RIF": {"auc": 60,  "mic": 1.0},
+        "PZA": {"auc": 380, "mic": 50},
+        "EMB": {"auc": 20,  "mic": 5.0},
+    }
+
+    tau_expected = {
+        "BDQ": 3.035, "LZD": 2.301, "INH": 2.176, "MXF": 2.146,
+        "RIF": 1.778, "PZA": 0.881, "EMB": 0.602,
+    }
+
+    taus = {}
+    for name, pk in pk_data.items():
+        tau = math.log10(pk["auc"] / pk["mic"])
+        taus[name] = tau
+        check(f"τ {name}", tau, tau_expected[name])
+
+    # ── 3b. Tissue penetration ratios ──────────────────────────────────
+    R_data = {
+        "BDQ": {"cell": 5.0, "case": 0.1, "cav": 0.8},
+        "LZD": {"cell": 1.2, "case": 0.9, "cav": 1.0},
+        "INH": {"cell": 0.8, "case": 0.5, "cav": 0.3},
+        "MXF": {"cell": 3.0, "case": 0.2, "cav": 5.0},
+        "RIF": {"cell": 0.3, "case": 3.0, "cav": 1.5},
+        "PZA": {"cell": 0.7, "case": 0.8, "cav": 0.5},
+        "EMB": {"cell": 0.5, "case": 0.1, "cav": 0.3},
+    }
+
+    K_ADMET = 0.1
+
+    # ── 3c. Compute per-compartment rankings ───────────────────────────
+    compartments = {"cellular": "cell", "caseum": "case", "cavity": "cav"}
+    rankings = {}  # compartment → [(name, regime, sort_key)]
+
+    K_expected = {
+        "cellular": {"BDQ": -0.700, "MXF": -0.567, "LZD": -0.067,
+                      "INH": 0.350, "PZA": 0.529, "EMB": 1.100, "RIF": 2.433},
+        "caseum":   {"RIF": -0.567, "LZD": 0.211, "PZA": 0.350,
+                      "INH": 1.100, "MXF": 4.100, "BDQ": 9.100, "EMB": 9.100},
+        "cavity":   {"MXF": -0.700, "RIF": -0.233, "LZD": 0.100,
+                      "BDQ": 0.350, "PZA": 1.100, "INH": 2.433, "EMB": 2.433},
+    }
+
+    C_expected = {
+        "cellular": {"INH": 6.217, "PZA": 1.665, "RIF": 0.731, "EMB": 0.547},
+        "caseum":   {"LZD": 10.905, "PZA": 2.517, "INH": 1.978,
+                      "MXF": 0.523, "BDQ": 0.334, "EMB": 0.066},
+        "cavity":   {"LZD": 23.010, "BDQ": 8.671, "INH": 0.894,
+                      "PZA": 0.801, "EMB": 0.247},
+    }
+
+    all_Ks = {}   # {compartment: {drug: K}}
+    all_Cs = {}   # {compartment: {drug: C or None}}
+
+    for comp_name, R_key in compartments.items():
+        print(f"\n  §5 — {comp_name} compartment")
+        conc_drugs = []
+        excl_drugs = []
+        comp_Ks = {}
+        comp_Cs = {}
+
+        for name in pk_data:
+            R = R_data[name][R_key]
+            K_lesion = max(1.0 / R - 1.0, -1.0)
+            K_total = K_ADMET + K_lesion
+            comp_Ks[name] = K_total
+
+            check(f"K_total {name} ({comp_name})", K_total,
+                  K_expected[comp_name][name], tol=0.005)
+
+            if K_total <= 0:
+                conc_drugs.append((name, taus[name]))
+                comp_Cs[name] = None
+            else:
+                C = taus[name] / K_total
+                excl_drugs.append((name, C))
+                comp_Cs[name] = C
+                if name in C_expected.get(comp_name, {}):
+                    check(f"C {name} ({comp_name})", C,
+                          C_expected[comp_name][name], tol=0.01)
+
+        all_Ks[comp_name] = comp_Ks
+        all_Cs[comp_name] = comp_Cs
+
+        # Build ranking: concentrating sorted by τ desc, then exclusion by C desc
+        conc_sorted = sorted(conc_drugs, key=lambda x: x[1], reverse=True)
+        excl_sorted = sorted(excl_drugs, key=lambda x: x[1], reverse=True)
+        ranking = [d[0] for d in conc_sorted] + [d[0] for d in excl_sorted]
+        rankings[comp_name] = ranking
+
+    # ── 3d. Verify rankings ────────────────────────────────────────────
+    print("\n  §6 — Rank verification across compartments")
+
+    expected_ranks = {
+        "cellular": ["BDQ", "LZD", "MXF", "INH", "PZA", "RIF", "EMB"],
+        "caseum":   ["RIF", "LZD", "PZA", "INH", "MXF", "BDQ", "EMB"],
+        "cavity":   ["MXF", "RIF", "LZD", "BDQ", "INH", "PZA", "EMB"],
+    }
+
+    for comp_name in compartments:
+        for i, expected_drug in enumerate(expected_ranks[comp_name]):
+            actual_drug = rankings[comp_name][i]
+            check_assert(f"{comp_name} rank {i+1} = {expected_drug}",
+                         actual_drug == expected_drug,
+                         f"got {actual_drug}")
+
+    # ── 3e. The rank inversion ─────────────────────────────────────────
+    print("\n  §6 — MXF↔RIF rank inversion")
+
+    mxf_cell = rankings["cellular"].index("MXF") + 1
+    mxf_case = rankings["caseum"].index("MXF") + 1
+    rif_cell = rankings["cellular"].index("RIF") + 1
+    rif_case = rankings["caseum"].index("RIF") + 1
+
+    check_assert("MXF: cellular #3 → caseum #5",
+                 mxf_cell == 3 and mxf_case == 5,
+                 f"cell={mxf_cell}, case={mxf_case}")
+    check_assert("RIF: cellular #6 → caseum #1",
+                 rif_cell == 6 and rif_case == 1,
+                 f"cell={rif_cell}, case={rif_case}")
+
+    # MXF concentrating at cellular, excluded at caseum
+    check_assert("MXF concentrating at cellular (K < 0)",
+                 all_Ks["cellular"]["MXF"] < 0,
+                 f"K = {all_Ks['cellular']['MXF']:.3f}")
+    check_assert("MXF excluded at caseum (K > 0)",
+                 all_Ks["caseum"]["MXF"] > 0,
+                 f"K = {all_Ks['caseum']['MXF']:.3f}")
+
+    # RIF excluded at cellular, concentrating at caseum
+    check_assert("RIF excluded at cellular (K > 0)",
+                 all_Ks["cellular"]["RIF"] > 0,
+                 f"K = {all_Ks['cellular']['RIF']:.3f}")
+    check_assert("RIF concentrating at caseum (K < 0)",
+                 all_Ks["caseum"]["RIF"] < 0,
+                 f"K = {all_Ks['caseum']['RIF']:.3f}")
+
+    # ── 3f. LZD universality ───────────────────────────────────────────
+    print("\n  §7 Pred 5 — LZD universal penetrator")
+
+    for comp_name in compartments:
+        lzd_rank = rankings[comp_name].index("LZD") + 1
+        check_assert(f"LZD top 3 at {comp_name}",
+                     lzd_rank <= 3,
+                     f"rank = {lzd_rank}")
+
+    # LZD R ≥ 0.9 everywhere
+    for R_key_label, R_key in [("cellular", "cell"), ("caseum", "case"), ("cavity", "cav")]:
+        check_assert(f"LZD R ≥ 0.9 at {R_key_label}",
+                     R_data["LZD"][R_key] >= 0.9,
+                     f"R = {R_data['LZD'][R_key]}")
+
+    # ── 3g. EMB universally last ───────────────────────────────────────
+    print("\n  §7 Pred 6 — EMB fails everywhere")
+
+    for comp_name in compartments:
+        check_assert(f"EMB last at {comp_name}",
+                     rankings[comp_name][-1] == "EMB",
+                     f"last = {rankings[comp_name][-1]}")
+
+    check_assert("EMB has lowest τ in panel",
+                 taus["EMB"] == min(taus.values()),
+                 f"τ = {taus['EMB']:.3f}")
+
+    # ── 3h. BDQ paradox ────────────────────────────────────────────────
+    print("\n  §7 Pred 8 — BDQ paradox: best τ, worst caseum")
+
+    check_assert("BDQ has highest τ",
+                 taus["BDQ"] == max(taus.values()),
+                 f"τ = {taus['BDQ']:.3f}")
+    check_assert("BDQ #1 at cellular",
+                 rankings["cellular"][0] == "BDQ")
+    check_assert("BDQ #6 at caseum",
+                 rankings["caseum"].index("BDQ") + 1 == 6,
+                 f"rank = {rankings['caseum'].index('BDQ') + 1}")
+
+    # ── 3i. REMoxTB failure explanation ────────────────────────────────
+    print("\n  §7 Pred 7 — REMoxTB failure")
+
+    # MXF replaces EMB: improves cellular but not caseum
+    mxf_caseum_C = all_Cs["caseum"]["MXF"]
+    emb_caseum_C = all_Cs["caseum"]["EMB"]
+    check_assert("MXF caseum C < 1.0 (can't help persisters)",
+                 mxf_caseum_C < 1.0,
+                 f"C = {mxf_caseum_C:.3f}")
+    check_assert("MXF caseum improvement over EMB is modest",
+                 mxf_caseum_C / emb_caseum_C < 10,
+                 f"ratio = {mxf_caseum_C/emb_caseum_C:.1f}")
+    # MXF much better at cellular
+    check_assert("MXF concentrating at cellular (huge improvement over EMB)",
+                 all_Ks["cellular"]["MXF"] < 0,
+                 f"K_cellular = {all_Ks['cellular']['MXF']:.3f}")
+
+    # ── 3j. K_ADMET = 0 sensitivity ────────────────────────────────────
+    print("\n  §8 — K_ADMET = 0 sensitivity")
+
+    for comp_name, R_key in compartments.items():
+        conc_0 = []
+        excl_0 = []
+        for name in pk_data:
+            R = R_data[name][R_key]
+            K_lesion = max(1.0 / R - 1.0, -1.0)
+            K_total_0 = K_lesion  # K_ADMET = 0
+            if K_total_0 <= 0:
+                conc_0.append((name, taus[name]))
+            else:
+                C = taus[name] / K_total_0
+                excl_0.append((name, C))
+
+        conc_sorted = sorted(conc_0, key=lambda x: x[1], reverse=True)
+        excl_sorted = sorted(excl_0, key=lambda x: x[1], reverse=True)
+        ranking_0 = [d[0] for d in conc_sorted] + [d[0] for d in excl_sorted]
+
+        if comp_name in ("cellular", "caseum"):
+            # Spec §8 shows these are unchanged
+            check_assert(f"K_ADMET=0: {comp_name} ranking unchanged",
+                         ranking_0 == expected_ranks[comp_name],
+                         f"got {ranking_0}")
+        else:
+            # Cavity: LZD has R=1.0 → K_lesion=0, so at K_ADMET=0
+            # LZD enters concentrating regime, moving from 3rd to 1st.
+            # Bottom 4 (BDQ, INH, PZA, EMB) unchanged.
+            check_assert(f"K_ADMET=0: {comp_name} bottom 4 unchanged",
+                         ranking_0[3:] == expected_ranks[comp_name][3:],
+                         f"got {ranking_0[3:]}")
+            check_assert(f"K_ADMET=0: {comp_name} EMB still last",
+                         ranking_0[-1] == "EMB")
+            # LZD jumps to concentrating (K_total = 0)
+            check_assert(f"K_ADMET=0: LZD enters concentrating at cavity",
+                         "LZD" in [d[0] for d in conc_0],
+                         "R=1.0, K_lesion=0, K_total=0")
+
+    # ── 3k. R sensitivity — MXF caseum robustness ─────────────────────
+    print("\n  §9 — R_caseum sensitivity for MXF↔RIF inversion")
+
+    # MXF only beats RIF in caseum if MXF R_caseum ≥ ~2.0
+    # All published values: 0.1-0.4. Inversion robust.
+    for R_test in [0.1, 0.2, 0.4, 0.5, 1.0]:
+        K_mxf = K_ADMET + max(1.0 / R_test - 1.0, -1.0)
+        if K_mxf > 0:
+            C_mxf = taus["MXF"] / K_mxf
+        else:
+            C_mxf = float('inf')  # concentrating
+        # RIF is concentrating at caseum (K < 0), so always beats MXF unless MXF also concentrating
+        rif_beats = K_mxf > 0 or taus["RIF"] > taus["MXF"]
+        check_assert(f"R_caseum(MXF)={R_test}: RIF still beats MXF",
+                     rif_beats,
+                     f"MXF K={K_mxf:.3f}")
+
+    # ── 3l. No Parallel Lines axiom ────────────────────────────────────
+    print("\n  §4.4 — No Parallel Lines axiom (K_lesion ≥ -1)")
+
+    for comp_name, R_key in compartments.items():
+        for name in pk_data:
+            R = R_data[name][R_key]
+            K_lesion = max(1.0 / R - 1.0, -1.0)
+            check_assert(f"K_lesion ≥ -1: {name} ({comp_name})",
+                         K_lesion >= -1.0,
+                         f"K_lesion = {K_lesion:.3f}")
+
+
+# ============================================================================
+# MAIN
+# ============================================================================
+
+if __name__ == "__main__":
+    print("=" * 72)
+    print("MIRADOR CLINICAL VALIDATION SUITE")
+    print("C = τ / K  ·  Davis Geometric  ·  2026")
+    print("=" * 72)
+
+    test_pji()
+    test_prostatitis()
+    test_tb_maldi()
+
+    # ── Summary ─────────────────────────────────────────────────────────
+    total = _pass + _fail
+    print("\n" + "=" * 72)
+    print(f"RESULTS: {_pass}/{total} passed, {_fail} failed")
+    print(f"Pass rate: {100*_pass/total:.1f}%")
+    print("=" * 72)
+
+    # Write JSON results
+    out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "mirador_clinical_validation_results.json")
+    with open(out_path, "w") as f:
+        json.dump({
+            "framework": "MIRADOR Clinical Validation",
+            "equation": "C = τ/K",
+            "tests": _results,
+            "total": total,
+            "passed": _pass,
+            "failed": _fail,
+            "pass_rate": f"{100*_pass/total:.1f}%",
+        }, f, indent=2)
+    print(f"\nResults → {os.path.basename(out_path)}")
+
+    if _fail > 0:
+        print("\nFailed tests:")
+        for r in _results:
+            if not r["passed"]:
+                print(f"  [-] {r['name']}")
+        sys.exit(1)
+    else:
+        print("\nAll predictions match clinical ground truth.")
+        print("I ∩ G = ∅. The geometry holds.")

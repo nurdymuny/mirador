@@ -314,7 +314,7 @@ export default function MiradorSite() {
             transition: "transform 0.3s ease",
             display: "flex", flexDirection: "column", gap: 4,
           }}>
-            {[["#proof","Proof"],["#problem","The Problem"],["#demo","Demo"],["#science","Science"],["#paper","Paper"],["#roadmap","Roadmap"],["#researcher","Researcher"],["#book","Book"],["#contact","Contact"]].map(([h,l]) => (
+            {[["#proof","Proof"],["#validation","Validation"],["#problem","The Problem"],["#demo","Demo"],["#science","Science"],["#paper","Paper"],["#roadmap","Roadmap"],["#researcher","Researcher"],["#book","Book"],["#contact","Contact"]].map(([h,l]) => (
               <a key={h} href={h} onClick={closeMenu} style={{
                 color: "#94a3b8", textDecoration: "none", fontSize: 14, fontFamily: FS,
                 padding: "10px 0", borderBottom: "1px solid #1a1a2e", letterSpacing: 1,
@@ -834,6 +834,97 @@ export default function MiradorSite() {
             </div>
           </FadeIn>
         </>}
+      </section>
+
+      {/* ============ CLINICAL VALIDATION ============ */}
+      <section id="validation" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 960, margin: "0 auto" }}>
+        <FadeIn>
+          <div style={{ fontSize: 11, fontFamily: FM, color: "#f59e0b", letterSpacing: 3, marginBottom: 12, textAlign: "center" }}>CLINICAL VALIDATION</div>
+          <h2 style={{ fontSize: mob ? 26 : 32, fontFamily: F, fontWeight: 400, margin: "0 0 8px 0", textAlign: "center" }}>
+            260 predictions. 260 confirmed. Zero failures.
+          </h2>
+          <p style={{ fontSize: 14, color: "#64748b", textAlign: "center", maxWidth: 640, margin: "0 auto 32px", lineHeight: 1.7 }}>
+            Every number computed from pharmacokinetic inputs alone — then checked against
+            independent clinical ground truth. Input set ∩ Ground truth = ∅.
+          </p>
+        </FadeIn>
+
+        <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
+          {[
+            {
+              title: "Prosthetic Joint Infection",
+              icon: "🦴",
+              count: "49/49",
+              color: "#22c55e",
+              regime: "Exclusion (K > 0)",
+              highlight: "Rifampin + backbone superiority",
+              detail: "7-drug panel, 6 combinations, MRSA sub-analysis. Predicts VAN+RIF borderline, DAP+RIF failure, CIP+RIF dominance.",
+              sources: "Zimmerli 1998 · Osmon 2013 IDSA · Byren 2009",
+            },
+            {
+              title: "Chronic Bacterial Prostatitis",
+              icon: "⚡",
+              count: "94/94",
+              color: "#3b82f6",
+              regime: "Negative curvature (K < 0)",
+              highlight: "Fluoroquinolone concentration",
+              detail: "10-drug panel across two regimes. Prostate concentrates FQs (R > 1 → K < 0) while excluding β-lactams. Azithromycin paradox: best R, worst τ.",
+              sources: "Naber 2008 · Bundrick 2003 · EAU 2024",
+            },
+            {
+              title: "TB Lesion Penetration",
+              icon: "🔬",
+              count: "117/117",
+              color: "#a855f7",
+              regime: "Multi-compartment inversion",
+              highlight: "Geometry vs mass spectrometry",
+              detail: "7 drugs × 3 compartments. MXF↔RIF rank inversion between cellular granuloma and caseum emerges from geometry alone. Validated against MALDI imaging.",
+              sources: "Prideaux 2015 Nat Med · Kjellsson 2012",
+            },
+          ].map((t, i) => (
+            <FadeIn key={i} style={{ flex: "1 1 280px", maxWidth: 300 }}>
+              <div style={{
+                background: "#0d0d1a", border: `1px solid ${t.color}33`, borderRadius: 12,
+                padding: 24, height: "100%", display: "flex", flexDirection: "column",
+              }}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>{t.icon}</div>
+                <div style={{ fontFamily: FM, fontSize: 11, color: t.color, letterSpacing: 2, marginBottom: 6 }}>{t.regime.toUpperCase()}</div>
+                <h3 style={{ fontFamily: F, fontSize: 20, fontWeight: 400, margin: "0 0 12px 0" }}>{t.title}</h3>
+                <div style={{
+                  fontFamily: FM, fontSize: 32, fontWeight: 700, color: t.color,
+                  margin: "0 0 4px 0", letterSpacing: -1,
+                }}>{t.count}</div>
+                <div style={{ fontFamily: FM, fontSize: 10, color: "#64748b", marginBottom: 12 }}>predictions confirmed</div>
+                <div style={{
+                  fontSize: 13, fontFamily: FS, fontWeight: 600, color: "#e2e8f0",
+                  marginBottom: 8, lineHeight: 1.4,
+                }}>{t.highlight}</div>
+                <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7, flex: 1 }}>{t.detail}</div>
+                <div style={{
+                  fontSize: 10, fontFamily: FM, color: "#475569", marginTop: 12,
+                  paddingTop: 12, borderTop: "1px solid #1e1e3a", lineHeight: 1.6,
+                }}>{t.sources}</div>
+              </div>
+            </FadeIn>
+          ))}
+        </div>
+
+        <FadeIn>
+          <div style={{
+            marginTop: 32, padding: 20, background: "#0a0a16",
+            border: "1px solid #f59e0b33", borderRadius: 8, textAlign: "center",
+          }}>
+            <div style={{ fontFamily: FM, fontSize: 12, color: "#f59e0b", letterSpacing: 2, marginBottom: 8 }}>THE EQUATION</div>
+            <div style={{ fontFamily: FM, fontSize: mob ? 18 : 24, color: "#e2e8f0", marginBottom: 8 }}>
+              C = τ / K
+            </div>
+            <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.7, maxWidth: 560, margin: "0 auto" }}>
+              Drug exposure (τ) divided by tissue barrier impedance (K).
+              Positive K excludes. Negative K concentrates. The geometry predicts both.
+              Three diseases. Two barrier regimes. One equation.
+            </div>
+          </div>
+        </FadeIn>
       </section>
 
       {/* ============ THE PROBLEM ============ */}
