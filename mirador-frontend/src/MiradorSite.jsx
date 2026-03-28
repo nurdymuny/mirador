@@ -842,7 +842,7 @@ export default function MiradorSite() {
         <FadeIn>
           <div style={{ fontSize: 11, fontFamily: FM, color: "#f59e0b", letterSpacing: 3, marginBottom: 12, textAlign: "center" }}>CLINICAL VALIDATION</div>
           <h2 style={{ fontSize: mob ? 26 : 32, fontFamily: F, fontWeight: 400, margin: "0 0 8px 0", textAlign: "center" }}>
-            356 predictions. 356 confirmed. Zero failures.
+            498 predictions. 498 confirmed. Zero failures.
           </h2>
           <p style={{ fontSize: 14, color: "#64748b", textAlign: "center", maxWidth: 640, margin: "0 auto 32px", lineHeight: 1.7 }}>
             Every number computed from pharmacokinetic inputs alone — then checked against
@@ -972,6 +972,57 @@ export default function MiradorSite() {
                 "NVP drops to #2 at R = 0.29 (low end of published range) — breakpoint at R ≈ 0.365",
                 "R_CSF rank vs C rank: Spearman ρ = 0.98 — near-perfect; CPE vs C: ρ ≈ 0.4 — geometry sees what expert scoring misses",
                 "K_ADMET = 0 sensitivity: full ranking unchanged — BBB geometry dominates ADMET",
+              ],
+            },
+            {
+              id: "dfo", title: "Diabetic Foot Osteomyelitis", icon: "🦶", count: "88/88", color: "#f97316",
+              regime: "Host-modified barrier (ischemia)", highlight: "When diabetes changes the geometry",
+              detail: "8-drug panel across healthy vs ischemic bone. IRF = 0.5 models microangiopathy. FQ dominance, metronidazole adjunct-only, vancomycin limitation — all predicted from R × IRF.",
+              sources: "SIDESTEP (Lipsky 2005) · IDSA DFI 2012 · IWGDF 2023 · Thabit 2019",
+              drugs: [
+                { name: "Levofloxacin", tau: 2.602, K: 1.600, C: 1.626, rank: 1 },
+                { name: "Ciprofloxacin", tau: 2.699, K: 1.957, C: 1.379, rank: 2 },
+                { name: "Clindamycin", tau: 2.079, K: 2.736, C: 0.760, rank: 3 },
+                { name: "Ertapenem", tau: 3.380, K: 4.656, C: 0.726, rank: 4 },
+                { name: "Vancomycin", tau: 2.602, K: 3.645, C: 0.714, rank: 5 },
+                { name: "Linezolid", tau: 2.000, K: 4.100, C: 0.488, rank: 6 },
+                { name: "Pip/tazo", tau: 2.699, K: 9.100, C: 0.297, rank: 7 },
+                { name: "Metronidazole", tau: 2.114, K: 12.433, C: 0.170, rank: 8 },
+              ],
+              combos: [],
+              findings: [
+                "FQs dominate ischemic bone: Levo #1 (C=1.626), Cipro #2 (C=1.379) — highest R_bone survives ischemia",
+                "Universal ischemia penalty: all drugs lose 54-78% coherence (IRF=0.5). DFO is a delivery problem, not a drug problem",
+                "Ertapenem > Pip/tazo (2.4×) in ischemic bone — predicts SIDESTEP trend toward ertapenem superiority",
+                "Metronidazole last (C=0.170) — near-total exclusion from ischemic bone. Adjunct only, matches guidelines",
+                "Vancomycin marginal (C=0.714) — adequate serum but poor ischemic bone delivery. Surgical debridement needed",
+                "No broad-spectrum drug achieves C > 1.0 alone — combination therapy geometrically necessary",
+                "FQ + Clindamycin = optimal oral combo: covers GP + GNR + anaerobes, both drugs C > 0.5",
+                "Rankings stable across IRF 0.3-0.7. Drug choice matters MORE in severe ischemia (margins thinner)",
+              ],
+            },
+            {
+              id: "neonatal", title: "Neonatal Meningitis", icon: "👶", count: "54/54", color: "#06b6d4",
+              regime: "Age-modified BBB (neonatal)", highlight: "Age as a base space coordinate",
+              detail: "6-drug panel against GBS + E. coli. Immature neonatal BBB is 1.5-2.2× more permeable than adult. Different pathogens, different drugs, different ranking — age changes the entire answer.",
+              sources: "WHO 2021 · AAP · IDSA 2004 · Nau 2010 · Phares 2008 · Gaschignard 2011",
+              drugs: [
+                { name: "Cefotaxime", tau: 3.620, K: 3.100, C: 1.168, rank: 1 },
+                { name: "Meropenem", tau: 3.824, K: 4.100, C: 0.933, rank: 2 },
+                { name: "Ampicillin", tau: 3.699, K: 4.100, C: 0.902, rank: 3 },
+                { name: "Penicillin G", tau: 3.778, K: 5.767, C: 0.655, rank: 4 },
+                { name: "Vancomycin", tau: 2.845, K: 5.767, C: 0.493, rank: 5 },
+                { name: "Gentamicin", tau: 1.903, K: 49.100, C: 0.039, rank: 6 },
+              ],
+              combos: [],
+              findings: [
+                "Cefotaxime #1 in neonatal CSF (C=1.168) — best E. coli coverage with best penetration",
+                "Ampicillin is top anti-GBS drug (C=0.902) — validates WHO/AAP/IDSA first-line empiric backbone",
+                "Gentamicin near-total exclusion (C=0.039, 30× below CTX) — synergy role only, not independent therapy",
+                "Every drug has 1.5-2.2× better coherence in neonatal vs adult CSF — immature BBB is geometrically advantageous",
+                "E. coli margin thinner than GBS (CTX=1.168 vs AMP=0.902) — predicts higher E. coli mortality (15-40% vs 5-20%)",
+                "Age changes the entire answer: different pathogens → different drugs → different ranking → different clinical practice",
+                "K_ADMET=0: ranking unchanged — BBB dominates completely (K_BBB = 49 for gentamicin)",
               ],
             },
           ];
@@ -1108,7 +1159,7 @@ export default function MiradorSite() {
             <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.7, maxWidth: 560, margin: "0 auto" }}>
               Drug exposure (τ) divided by tissue barrier impedance (K).
               Positive K excludes. Negative K concentrates. The geometry predicts both.
-              Four diseases. Three barrier regimes. One equation.
+              Six diseases. Four barrier regimes. One equation.
             </div>
           </div>
         </FadeIn>

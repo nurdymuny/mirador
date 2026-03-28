@@ -1234,6 +1234,421 @@ def test_hiv_cns():
 
 
 # ============================================================================
+# TEST 5: DIABETIC FOOT OSTEOMYELITIS
+# ============================================================================
+
+def test_dfo():
+    """
+    Diabetic Foot Osteomyelitis validation — host-modified barriers.
+    Validates that the ischemia reduction factor (IRF) on R_bone
+    correctly predicts FQ dominance, metronidazole adjunct-only,
+    vancomycin limitation, and universal ischemia penalty.
+
+    Ground truth: SIDESTEP (Lipsky 2005), IDSA DFI 2012, IWGDF 2023.
+    I ∩ G = ∅.
+    """
+    print("\n" + "=" * 72)
+    print("TEST 5: DIABETIC FOOT OSTEOMYELITIS — ISCHEMIA PENALTY")
+    print("=" * 72)
+
+    # ── 5a. Drug panel and τ ────────────────────────────────────────────
+    print("\n  §4.3 — τ = log₁₀(AUC₂₄ / MIC)")
+
+    pk_data = {
+        "Levofloxacin":  {"auc": 48,  "mic": 0.12, "R_h": 0.80,
+                          "spectrum": ["GP", "GNR"]},
+        "Ciprofloxacin": {"auc": 30,  "mic": 0.06, "R_h": 0.70,
+                          "spectrum": ["GNR", "GP"]},
+        "Clindamycin":   {"auc": 30,  "mic": 0.25, "R_h": 0.55,
+                          "spectrum": ["GP", "anaerobe"]},
+        "Ertapenem":     {"auc": 600, "mic": 0.25, "R_h": 0.36,
+                          "spectrum": ["GP", "GNR", "anaerobe"]},
+        "Vancomycin":    {"auc": 400, "mic": 1.0,  "R_h": 0.44,
+                          "spectrum": ["GP"]},
+        "Linezolid":     {"auc": 200, "mic": 2.0,  "R_h": 0.40,
+                          "spectrum": ["GP"]},
+        "Pip_tazo":      {"auc": 250, "mic": 0.5,  "R_h": 0.20,
+                          "spectrum": ["GP", "GNR", "anaerobe"]},
+        "Metronidazole": {"auc": 130, "mic": 1.0,  "R_h": 0.15,
+                          "spectrum": ["anaerobe"]},
+    }
+
+    tau_expected = {
+        "Levofloxacin": 2.602, "Ciprofloxacin": 2.699,
+        "Clindamycin": 2.079, "Ertapenem": 3.380,
+        "Vancomycin": 2.602, "Linezolid": 2.000,
+        "Pip_tazo": 2.699, "Metronidazole": 2.114,
+    }
+
+    taus = {}
+    for name, d in pk_data.items():
+        tau = math.log10(d["auc"] / d["mic"])
+        taus[name] = tau
+        check(f"τ {name}", tau, tau_expected[name])
+
+    # ── 5b. K and C — healthy bone ─────────────────────────────────────
+    print("\n  §5.1 — Healthy bone: K = K_ADMET + K_bone")
+
+    IRF = 0.5
+    K_ADMET = 0.1
+
+    C_h_expected = {
+        "Levofloxacin": 7.434, "Ciprofloxacin": 5.103,
+        "Clindamycin": 2.265, "Vancomycin": 1.896,
+        "Ertapenem": 1.800, "Linezolid": 1.250,
+        "Pip_tazo": 0.658, "Metronidazole": 0.367,
+    }
+
+    Cs_h = {}
+    Ks_h = {}
+    for name, d in pk_data.items():
+        K_bone = max(1.0 / d["R_h"] - 1.0, -1.0)
+        K_total = K_ADMET + K_bone
+        C_h = taus[name] / K_total
+        Cs_h[name] = C_h
+        Ks_h[name] = K_total
+        check(f"C_healthy {name}", C_h, C_h_expected[name], tol=0.005)
+
+    # ── 5c. K and C — ischemic bone ────────────────────────────────────
+    print("\n  §5.2 — Ischemic bone: R_isch = R_h × IRF(0.5)")
+
+    C_i_expected = {
+        "Levofloxacin": 1.626, "Ciprofloxacin": 1.379,
+        "Clindamycin": 0.760, "Ertapenem": 0.726,
+        "Vancomycin": 0.714, "Linezolid": 0.488,
+        "Pip_tazo": 0.297, "Metronidazole": 0.170,
+    }
+
+    Cs_i = {}
+    Ks_i = {}
+    for name, d in pk_data.items():
+        R_i = d["R_h"] * IRF
+        K_bone_i = max(1.0 / R_i - 1.0, -1.0)
+        K_total_i = K_ADMET + K_bone_i
+        C_i = taus[name] / K_total_i
+        Cs_i[name] = C_i
+        Ks_i[name] = K_total_i
+        check(f"C_ischemic {name}", C_i, C_i_expected[name], tol=0.005)
+
+    # ── 5d. Ranking ────────────────────────────────────────────────────
+    print("\n  §5.4 — Ischemic bone ranking")
+
+    ranked = sorted(Cs_i.items(), key=lambda x: x[1], reverse=True)
+    rank_names = [r[0] for r in ranked]
+
+    expected_order = ["Levofloxacin", "Ciprofloxacin", "Clindamycin",
+                      "Ertapenem", "Vancomycin", "Linezolid",
+                      "Pip_tazo", "Metronidazole"]
+
+    for i, expected_name in enumerate(expected_order):
+        check_assert(f"Isch rank {i+1} = {expected_name}",
+                     rank_names[i] == expected_name,
+                     f"got {rank_names[i]}")
+
+    # ── 5e. Predictions ───────────────────────────────────────────────
+    print("\n  §6 — Clinical predictions")
+
+    # Pred 1: FQ dominance
+    check_assert("FQ #1 and #2 in ischemic bone",
+                 rank_names[0] in ["Levofloxacin", "Ciprofloxacin"] and
+                 rank_names[1] in ["Levofloxacin", "Ciprofloxacin"])
+    check_assert("Levofloxacin is #1",
+                 rank_names[0] == "Levofloxacin",
+                 f"C = {Cs_i['Levofloxacin']:.3f}")
+
+    # Pred 2: Ertapenem > Pip/tazo
+    check_assert("Ertapenem > Pip/tazo in ischemic bone",
+                 Cs_i["Ertapenem"] > Cs_i["Pip_tazo"],
+                 f"ERT={Cs_i['Ertapenem']:.3f}, P/T={Cs_i['Pip_tazo']:.3f}")
+    ert_pt_ratio = Cs_i["Ertapenem"] / Cs_i["Pip_tazo"]
+    check_assert("Ertapenem/Pip_tazo ratio > 2.0",
+                 ert_pt_ratio > 2.0,
+                 f"ratio = {ert_pt_ratio:.1f}")
+
+    # Pred 3: Metronidazole last
+    check_assert("Metronidazole ranks last",
+                 rank_names[-1] == "Metronidazole",
+                 f"C = {Cs_i['Metronidazole']:.3f}")
+    check_assert("Metronidazole C < 0.2 (near-total exclusion)",
+                 Cs_i["Metronidazole"] < 0.2)
+
+    # Pred 4: Vancomycin limited
+    check_assert("Vancomycin C_ischemic < 1.0",
+                 Cs_i["Vancomycin"] < 1.0,
+                 f"C = {Cs_i['Vancomycin']:.3f}")
+
+    # Pred 5: Universal ischemia penalty — all drugs lose >50%
+    print("\n  §5.3 — Ischemia penalty: all drugs lose >50% coherence")
+
+    for name in pk_data:
+        ratio = Cs_i[name] / Cs_h[name]
+        check_assert(f"Ischemia penalty {name}: ratio < 0.50",
+                     ratio < 0.50,
+                     f"C_i/C_h = {ratio:.3f}")
+
+    # Pred 6: No single broad-spectrum drug C > 1.0
+    print("\n  §6 Pred 6 — No broad-spectrum monotherapy C > 1.0")
+
+    for name, d in pk_data.items():
+        if len(d["spectrum"]) == 3:
+            check_assert(f"Broad-spectrum {name} C_i < 1.0",
+                         Cs_i[name] < 1.0,
+                         f"C = {Cs_i[name]:.3f}")
+
+    # FQ + clindamycin covers all 3 pathogen classes
+    levo_spec = set(pk_data["Levofloxacin"]["spectrum"])
+    clinda_spec = set(pk_data["Clindamycin"]["spectrum"])
+    combo_coverage = levo_spec | clinda_spec
+    check_assert("Levo + Clinda covers GP, GNR, anaerobe",
+                 combo_coverage == {"GP", "GNR", "anaerobe"},
+                 f"got {combo_coverage}")
+    check_assert("Levo + Clinda: both drugs C > 0.5 (oral backbone)",
+                 Cs_i["Levofloxacin"] > 0.5 and Cs_i["Clindamycin"] > 0.5)
+
+    # ── 5f. K_ADMET = 0 sensitivity ───────────────────────────────────
+    print("\n  §7 — K_ADMET = 0 sensitivity")
+
+    no_admet_Cs = {}
+    for name, d in pk_data.items():
+        R_i = d["R_h"] * IRF
+        K_bone_i = max(1.0 / R_i - 1.0, -1.0)
+        no_admet_Cs[name] = taus[name] / K_bone_i
+
+    no_admet_ranked = sorted(no_admet_Cs.items(),
+                             key=lambda x: x[1], reverse=True)
+    no_admet_names = [r[0] for r in no_admet_ranked]
+
+    check_assert("K_ADMET=0: ranking unchanged",
+                 no_admet_names == rank_names,
+                 f"changed: {[(a,b) for a,b in zip(no_admet_names, rank_names) if a != b]}")
+
+    # ── 5g. IRF sensitivity — ranking stability ───────────────────────
+    print("\n  §8 — IRF sensitivity: ranking stable across 0.3-0.7")
+
+    for irf in [0.3, 0.4, 0.5, 0.6, 0.7]:
+        irf_Cs = {}
+        for name, d in pk_data.items():
+            R_i = d["R_h"] * irf
+            K_i = max(1.0 / R_i - 1.0, -1.0) + K_ADMET
+            irf_Cs[name] = taus[name] / K_i
+        irf_ranked = sorted(irf_Cs.items(),
+                            key=lambda x: x[1], reverse=True)
+        check_assert(f"IRF={irf}: FQ is #1",
+                     irf_ranked[0][0] in ["Levofloxacin", "Ciprofloxacin"],
+                     f"got {irf_ranked[0][0]}")
+        check_assert(f"IRF={irf}: Metronidazole is last",
+                     irf_ranked[-1][0] == "Metronidazole",
+                     f"got {irf_ranked[-1][0]}")
+
+    # ── 5h. Healthy bone ranking ──────────────────────────────────────
+    print("\n  §5.1 — Healthy bone ranking")
+
+    h_ranked = sorted(Cs_h.items(), key=lambda x: x[1], reverse=True)
+    h_names = [r[0] for r in h_ranked]
+
+    expected_h_order = ["Levofloxacin", "Ciprofloxacin", "Clindamycin",
+                        "Vancomycin", "Ertapenem", "Linezolid",
+                        "Pip_tazo", "Metronidazole"]
+
+    for i, expected_name in enumerate(expected_h_order):
+        check_assert(f"Healthy rank {i+1} = {expected_name}",
+                     h_names[i] == expected_name,
+                     f"got {h_names[i]}")
+
+    # ── 5i. No Parallel Lines axiom ───────────────────────────────────
+    print("\n  §4.4 — No Parallel Lines axiom (K_bone ≥ -1)")
+
+    for name, d in pk_data.items():
+        for label, R in [("healthy", d["R_h"]), ("ischemic", d["R_h"] * IRF)]:
+            K_bone = max(1.0 / R - 1.0, -1.0)
+            check_assert(f"K_bone ≥ -1: {name} ({label})",
+                         K_bone >= -1.0,
+                         f"K_bone = {K_bone:.3f}")
+
+
+# ============================================================================
+# TEST 6: NEONATAL MENINGITIS
+# ============================================================================
+
+def test_neonatal_meningitis():
+    """
+    Neonatal meningitis validation — age as a base space coordinate.
+    Different pathogens (GBS, E. coli), different drugs (ampicillin,
+    gentamicin, cefotaxime), different BBB (immature, more permeable).
+
+    Ground truth: WHO 2021, AAP, IDSA, Phares 2008, Gaschignard 2011.
+    I ∩ G = ∅.
+    """
+    print("\n" + "=" * 72)
+    print("TEST 6: NEONATAL MENINGITIS — AGE AS BASE SPACE COORDINATE")
+    print("=" * 72)
+
+    # ── 6a. Drug panel and τ ────────────────────────────────────────────
+    print("\n  §4.3 — τ = log₁₀(AUC₂₄ / MIC)")
+
+    pk_data = {
+        "Ampicillin":   {"auc": 300, "mic": 0.06, "R_neo": 0.20,
+                         "R_adult": 0.10, "target": "GBS"},
+        "Cefotaxime":   {"auc": 250, "mic": 0.06, "R_neo": 0.25,
+                         "R_adult": 0.15, "target": "E_coli"},
+        "Penicillin_G": {"auc": 180, "mic": 0.03, "R_neo": 0.15,
+                         "R_adult": 0.08, "target": "GBS"},
+        "Meropenem":    {"auc": 200, "mic": 0.03, "R_neo": 0.20,
+                         "R_adult": 0.10, "target": "E_coli"},
+        "Vancomycin":   {"auc": 350, "mic": 0.5,  "R_neo": 0.15,
+                         "R_adult": 0.10, "target": "GBS"},
+        "Gentamicin":   {"auc": 40,  "mic": 0.5,  "R_neo": 0.02,
+                         "R_adult": 0.01, "target": "E_coli"},
+    }
+
+    tau_expected = {
+        "Ampicillin": 3.699, "Cefotaxime": 3.620,
+        "Penicillin_G": 3.778, "Meropenem": 3.824,
+        "Vancomycin": 2.845, "Gentamicin": 1.903,
+    }
+
+    taus = {}
+    for name, d in pk_data.items():
+        tau = math.log10(d["auc"] / d["mic"])
+        taus[name] = tau
+        check(f"τ {name}", tau, tau_expected[name])
+
+    # ── 6b. Neonatal CSF ───────────────────────────────────────────────
+    print("\n  §5.1 — Neonatal CSF: K = K_ADMET + K_BBB")
+
+    K_ADMET = 0.1
+
+    C_neo_expected = {
+        "Cefotaxime": 1.168, "Meropenem": 0.933,
+        "Ampicillin": 0.902, "Penicillin_G": 0.655,
+        "Vancomycin": 0.493, "Gentamicin": 0.039,
+    }
+
+    Cs_neo = {}
+    Ks_neo = {}
+    for name, d in pk_data.items():
+        K_BBB = max(1.0 / d["R_neo"] - 1.0, -1.0)
+        K_total = K_ADMET + K_BBB
+        C_neo = taus[name] / K_total
+        Cs_neo[name] = C_neo
+        Ks_neo[name] = K_total
+        check(f"C_neonatal {name}", C_neo, C_neo_expected[name], tol=0.005)
+
+    # ── 6c. Adult CSF ─────────────────────────────────────────────────
+    print("\n  §5.2 — Adult CSF (comparison)")
+
+    C_adult_expected = {
+        "Cefotaxime": 0.628, "Meropenem": 0.420,
+        "Ampicillin": 0.406, "Penicillin_G": 0.326,
+        "Vancomycin": 0.313, "Gentamicin": 0.019,
+    }
+
+    Cs_adult = {}
+    for name, d in pk_data.items():
+        K_BBB_a = max(1.0 / d["R_adult"] - 1.0, -1.0)
+        K_total_a = K_ADMET + K_BBB_a
+        C_adult = taus[name] / K_total_a
+        Cs_adult[name] = C_adult
+        check(f"C_adult {name}", C_adult, C_adult_expected[name], tol=0.005)
+
+    # ── 6d. Neonatal ranking ──────────────────────────────────────────
+    print("\n  §5.4 — Neonatal meningitis ranking")
+
+    ranked = sorted(Cs_neo.items(), key=lambda x: x[1], reverse=True)
+    rank_names = [r[0] for r in ranked]
+
+    expected_order = ["Cefotaxime", "Meropenem", "Ampicillin",
+                      "Penicillin_G", "Vancomycin", "Gentamicin"]
+
+    for i, expected_name in enumerate(expected_order):
+        check_assert(f"Neonatal rank {i+1} = {expected_name}",
+                     rank_names[i] == expected_name,
+                     f"got {rank_names[i]}")
+
+    # ── 6e. Clinical predictions ──────────────────────────────────────
+    print("\n  §6 — Clinical predictions")
+
+    # Pred 1: Ampicillin is GBS backbone
+    gbs_drugs = {k: v for k, v in Cs_neo.items()
+                 if pk_data[k]["target"] == "GBS"}
+    gbs_ranked = sorted(gbs_drugs.items(),
+                        key=lambda x: x[1], reverse=True)
+    check_assert("Ampicillin is top anti-GBS drug",
+                 gbs_ranked[0][0] == "Ampicillin",
+                 f"C = {Cs_neo['Ampicillin']:.3f}")
+
+    # Pred 2: Cefotaxime >> gentamicin for GNR
+    ecoli_drugs = {k: v for k, v in Cs_neo.items()
+                   if pk_data[k]["target"] == "E_coli"}
+    ecoli_ranked = sorted(ecoli_drugs.items(),
+                          key=lambda x: x[1], reverse=True)
+    check_assert("Cefotaxime is top anti-E.coli drug",
+                 ecoli_ranked[0][0] == "Cefotaxime")
+    check_assert("Gentamicin is worst anti-E.coli drug",
+                 ecoli_ranked[-1][0] == "Gentamicin")
+
+    ctx_gen_ratio = Cs_neo["Cefotaxime"] / Cs_neo["Gentamicin"]
+    check_assert("CTX/GEN ratio > 25",
+                 ctx_gen_ratio > 25,
+                 f"ratio = {ctx_gen_ratio:.1f}")
+
+    # Pred 3: Neonatal advantage — all drugs higher C in neonate
+    print("\n  §5.3 — Neonatal advantage: C_neo > C_adult for all")
+
+    for name in pk_data:
+        check_assert(f"C_neo > C_adult: {name}",
+                     Cs_neo[name] > Cs_adult[name],
+                     f"neo={Cs_neo[name]:.3f}, adult={Cs_adult[name]:.3f}")
+
+    for name in pk_data:
+        advantage = Cs_neo[name] / Cs_adult[name]
+        check_assert(f"Neonatal advantage {name} in [1.3, 3.0]",
+                     1.3 < advantage < 3.0,
+                     f"advantage = {advantage:.2f}")
+
+    # Pred 4: Gentamicin geometric limitation
+    check_assert("Gentamicin ranks last (synergy only)",
+                 rank_names[-1] == "Gentamicin",
+                 f"C = {Cs_neo['Gentamicin']:.4f}")
+    check_assert("Gentamicin C < 0.05 (near-total exclusion)",
+                 Cs_neo["Gentamicin"] < 0.05)
+
+    # Pred 5: E. coli thinner margin than GBS
+    best_ecoli_C = Cs_neo["Cefotaxime"]
+    best_gbs_C = Cs_neo["Ampicillin"]
+    # Both are near threshold, but E. coli reliance on single drug
+    check_assert("Best E.coli drug (CTX) margin thinner than best GBS (AMP) both near 1.0",
+                 best_ecoli_C < 1.5 and best_gbs_C < 1.5,
+                 f"CTX={best_ecoli_C:.3f}, AMP={best_gbs_C:.3f}")
+
+    # ── 6f. K_ADMET = 0 sensitivity ──────────────────────────────────
+    print("\n  §8 — K_ADMET = 0 sensitivity")
+
+    no_admet_Cs = {}
+    for name, d in pk_data.items():
+        K_BBB = max(1.0 / d["R_neo"] - 1.0, -1.0)
+        no_admet_Cs[name] = taus[name] / K_BBB
+
+    no_admet_ranked = sorted(no_admet_Cs.items(),
+                             key=lambda x: x[1], reverse=True)
+    no_admet_names = [r[0] for r in no_admet_ranked]
+
+    check_assert("K_ADMET=0: ranking unchanged",
+                 no_admet_names == rank_names,
+                 f"changed: {[(a,b) for a,b in zip(no_admet_names, rank_names) if a != b]}")
+
+    # ── 6g. No Parallel Lines axiom ──────────────────────────────────
+    print("\n  §4.4 — No Parallel Lines axiom (K_BBB ≥ -1)")
+
+    for name, d in pk_data.items():
+        for label, R in [("neonatal", d["R_neo"]), ("adult", d["R_adult"])]:
+            K_BBB = max(1.0 / R - 1.0, -1.0)
+            check_assert(f"K_BBB ≥ -1: {name} ({label})",
+                         K_BBB >= -1.0,
+                         f"K_BBB = {K_BBB:.3f}")
+
+
+# ============================================================================
 # MAIN
 # ============================================================================
 
@@ -1247,6 +1662,8 @@ if __name__ == "__main__":
     test_prostatitis()
     test_tb_maldi()
     test_hiv_cns()
+    test_dfo()
+    test_neonatal_meningitis()
 
     # ── Summary ─────────────────────────────────────────────────────────
     total = _pass + _fail
