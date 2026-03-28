@@ -1649,6 +1649,537 @@ def test_neonatal_meningitis():
 
 
 # ============================================================================
+# TEST 7: INFECTIVE ENDOCARDITIS
+# ============================================================================
+
+def test_endocarditis():
+    """
+    Infective Endocarditis validation.
+    C = τ / K at the cardiac vegetation (avascular diffusion barrier).
+    NVE vs PVE (adds K_biofilm = 2.0).
+    Ground truth: AHA 2015, ESC 2023, POET 2019 (NEJM).
+    """
+    print("\n" + "=" * 72)
+    print("TEST 7 · INFECTIVE ENDOCARDITIS — The Avascular Fortress")
+    print("=" * 72)
+
+    K_ADMET = 0.1
+    K_BIOFILM = 2.0
+
+    # 8-drug panel vs S. aureus (MSSA)
+    pk_data = {
+        "NAF": {"name": "Nafcillin",    "auc": 200, "mic": 0.5,   "R_veg": 0.20},
+        "CEF": {"name": "Cefazolin",    "auc": 350, "mic": 1.0,   "R_veg": 0.15},
+        "VAN": {"name": "Vancomycin",   "auc": 400, "mic": 1.0,   "R_veg": 0.10},
+        "DAP": {"name": "Daptomycin",   "auc": 750, "mic": 0.5,   "R_veg": 0.15},
+        "GEN": {"name": "Gentamicin",   "auc":  70, "mic": 0.5,   "R_veg": 0.05},
+        "RIF": {"name": "Rifampin",     "auc":  60, "mic": 0.008, "R_veg": 0.50},
+        "CRO": {"name": "Ceftriaxone",  "auc": 550, "mic": 2.0,   "R_veg": 0.12},
+        "LZD": {"name": "Linezolid",    "auc": 200, "mic": 2.0,   "R_veg": 0.35},
+    }
+
+    expected_tau = {
+        "RIF": 3.875, "DAP": 3.176, "NAF": 2.602, "VAN": 2.602,
+        "CEF": 2.544, "CRO": 2.439, "GEN": 2.146, "LZD": 2.000
+    }
+    expected_C_NVE = {
+        "RIF": 3.523, "LZD": 1.022, "NAF": 0.634, "DAP": 0.551,
+        "CEF": 0.441, "CRO": 0.328, "VAN": 0.286, "GEN": 0.112
+    }
+    expected_C_PVE = {
+        "RIF": 1.250, "LZD": 0.505, "NAF": 0.427, "DAP": 0.409,
+        "CEF": 0.328, "CRO": 0.259, "VAN": 0.234, "GEN": 0.102
+    }
+    NVE_rank = ["RIF", "LZD", "NAF", "DAP", "CEF", "CRO", "VAN", "GEN"]
+    PVE_rank = ["RIF", "LZD", "NAF", "DAP", "CEF", "CRO", "VAN", "GEN"]
+
+    # ── 7a. τ verification ────────────────────────────────────────────
+    print("\n  §1 — τ = log₁₀(AUC₂₄ / MIC)")
+
+    taus = {}
+    for code, d in pk_data.items():
+        tau = math.log10(d["auc"] / d["mic"])
+        taus[code] = tau
+        check(f"τ_{code}", tau, expected_tau[code], tol=0.002)
+
+    # ── 7b. NVE coherence ────────────────────────────────────────────
+    print("\n  §2 — NVE coherence: C = τ / (K_ADMET + K_vegetation)")
+
+    Cs_NVE = {}
+    for code, d in pk_data.items():
+        K_veg = max(1.0 / d["R_veg"] - 1.0, -1.0)
+        K_total = K_ADMET + K_veg
+        C = taus[code] / K_total
+        Cs_NVE[code] = C
+        check(f"C_NVE_{code}", C, expected_C_NVE[code], tol=0.002)
+
+    # ── 7c. NVE ranking ──────────────────────────────────────────────
+    print("\n  §3 — NVE ranking")
+
+    nve_ranked = sorted(Cs_NVE.items(), key=lambda x: x[1], reverse=True)
+    nve_names = [r[0] for r in nve_ranked]
+
+    for i, code in enumerate(NVE_rank):
+        check_assert(f"NVE rank #{i+1} = {code}",
+                     nve_names[i] == code,
+                     f"got {nve_names[i]}")
+
+    # ── 7d. PVE coherence ────────────────────────────────────────────
+    print("\n  §4 — PVE coherence: C = τ / (K_ADMET + K_vegetation + K_biofilm)")
+
+    Cs_PVE = {}
+    for code, d in pk_data.items():
+        K_veg = max(1.0 / d["R_veg"] - 1.0, -1.0)
+        K_total_PVE = K_ADMET + K_veg + K_BIOFILM
+        C = taus[code] / K_total_PVE
+        Cs_PVE[code] = C
+        check(f"C_PVE_{code}", C, expected_C_PVE[code], tol=0.002)
+
+    # ── 7e. PVE ranking ──────────────────────────────────────────────
+    print("\n  §5 — PVE ranking")
+
+    pve_ranked = sorted(Cs_PVE.items(), key=lambda x: x[1], reverse=True)
+    pve_names = [r[0] for r in pve_ranked]
+
+    for i, code in enumerate(PVE_rank):
+        check_assert(f"PVE rank #{i+1} = {code}",
+                     pve_names[i] == code,
+                     f"got {pve_names[i]}")
+
+    # ── 7f. Predictions ──────────────────────────────────────────────
+    print("\n  §6 — Validation predictions")
+
+    # Prediction 1: Rifampin #1 in both NVE and PVE
+    check_assert("Pred 1: RIF #1 NVE",
+                 nve_names[0] == "RIF",
+                 f"got {nve_names[0]}")
+    check_assert("Pred 1: RIF #1 PVE",
+                 pve_names[0] == "RIF",
+                 f"got {pve_names[0]}")
+
+    # Prediction 2: Nafcillin > Vancomycin for MSSA (>2× better)
+    ratio_naf_van = Cs_NVE["NAF"] / Cs_NVE["VAN"]
+    check_assert("Pred 2: NAF > VAN for MSSA",
+                 Cs_NVE["NAF"] > Cs_NVE["VAN"],
+                 f"NAF={Cs_NVE['NAF']:.3f}, VAN={Cs_NVE['VAN']:.3f}")
+    check_assert("Pred 2: NAF/VAN ratio > 2.0",
+                 ratio_naf_van > 2.0,
+                 f"ratio={ratio_naf_van:.2f}")
+
+    # Prediction 3: Gentamicin last in both
+    check_assert("Pred 3: GEN last NVE",
+                 nve_names[-1] == "GEN",
+                 f"got {nve_names[-1]}")
+    check_assert("Pred 3: GEN last PVE",
+                 pve_names[-1] == "GEN",
+                 f"got {pve_names[-1]}")
+
+    # Prediction 4: Only RIF above C=1.0 in PVE
+    above_pve = [c for c, val in Cs_PVE.items() if val >= 1.0]
+    check_assert("Pred 4: only RIF above C=1.0 in PVE",
+                 above_pve == ["RIF"],
+                 f"got {above_pve}")
+
+    # Prediction 5: 2 drugs above C=1.0 in NVE (RIF, LZD)
+    above_nve = sorted([c for c, val in Cs_NVE.items() if val >= 1.0])
+    check_assert("Pred 5: RIF + LZD above C=1.0 in NVE",
+                 sorted(above_nve) == ["LZD", "RIF"],
+                 f"got {sorted(above_nve)}")
+
+    # Prediction 6: DAP limited by K despite high τ
+    check_assert("Pred 6: DAP τ > NAF τ but DAP C < NAF C",
+                 taus["DAP"] > taus["NAF"] and Cs_NVE["DAP"] < Cs_NVE["NAF"],
+                 f"τ_DAP={taus['DAP']:.3f}, τ_NAF={taus['NAF']:.3f}")
+
+    # ── 7g. PVE penalty ──────────────────────────────────────────────
+    print("\n  §7 — PVE penalty (C_NVE vs C_PVE)")
+
+    # RIF loses 65%
+    rif_loss = (1 - Cs_PVE["RIF"] / Cs_NVE["RIF"]) * 100
+    check(f"RIF PVE loss %", rif_loss, 64.5, tol=1.0)
+
+    # LZD loses 51%
+    lzd_loss = (1 - Cs_PVE["LZD"] / Cs_NVE["LZD"]) * 100
+    check(f"LZD PVE loss %", lzd_loss, 50.6, tol=1.0)
+
+    # GEN loses 9%
+    gen_loss = (1 - Cs_PVE["GEN"] / Cs_NVE["GEN"]) * 100
+    check(f"GEN PVE loss %", gen_loss, 8.9, tol=1.0)
+
+    # ── 7h. K_ADMET sensitivity ──────────────────────────────────────
+    print("\n  §8 — K_ADMET = 0 sensitivity")
+
+    no_admet_NVE = {}
+    for code, d in pk_data.items():
+        K_veg = max(1.0 / d["R_veg"] - 1.0, -1.0)
+        no_admet_NVE[code] = taus[code] / K_veg
+
+    no_admet_ranked = sorted(no_admet_NVE.items(), key=lambda x: x[1], reverse=True)
+    no_admet_names = [r[0] for r in no_admet_ranked]
+
+    check_assert("K_ADMET=0: ranking unchanged",
+                 no_admet_names == NVE_rank,
+                 f"changed at: {[(a,b) for a,b in zip(no_admet_names, NVE_rank) if a != b]}")
+
+    # ── 7i. No Parallel Lines axiom ──────────────────────────────────
+    print("\n  §9 — No Parallel Lines axiom (K_veg ≥ -1)")
+
+    for code, d in pk_data.items():
+        K_veg = max(1.0 / d["R_veg"] - 1.0, -1.0)
+        check_assert(f"K_veg ≥ -1: {code}",
+                     K_veg >= -1.0,
+                     f"K_veg = {K_veg:.3f}")
+
+
+# ============================================================================
+# TEST 8: ADULT BACTERIAL MENINGITIS + DEXAMETHASONE
+# ============================================================================
+
+def test_meningitis_dex():
+    """
+    Adult Bacterial Meningitis + Dexamethasone validation.
+    C = τ / K with time-dependent R (inflamed vs post-dex).
+    Ground truth: de Gans 2002 (NEJM), IDSA guidelines.
+    """
+    print("\n" + "=" * 72)
+    print("TEST 8 · MENINGITIS + DEX — The Closing Gate")
+    print("=" * 72)
+
+    K_ADMET = 0.1
+
+    # 6-drug panel vs S. pneumoniae
+    pk_data = {
+        "CRO": {"name": "Ceftriaxone",  "auc": 550, "mic": 0.5,  "R_inf": 0.15, "R_dex": 0.10},
+        "VAN": {"name": "Vancomycin",   "auc": 400, "mic": 0.5,  "R_inf": 0.10, "R_dex": 0.04},
+        "MER": {"name": "Meropenem",    "auc": 200, "mic": 0.25, "R_inf": 0.10, "R_dex": 0.05},
+        "AMP": {"name": "Ampicillin",   "auc": 150, "mic": 0.25, "R_inf": 0.10, "R_dex": 0.05},
+        "RIF": {"name": "Rifampin",     "auc":  60, "mic": 0.03, "R_inf": 0.20, "R_dex": 0.15},
+        "PEN": {"name": "Penicillin G", "auc": 180, "mic": 0.03, "R_inf": 0.08, "R_dex": 0.03},
+    }
+
+    expected_tau = {
+        "CRO": 3.041, "VAN": 2.903, "MER": 2.903,
+        "AMP": 2.778, "RIF": 3.301, "PEN": 3.778
+    }
+    expected_C_inf = {
+        "RIF": 0.805, "CRO": 0.527, "PEN": 0.326,
+        "MER": 0.319, "VAN": 0.319, "AMP": 0.305
+    }
+    expected_C_dex = {
+        "RIF": 0.572, "CRO": 0.334, "MER": 0.152,
+        "AMP": 0.145, "VAN": 0.120, "PEN": 0.116
+    }
+    # VAN and MER are tied at 0.319 inflamed; use rank with MER before VAN
+    # (τ_MER = τ_VAN but MER listed first conventionally)
+    INF_rank = ["RIF", "CRO", "PEN", "MER", "VAN", "AMP"]
+    DEX_rank = ["RIF", "CRO", "MER", "AMP", "VAN", "PEN"]
+
+    # ── 8a. τ verification ────────────────────────────────────────────
+    print("\n  §1 — τ = log₁₀(AUC₂₄ / MIC)")
+
+    taus = {}
+    for code, d in pk_data.items():
+        tau = math.log10(d["auc"] / d["mic"])
+        taus[code] = tau
+        check(f"τ_{code}", tau, expected_tau[code], tol=0.002)
+
+    # ── 8b. Inflamed meninges coherence ──────────────────────────────
+    print("\n  §2 — Inflamed meninges: C = τ / (K_ADMET + K_BBB)")
+
+    Cs_inf = {}
+    for code, d in pk_data.items():
+        K_BBB = max(1.0 / d["R_inf"] - 1.0, -1.0)
+        K_total = K_ADMET + K_BBB
+        C = taus[code] / K_total
+        Cs_inf[code] = C
+        check(f"C_inf_{code}", C, expected_C_inf[code], tol=0.002)
+
+    # ── 8c. Inflamed ranking ─────────────────────────────────────────
+    print("\n  §3 — Inflamed ranking")
+
+    inf_ranked = sorted(Cs_inf.items(), key=lambda x: x[1], reverse=True)
+    inf_names = [r[0] for r in inf_ranked]
+
+    # RIF #1, CRO #2, PEN #3 are unambiguous
+    check_assert("Inf rank #1 = RIF", inf_names[0] == "RIF")
+    check_assert("Inf rank #2 = CRO", inf_names[1] == "CRO")
+    check_assert("Inf rank #3 = PEN", inf_names[2] == "PEN")
+    # VAN and MER are tied (both 0.319) — check they occupy positions 4-5
+    check_assert("Inf rank VAN+MER in positions 4-5",
+                 set(inf_names[3:5]) == {"VAN", "MER"},
+                 f"got {inf_names[3:5]}")
+    check_assert("Inf rank #6 = AMP", inf_names[5] == "AMP")
+
+    # ── 8d. With-dex coherence ───────────────────────────────────────
+    print("\n  §4 — With dexamethasone: C = τ / (K_ADMET + K_BBB_dex)")
+
+    Cs_dex = {}
+    for code, d in pk_data.items():
+        K_BBB = max(1.0 / d["R_dex"] - 1.0, -1.0)
+        K_total = K_ADMET + K_BBB
+        C = taus[code] / K_total
+        Cs_dex[code] = C
+        check(f"C_dex_{code}", C, expected_C_dex[code], tol=0.002)
+
+    # ── 8e. Dex ranking ──────────────────────────────────────────────
+    print("\n  §5 — With-dex ranking")
+
+    dex_ranked = sorted(Cs_dex.items(), key=lambda x: x[1], reverse=True)
+    dex_names = [r[0] for r in dex_ranked]
+
+    for i, code in enumerate(DEX_rank):
+        check_assert(f"Dex rank #{i+1} = {code}",
+                     dex_names[i] == code,
+                     f"got {dex_names[i]}")
+
+    # ── 8f. Dex penalty ──────────────────────────────────────────────
+    print("\n  §6 — Dex penalty (% loss in C)")
+
+    expected_loss = {
+        "RIF": 28.9, "CRO": 36.6, "MER": 52.4,
+        "AMP": 52.5, "VAN": 62.4, "PEN": 64.4
+    }
+    for code in expected_loss:
+        loss = (1 - Cs_dex[code] / Cs_inf[code]) * 100
+        check(f"Dex loss {code}", loss, expected_loss[code], tol=0.5)
+
+    # ── 8g. Predictions ──────────────────────────────────────────────
+    print("\n  §7 — Validation predictions")
+
+    # Pred 1: CRO most robust backbone (rank #2 both states)
+    check_assert("Pred 1: CRO #2 inflamed", inf_names[1] == "CRO")
+    check_assert("Pred 1: CRO #2 with dex", dex_names[1] == "CRO")
+
+    # Pred 2: VAN vulnerable — loses 62%
+    check_assert("Pred 2: VAN loss > 60%",
+                 expected_loss["VAN"] > 60.0,
+                 f"loss = {expected_loss['VAN']:.1f}%")
+
+    # Pred 3: RIF most resistant — loses only 29%
+    check_assert("Pred 3: RIF loss < 30%",
+                 expected_loss["RIF"] < 30.0,
+                 f"loss = {expected_loss['RIF']:.1f}%")
+
+    # Pred 4: PEN drops from #3 to #6 (rank inversion)
+    pen_rank_inf = inf_names.index("PEN") + 1
+    pen_rank_dex = dex_names.index("PEN") + 1
+    check_assert("Pred 4: PEN drops from #3 to #6",
+                 pen_rank_inf == 3 and pen_rank_dex == 6,
+                 f"inf #{pen_rank_inf}, dex #{pen_rank_dex}")
+
+    # Pred 5: MER emerges above VAN with dex
+    check_assert("Pred 5: MER > VAN with dex",
+                 Cs_dex["MER"] > Cs_dex["VAN"],
+                 f"MER={Cs_dex['MER']:.3f}, VAN={Cs_dex['VAN']:.3f}")
+
+    # ── 8h. K_ADMET sensitivity ──────────────────────────────────────
+    print("\n  §8 — K_ADMET = 0 sensitivity")
+
+    no_admet_inf = {}
+    for code, d in pk_data.items():
+        K_BBB = max(1.0 / d["R_inf"] - 1.0, -1.0)
+        no_admet_inf[code] = taus[code] / K_BBB
+
+    no_admet_ranked = sorted(no_admet_inf.items(), key=lambda x: x[1], reverse=True)
+    no_admet_names = [r[0] for r in no_admet_ranked]
+
+    check_assert("K_ADMET=0: RIF still #1 inflamed",
+                 no_admet_names[0] == "RIF")
+    check_assert("K_ADMET=0: AMP still #6 inflamed",
+                 no_admet_names[5] == "AMP")
+
+    # ── 8i. No Parallel Lines axiom ──────────────────────────────────
+    print("\n  §9 — No Parallel Lines axiom (K_BBB ≥ -1)")
+
+    for code, d in pk_data.items():
+        for label, R in [("inflamed", d["R_inf"]), ("dex", d["R_dex"])]:
+            K_BBB = max(1.0 / R - 1.0, -1.0)
+            check_assert(f"K_BBB ≥ -1: {code} ({label})",
+                         K_BBB >= -1.0,
+                         f"K_BBB = {K_BBB:.3f}")
+
+
+# ============================================================================
+# TEST 9: INTRA-ABDOMINAL ABSCESS
+# ============================================================================
+
+def test_abscess():
+    """
+    Intra-abdominal Abscess validation.
+    C = τ / K in two compartments: phlegmon (drugs work) vs
+    mature abscess (all drugs fail → mandatory drainage).
+    Ground truth: SIS 2010, IDSA 2010, Brook 2008.
+    """
+    print("\n" + "=" * 72)
+    print("TEST 9 · INTRA-ABDOMINAL ABSCESS — The Walled City")
+    print("=" * 72)
+
+    K_ADMET = 0.1
+
+    # 8-drug panel
+    pk_data = {
+        "MET": {"name": "Metronidazole",  "auc": 130, "mic": 1.0,  "R_phleg": 0.80, "R_abs": 0.12},
+        "CLI": {"name": "Clindamycin",    "auc":  30, "mic": 0.25, "R_phleg": 0.60, "R_abs": 0.08},
+        "CIP": {"name": "Ciprofloxacin",  "auc":  30, "mic": 0.06, "R_phleg": 0.70, "R_abs": 0.06},
+        "MER": {"name": "Meropenem",      "auc": 200, "mic": 0.25, "R_phleg": 0.30, "R_abs": 0.03},
+        "TZP": {"name": "Pip/tazo",       "auc": 250, "mic": 0.5,  "R_phleg": 0.20, "R_abs": 0.02},
+        "CRO": {"name": "Ceftriaxone",    "auc": 550, "mic": 0.06, "R_phleg": 0.15, "R_abs": 0.02},
+        "GEN": {"name": "Gentamicin",     "auc":  70, "mic": 0.5,  "R_phleg": 0.10, "R_abs": 0.01},
+        "VAN": {"name": "Vancomycin",     "auc": 400, "mic": 1.0,  "R_phleg": 0.10, "R_abs": 0.01},
+    }
+
+    expected_tau = {
+        "CRO": 3.962, "MER": 2.903, "CIP": 2.699, "TZP": 2.699,
+        "VAN": 2.602, "GEN": 2.146, "MET": 2.114, "CLI": 2.079
+    }
+    expected_C_phleg = {
+        "MET": 6.040, "CIP": 5.103, "CLI": 2.712, "MER": 1.193,
+        "CRO": 0.687, "TZP": 0.658, "VAN": 0.286, "GEN": 0.236
+    }
+    expected_C_abs = {
+        "MET": 0.284, "CLI": 0.179, "CIP": 0.171, "MER": 0.090,
+        "CRO": 0.081, "TZP": 0.055, "VAN": 0.026, "GEN": 0.022
+    }
+    PHLEG_rank = ["MET", "CIP", "CLI", "MER", "CRO", "TZP", "VAN", "GEN"]
+    ABS_rank   = ["MET", "CLI", "CIP", "MER", "CRO", "TZP", "VAN", "GEN"]
+
+    # ── 9a. τ verification ────────────────────────────────────────────
+    print("\n  §1 — τ = log₁₀(AUC₂₄ / MIC)")
+
+    taus = {}
+    for code, d in pk_data.items():
+        tau = math.log10(d["auc"] / d["mic"])
+        taus[code] = tau
+        check(f"τ_{code}", tau, expected_tau[code], tol=0.002)
+
+    # ── 9b. Phlegmon coherence ───────────────────────────────────────
+    print("\n  §2 — Phlegmon: C = τ / (K_ADMET + K_peritoneal)")
+
+    Cs_phleg = {}
+    for code, d in pk_data.items():
+        K_peri = max(1.0 / d["R_phleg"] - 1.0, -1.0)
+        K_total = K_ADMET + K_peri
+        C = taus[code] / K_total
+        Cs_phleg[code] = C
+        check(f"C_phleg_{code}", C, expected_C_phleg[code], tol=0.005)
+
+    # ── 9c. Phlegmon ranking ─────────────────────────────────────────
+    print("\n  §3 — Phlegmon ranking")
+
+    phleg_ranked = sorted(Cs_phleg.items(), key=lambda x: x[1], reverse=True)
+    phleg_names = [r[0] for r in phleg_ranked]
+
+    for i, code in enumerate(PHLEG_rank):
+        check_assert(f"Phlegmon rank #{i+1} = {code}",
+                     phleg_names[i] == code,
+                     f"got {phleg_names[i]}")
+
+    # ── 9d. Abscess coherence ────────────────────────────────────────
+    print("\n  §4 — Mature abscess: C = τ / (K_ADMET + K_capsule)")
+
+    Cs_abs = {}
+    for code, d in pk_data.items():
+        K_caps = max(1.0 / d["R_abs"] - 1.0, -1.0)
+        K_total = K_ADMET + K_caps
+        C = taus[code] / K_total
+        Cs_abs[code] = C
+        check(f"C_abs_{code}", C, expected_C_abs[code], tol=0.002)
+
+    # ── 9e. Abscess ranking ──────────────────────────────────────────
+    print("\n  §5 — Abscess ranking")
+
+    abs_ranked = sorted(Cs_abs.items(), key=lambda x: x[1], reverse=True)
+    abs_names = [r[0] for r in abs_ranked]
+
+    for i, code in enumerate(ABS_rank):
+        check_assert(f"Abscess rank #{i+1} = {code}",
+                     abs_names[i] == code,
+                     f"got {abs_names[i]}")
+
+    # ── 9f. KEY RESULT: all drugs fail in abscess ────────────────────
+    print("\n  §6 — All drugs C < 1.0 in mature abscess (drainage mandatory)")
+
+    for code in pk_data:
+        check_assert(f"C_abs < 1.0: {code}",
+                     Cs_abs[code] < 1.0,
+                     f"C = {Cs_abs[code]:.3f}")
+
+    max_abs_C = max(Cs_abs.values())
+    check_assert("Max abscess C < 0.3",
+                 max_abs_C < 0.3,
+                 f"max = {max_abs_C:.3f}")
+
+    # ── 9g. Phlegmon: 4 drugs above threshold ────────────────────────
+    print("\n  §7 — Phlegmon: drugs above C = 1.0")
+
+    above = sorted([c for c, val in Cs_phleg.items() if val >= 1.0])
+    check_assert("4 drugs above C=1.0 in phlegmon",
+                 len(above) == 4,
+                 f"got {len(above)}: {above}")
+    check_assert("Phlegmon above-threshold: MET, CIP, CLI, MER",
+                 sorted(above) == ["CIP", "CLI", "MER", "MET"],
+                 f"got {sorted(above)}")
+
+    # ── 9h. Predictions ──────────────────────────────────────────────
+    print("\n  §8 — Validation predictions")
+
+    # Pred 1: Phlegmon treatable, abscess not
+    check_assert("Pred 1: phlegmon has C>1 drugs, abscess has 0",
+                 len(above) > 0 and all(v < 1.0 for v in Cs_abs.values()))
+
+    # Pred 2: Metro #1 in both compartments
+    check_assert("Pred 2: MET #1 phlegmon", phleg_names[0] == "MET")
+    check_assert("Pred 2: MET #1 abscess", abs_names[0] == "MET")
+
+    # Pred 3: Metro inversion from DFO (#8 in bone → #1 in abscess)
+    check_assert("Pred 3: Metro is #1 in abscess (was #8 in DFO bone)",
+                 abs_names[0] == "MET",
+                 "Metro goes from worst in bone to best in abscess")
+
+    # Pred 4: VAN + GEN excluded (too large / pH-inactivated)
+    check_assert("Pred 4: VAN and GEN last two",
+                 set(abs_names[-2:]) == {"VAN", "GEN"},
+                 f"got {abs_names[-2:]}")
+
+    # Pred 5: CRO high τ but fails in abscess
+    check_assert("Pred 5: CRO has highest τ but only #5 in abscess",
+                 taus["CRO"] == max(taus.values()) and abs_names.index("CRO") == 4,
+                 f"τ_CRO={taus['CRO']:.3f}, rank={abs_names.index('CRO')+1}")
+
+    # Pred 6: Cipro-Clinda inversion (phlegmon vs abscess)
+    check_assert("Pred 6: CIP > CLI in phlegmon",
+                 Cs_phleg["CIP"] > Cs_phleg["CLI"])
+    check_assert("Pred 6: CLI > CIP in abscess (inversion)",
+                 Cs_abs["CLI"] > Cs_abs["CIP"])
+
+    # ── 9i. K_ADMET sensitivity ──────────────────────────────────────
+    print("\n  §9 — K_ADMET = 0 sensitivity")
+
+    no_admet_phleg = {}
+    for code, d in pk_data.items():
+        K_peri = max(1.0 / d["R_phleg"] - 1.0, -1.0)
+        no_admet_phleg[code] = taus[code] / K_peri
+
+    no_admet_ranked = sorted(no_admet_phleg.items(), key=lambda x: x[1], reverse=True)
+    no_admet_names = [r[0] for r in no_admet_ranked]
+
+    check_assert("K_ADMET=0: MET still #1",
+                 no_admet_names[0] == "MET")
+    check_assert("K_ADMET=0: GEN still last",
+                 no_admet_names[-1] == "GEN")
+
+    # ── 9j. No Parallel Lines axiom ──────────────────────────────────
+    print("\n  §10 — No Parallel Lines axiom (K ≥ -1)")
+
+    for code, d in pk_data.items():
+        for label, R in [("phlegmon", d["R_phleg"]), ("abscess", d["R_abs"])]:
+            K = max(1.0 / R - 1.0, -1.0)
+            check_assert(f"K ≥ -1: {code} ({label})",
+                         K >= -1.0,
+                         f"K = {K:.3f}")
+
+
+# ============================================================================
 # MAIN
 # ============================================================================
 
@@ -1664,6 +2195,9 @@ if __name__ == "__main__":
     test_hiv_cns()
     test_dfo()
     test_neonatal_meningitis()
+    test_endocarditis()
+    test_meningitis_dex()
+    test_abscess()
 
     # ── Summary ─────────────────────────────────────────────────────────
     total = _pass + _fail

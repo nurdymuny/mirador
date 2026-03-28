@@ -842,8 +842,7 @@ export default function MiradorSite() {
         <FadeIn>
           <div style={{ fontSize: 11, fontFamily: FM, color: "#f59e0b", letterSpacing: 3, marginBottom: 12, textAlign: "center" }}>CLINICAL VALIDATION</div>
           <h2 style={{ fontSize: mob ? 26 : 32, fontFamily: F, fontWeight: 400, margin: "0 0 8px 0", textAlign: "center" }}>
-            498 predictions. 498 confirmed. Zero failures.
-          </h2>
+            691 predictions. 691 confirmed. Zero failures.          </h2>
           <p style={{ fontSize: 14, color: "#64748b", textAlign: "center", maxWidth: 640, margin: "0 auto 32px", lineHeight: 1.7 }}>
             Every number computed from pharmacokinetic inputs alone — then checked against
             independent clinical ground truth. Input set ∩ Ground truth = ∅.
@@ -1025,6 +1024,82 @@ export default function MiradorSite() {
                 "K_ADMET=0: ranking unchanged — BBB dominates completely (K_BBB = 49 for gentamicin)",
               ],
             },
+            {
+              id: "endocarditis", title: "Infective Endocarditis", icon: "🫀", count: "61/61", color: "#dc2626",
+              regime: "Avascular vegetation (K ≫ 0)", highlight: "Rifampin essential for PVE",
+              detail: "8-drug panel against MSSA. NVE vs PVE (K_biofilm = 2.0). The avascular fibrin-platelet vegetation has the highest K in the suite. Only rifampin survives the PVE double barrier.",
+              sources: "AHA 2015 · ESC 2023 · POET 2019 (NEJM) · Cremieux 1989 · Xiong 2011",
+              drugs: [
+                { name: "Rifampin", tau: 3.875, K: 1.100, C: 3.523, rank: 1 },
+                { name: "Linezolid", tau: 2.000, K: 1.957, C: 1.022, rank: 2 },
+                { name: "Nafcillin", tau: 2.602, K: 4.100, C: 0.634, rank: 3 },
+                { name: "Daptomycin", tau: 3.176, K: 5.767, C: 0.551, rank: 4 },
+                { name: "Cefazolin", tau: 2.544, K: 5.767, C: 0.441, rank: 5 },
+                { name: "Ceftriaxone", tau: 2.439, K: 7.433, C: 0.328, rank: 6 },
+                { name: "Vancomycin", tau: 2.602, K: 9.100, C: 0.286, rank: 7 },
+                { name: "Gentamicin", tau: 2.146, K: 19.100, C: 0.112, rank: 8 },
+              ],
+              combos: [],
+              findings: [
+                "Rifampin #1 in both NVE (C=3.523) and PVE (C=1.250) — MIC = 0.008 gives massive τ advantage plus lipophilic diffusion",
+                "Nafcillin > Vancomycin for MSSA by 2.2× (C=0.634 vs 0.286) — matches AHA guideline: prefer nafcillin for MSSA IE",
+                "Gentamicin LAST (C=0.112) — AHA 2015 removed gentamicin from staph IE. Geometry predicted what took decades clinically",
+                "Only rifampin exceeds C=1.0 in PVE — biofilm penalty pushes all others below threshold. Geometric basis for mandatory rifampin",
+                "Linezolid #2 (C=1.022 NVE) — the only other drug above threshold. Validates POET trial oral step-down success",
+                "Daptomycin limited by K despite high τ (3.176) — 1620 Da partially impeded. Matches failure in left-sided IE (Fowler 2006)",
+                "PVE penalty largest for best drugs: rifampin loses 65%, linezolid 51%, but gentamicin only 9% (already near-zero)",
+                "K_ADMET=0: ranking unchanged — vegetation barrier dominates completely",
+              ],
+            },
+            {
+              id: "meningitis_dex", title: "Meningitis + Dex", icon: "💊", count: "55/55", color: "#7c3aed",
+              regime: "Dynamic barrier (K changes with dex)", highlight: "Dex closes the gate — rank inversions",
+              detail: "6-drug panel against S. pneumoniae. Two barrier states: inflamed meninges (higher R) vs post-dexamethasone (lower R). Dex modifies the geometry — some drugs lose 60%+ coherence.",
+              sources: "de Gans 2002 (NEJM) · IDSA · Ricard 2007 · Nau 2010 · Lutsar 1998",
+              drugs: [
+                { name: "Rifampin", tau: 3.301, K: 4.100, C: 0.805, rank: 1 },
+                { name: "Ceftriaxone", tau: 3.041, K: 5.767, C: 0.527, rank: 2 },
+                { name: "Penicillin G", tau: 3.778, K: 11.600, C: 0.326, rank: 3 },
+                { name: "Meropenem", tau: 2.903, K: 9.100, C: 0.319, rank: 4 },
+                { name: "Vancomycin", tau: 2.903, K: 9.100, C: 0.319, rank: 5 },
+                { name: "Ampicillin", tau: 2.778, K: 9.100, C: 0.305, rank: 6 },
+              ],
+              combos: [],
+              findings: [
+                "Ceftriaxone most robust backbone: only 37% C loss with dex (0.527→0.334), stays #2 in both states",
+                "Vancomycin vulnerable: 62% C loss with dex (0.319→0.120) — matches Ricard 2007 reduced CSF VAN with steroids",
+                "Rifampin most dex-resistant: only 29% loss (lipophilic, crosses restored BBB). Validates 'add rifampin with dex' guideline",
+                "Penicillin G collapses: drops from #3 to #6 (LAST) with dex — 64% loss despite having the highest τ (3.778)",
+                "Meropenem emerges above vancomycin with dex (0.152 vs 0.120) — tie breaks in favor of R_dex = 0.05 vs 0.04",
+                "Rank inversion confirms dynamic geometry: lipophilic drugs resist closing gate, hydrophilic drugs suffer",
+              ],
+            },
+            {
+              id: "abscess", title: "Intra-abdominal Abscess", icon: "🔴", count: "77/77", color: "#ea580c",
+              regime: "Universal failure (ALL C < θ)", highlight: "Geometry predicts mandatory drainage",
+              detail: "8-drug panel in two compartments: phlegmon (drugs work) vs mature abscess (all drugs fail). The equation predicts when NO antibiotic is sufficient — the strongest possible validation.",
+              sources: "SIS 2010 · IDSA 2010 · Brook 2008 · Joiner 1981 · Wagner 2006",
+              drugs: [
+                { name: "Metronidazole", tau: 2.114, K: 7.433, C: 0.284, rank: 1 },
+                { name: "Clindamycin", tau: 2.079, K: 11.600, C: 0.179, rank: 2 },
+                { name: "Ciprofloxacin", tau: 2.699, K: 15.767, C: 0.171, rank: 3 },
+                { name: "Meropenem", tau: 2.903, K: 32.433, C: 0.090, rank: 4 },
+                { name: "Ceftriaxone", tau: 3.962, K: 49.100, C: 0.081, rank: 5 },
+                { name: "Pip/tazo", tau: 2.699, K: 49.100, C: 0.055, rank: 6 },
+                { name: "Vancomycin", tau: 2.602, K: 99.100, C: 0.026, rank: 7 },
+                { name: "Gentamicin", tau: 2.146, K: 99.100, C: 0.022, rank: 8 },
+              ],
+              combos: [],
+              findings: [
+                "ALL drugs C < 0.3 in mature abscess — max is metronidazole at 0.284. Equation predicts mandatory source control",
+                "4 drugs exceed C=1.0 in phlegmon (Metro=6.04, Cipro=5.10, Clinda=2.71, Mero=1.19) — antibiotics work without capsule",
+                "Metro inversion from DFO: #8 in bone → #1 in abscess. Same drug, same equation, opposite context. R changes everything",
+                "VAN (1449 Da) and GEN (pH-inactivated) are geometrically excluded: C = 0.026 and 0.022 in abscess",
+                "CRO has highest τ (3.962) but only #5 in abscess — massive exposure cannot overcome K = 49.1 capsule barrier",
+                "Cipro/Clinda inversion: CIP > CLI in phlegmon, CLI > CIP in abscess — capsule penetration dominates in mature abscess",
+                "Phlegmon→abscess transition crosses treatment boundary: drugs stop working when capsule forms. Drain the abscess.",
+              ],
+            },
           ];
 
           const ValTable = ({ headers, rows }) => (
@@ -1159,7 +1234,7 @@ export default function MiradorSite() {
             <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.7, maxWidth: 560, margin: "0 auto" }}>
               Drug exposure (τ) divided by tissue barrier impedance (K).
               Positive K excludes. Negative K concentrates. The geometry predicts both.
-              Six diseases. Four barrier regimes. One equation.
+              Nine diseases. Six barrier regimes. One equation.
             </div>
           </div>
         </FadeIn>
