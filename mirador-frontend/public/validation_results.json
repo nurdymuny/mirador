@@ -1,0 +1,1522 @@
+{
+  "framework": "MIRADOR Clinical Validation",
+  "equation": "C = \u03c4/K",
+  "tests": [
+    {
+      "name": "\u03c4 Vancomycin",
+      "passed": true,
+      "computed": 2.60206,
+      "expected": 2.602,
+      "diff": 6e-05
+    },
+    {
+      "name": "\u03c4 Rifampin",
+      "passed": true,
+      "computed": 3.522879,
+      "expected": 3.523,
+      "diff": 0.000121
+    },
+    {
+      "name": "\u03c4 Daptomycin",
+      "passed": true,
+      "computed": 3.174351,
+      "expected": 3.174,
+      "diff": 0.000351
+    },
+    {
+      "name": "\u03c4 Linezolid",
+      "passed": true,
+      "computed": 2.0,
+      "expected": 2.0,
+      "diff": 0.0
+    },
+    {
+      "name": "\u03c4 Ciprofloxacin",
+      "passed": true,
+      "computed": 1.477121,
+      "expected": 1.477,
+      "diff": 0.000121
+    },
+    {
+      "name": "\u03c4 Ceftaroline",
+      "passed": true,
+      "computed": 2.60206,
+      "expected": 2.602,
+      "diff": 6e-05
+    },
+    {
+      "name": "\u03c4 TMP-SMX",
+      "passed": true,
+      "computed": 1.477121,
+      "expected": 1.477,
+      "diff": 0.000121
+    },
+    {
+      "name": "K_total Vancomycin",
+      "passed": true,
+      "computed": 12.875937,
+      "expected": 12.876,
+      "diff": 6.3e-05
+    },
+    {
+      "name": "C Vancomycin",
+      "passed": true,
+      "computed": 0.202087,
+      "expected": 0.202,
+      "diff": 8.7e-05
+    },
+    {
+      "name": "K_total Rifampin",
+      "passed": true,
+      "computed": 6.20899,
+      "expected": 6.209,
+      "diff": 1e-05
+    },
+    {
+      "name": "C Rifampin",
+      "passed": true,
+      "computed": 0.567384,
+      "expected": 0.567,
+      "diff": 0.000384
+    },
+    {
+      "name": "K_total Daptomycin",
+      "passed": true,
+      "computed": 29.642603,
+      "expected": 29.642,
+      "diff": 0.000603
+    },
+    {
+      "name": "C Daptomycin",
+      "passed": true,
+      "computed": 0.107087,
+      "expected": 0.107,
+      "diff": 8.7e-05
+    },
+    {
+      "name": "K_total Linezolid",
+      "passed": true,
+      "computed": 3.55515,
+      "expected": 3.555,
+      "diff": 0.00015
+    },
+    {
+      "name": "C Linezolid",
+      "passed": true,
+      "computed": 0.562564,
+      "expected": 0.563,
+      "diff": 0.000436
+    },
+    {
+      "name": "K_total Ciprofloxacin",
+      "passed": true,
+      "computed": 2.65721,
+      "expected": 2.657,
+      "diff": 0.00021
+    },
+    {
+      "name": "C Ciprofloxacin",
+      "passed": true,
+      "computed": 0.555892,
+      "expected": 0.556,
+      "diff": 0.000108
+    },
+    {
+      "name": "K_total Ceftaroline",
+      "passed": true,
+      "computed": 8.941573,
+      "expected": 8.941,
+      "diff": 0.000573
+    },
+    {
+      "name": "C Ceftaroline",
+      "passed": true,
+      "computed": 0.291007,
+      "expected": 0.291,
+      "diff": 7e-06
+    },
+    {
+      "name": "K_total TMP-SMX",
+      "passed": true,
+      "computed": 5.00721,
+      "expected": 5.007,
+      "diff": 0.00021
+    },
+    {
+      "name": "C TMP-SMX",
+      "passed": true,
+      "computed": 0.294999,
+      "expected": 0.295,
+      "diff": 1e-06
+    },
+    {
+      "name": "Rifampin ranks #1",
+      "passed": true,
+      "detail": "got Rifampin"
+    },
+    {
+      "name": "Daptomycin ranks last",
+      "passed": true,
+      "detail": "got Daptomycin"
+    },
+    {
+      "name": "Vancomycin ranks 6th or lower",
+      "passed": true,
+      "detail": "rank=6"
+    },
+    {
+      "name": "Top 3 are RIF, LZD, CIP (any order)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "C_combo VAN+RIF",
+      "passed": true,
+      "computed": 2.105499,
+      "expected": 2.106,
+      "diff": 0.000501
+    },
+    {
+      "name": "C_combo LZD+RIF",
+      "passed": true,
+      "computed": 3.517897,
+      "expected": 3.518,
+      "diff": 0.000103
+    },
+    {
+      "name": "C_combo CIP+RIF",
+      "passed": true,
+      "computed": 3.869218,
+      "expected": 3.871,
+      "diff": 0.001782
+    },
+    {
+      "name": "C_combo TMP+RIF",
+      "passed": true,
+      "computed": 2.597535,
+      "expected": 2.597,
+      "diff": 0.000535
+    },
+    {
+      "name": "C_combo CAR+RIF",
+      "passed": true,
+      "computed": 2.4069,
+      "expected": 2.407,
+      "diff": 0.0001
+    },
+    {
+      "name": "C_combo DAP+RIF",
+      "passed": true,
+      "computed": 1.878576,
+      "expected": 1.879,
+      "diff": 0.000424
+    },
+    {
+      "name": "CIP+RIF is strongest combination",
+      "passed": true,
+      "detail": "got CIP+RIF"
+    },
+    {
+      "name": "DAP+RIF is weakest combination",
+      "passed": true,
+      "detail": "got DAP+RIF"
+    },
+    {
+      "name": "VAN+RIF ranks 5th (borderline)",
+      "passed": true,
+      "detail": "rank=5"
+    },
+    {
+      "name": "VAN+RIF borderline pass (C/\u03b8 \u2248 1.05)",
+      "passed": true,
+      "detail": "C/\u03b8 = 1.053"
+    },
+    {
+      "name": "DAP+RIF borderline fail (C/\u03b8 < 1.0)",
+      "passed": true,
+      "detail": "C/\u03b8 = 0.939"
+    },
+    {
+      "name": "CIP+RIF strong pass (C/\u03b8 > 1.5)",
+      "passed": true,
+      "detail": "C/\u03b8 = 1.935"
+    },
+    {
+      "name": "TMP+RIF passes \u03b8",
+      "passed": true,
+      "detail": "C/\u03b8 = 1.299"
+    },
+    {
+      "name": "CAR+RIF passes \u03b8",
+      "passed": true,
+      "detail": "C/\u03b8 = 1.203"
+    },
+    {
+      "name": "MRSA: Rifampin still #1",
+      "passed": true,
+      "detail": "got Rifampin"
+    },
+    {
+      "name": "MRSA: Daptomycin still last",
+      "passed": true,
+      "detail": "got Daptomycin"
+    },
+    {
+      "name": "MRSA: LZD+RIF is best combo",
+      "passed": true,
+      "detail": "got LZD+RIF"
+    },
+    {
+      "name": "K_ADMET=0: bottom 4 unchanged",
+      "passed": true,
+      "detail": "got {'TMP-SMX', 'Vancomycin', 'Ceftaroline', 'Daptomycin'}"
+    },
+    {
+      "name": "K_ADMET=0: Daptomycin still last",
+      "passed": true,
+      "detail": "got Daptomycin"
+    },
+    {
+      "name": "K_ADMET=0: Vancomycin still 6th",
+      "passed": true,
+      "detail": "got Vancomycin"
+    },
+    {
+      "name": "K_ADMET=0: top 3 still RIF/LZD/CIP",
+      "passed": true,
+      "detail": "got {'Ciprofloxacin', 'Rifampin', 'Linezolid'}"
+    },
+    {
+      "name": "R_prosthetic sensitivity: VAN always \u22656th",
+      "passed": true,
+      "detail": "across R_prosthetic = 0.05 to 0.30"
+    },
+    {
+      "name": "d\u00b2 within RIF resistance range",
+      "passed": true,
+      "detail": "d\u00b2=0.25, range=[0.15, 0.3]"
+    },
+    {
+      "name": "MBEC 8\u00d7 range \u2192 C varies < 0.02",
+      "passed": true,
+      "detail": "C range = 0.0145"
+    },
+    {
+      "name": "\u03c4 Ciprofloxacin",
+      "passed": true,
+      "computed": 3.574031,
+      "expected": 3.574,
+      "diff": 3.1e-05
+    },
+    {
+      "name": "\u03c4 Levofloxacin",
+      "passed": true,
+      "computed": 3.50515,
+      "expected": 3.505,
+      "diff": 0.00015
+    },
+    {
+      "name": "\u03c4 Norfloxacin",
+      "passed": true,
+      "computed": 2.124939,
+      "expected": 2.125,
+      "diff": 6.1e-05
+    },
+    {
+      "name": "\u03c4 TMP-SMX",
+      "passed": true,
+      "computed": 2.079181,
+      "expected": 2.079,
+      "diff": 0.000181
+    },
+    {
+      "name": "\u03c4 Trimethoprim",
+      "passed": true,
+      "computed": 1.477121,
+      "expected": 1.477,
+      "diff": 0.000121
+    },
+    {
+      "name": "\u03c4 Amoxicillin",
+      "passed": true,
+      "computed": 0.69897,
+      "expected": 0.699,
+      "diff": 3e-05
+    },
+    {
+      "name": "\u03c4 Cephalexin",
+      "passed": true,
+      "computed": 0.875061,
+      "expected": 0.875,
+      "diff": 6.1e-05
+    },
+    {
+      "name": "\u03c4 Doxycycline",
+      "passed": true,
+      "computed": 1.60206,
+      "expected": 1.602,
+      "diff": 6e-05
+    },
+    {
+      "name": "\u03c4 Azithromycin",
+      "passed": true,
+      "computed": -0.30103,
+      "expected": -0.301,
+      "diff": 3e-05
+    },
+    {
+      "name": "\u03c4 Fosfomycin",
+      "passed": true,
+      "computed": 2.041393,
+      "expected": 2.041,
+      "diff": 0.000393
+    },
+    {
+      "name": "K_prostate Ciprofloxacin",
+      "passed": true,
+      "computed": -0.666667,
+      "expected": -0.666667,
+      "diff": 0.0
+    },
+    {
+      "name": "K_total Ciprofloxacin",
+      "passed": true,
+      "computed": -0.366667,
+      "expected": -0.367,
+      "diff": 0.000333
+    },
+    {
+      "name": "K_prostate Levofloxacin",
+      "passed": true,
+      "computed": -0.75,
+      "expected": -0.75,
+      "diff": 0.0
+    },
+    {
+      "name": "K_total Levofloxacin",
+      "passed": true,
+      "computed": -0.45,
+      "expected": -0.45,
+      "diff": 0.0
+    },
+    {
+      "name": "K_prostate Norfloxacin",
+      "passed": true,
+      "computed": -0.5,
+      "expected": -0.5,
+      "diff": 0.0
+    },
+    {
+      "name": "K_total Norfloxacin",
+      "passed": true,
+      "computed": 0.0,
+      "expected": 0.0,
+      "diff": 0.0
+    },
+    {
+      "name": "K_prostate TMP-SMX",
+      "passed": true,
+      "computed": -0.333333,
+      "expected": -0.333333,
+      "diff": 0.0
+    },
+    {
+      "name": "K_total TMP-SMX",
+      "passed": true,
+      "computed": 0.066667,
+      "expected": 0.067,
+      "diff": 0.000333
+    },
+    {
+      "name": "K_prostate Trimethoprim",
+      "passed": true,
+      "computed": -0.6,
+      "expected": -0.6,
+      "diff": 0.0
+    },
+    {
+      "name": "K_total Trimethoprim",
+      "passed": true,
+      "computed": -0.25,
+      "expected": -0.25,
+      "diff": 0.0
+    },
+    {
+      "name": "K_prostate Amoxicillin",
+      "passed": true,
+      "computed": 5.666667,
+      "expected": 5.666667,
+      "diff": 0.0
+    },
+    {
+      "name": "K_total Amoxicillin",
+      "passed": true,
+      "computed": 6.266667,
+      "expected": 6.267,
+      "diff": 0.000333
+    },
+    {
+      "name": "K_prostate Cephalexin",
+      "passed": true,
+      "computed": 9.0,
+      "expected": 9.0,
+      "diff": 0.0
+    },
+    {
+      "name": "K_total Cephalexin",
+      "passed": true,
+      "computed": 9.6,
+      "expected": 9.6,
+      "diff": 0.0
+    },
+    {
+      "name": "K_prostate Doxycycline",
+      "passed": true,
+      "computed": 0.25,
+      "expected": 0.25,
+      "diff": 0.0
+    },
+    {
+      "name": "K_total Doxycycline",
+      "passed": true,
+      "computed": 0.65,
+      "expected": 0.65,
+      "diff": 0.0
+    },
+    {
+      "name": "K_prostate Azithromycin",
+      "passed": true,
+      "computed": -0.8,
+      "expected": -0.8,
+      "diff": 0.0
+    },
+    {
+      "name": "K_total Azithromycin",
+      "passed": true,
+      "computed": -0.6,
+      "expected": -0.6,
+      "diff": 0.0
+    },
+    {
+      "name": "K_prostate Fosfomycin",
+      "passed": true,
+      "computed": 2.333333,
+      "expected": 2.333333,
+      "diff": 0.0
+    },
+    {
+      "name": "K_total Fosfomycin",
+      "passed": true,
+      "computed": 2.933333,
+      "expected": 2.933,
+      "diff": 0.000333
+    },
+    {
+      "name": "5 drugs in concentrating regime",
+      "passed": true,
+      "detail": "got 5: ['Ciprofloxacin', 'Levofloxacin', 'Norfloxacin', 'Trimethoprim', 'Azithromycin']"
+    },
+    {
+      "name": "5 drugs in exclusion regime",
+      "passed": true,
+      "detail": "got 5: ['TMP-SMX', 'Amoxicillin', 'Cephalexin', 'Doxycycline', 'Fosfomycin']"
+    },
+    {
+      "name": "Concentrating set correct",
+      "passed": true,
+      "detail": "got {'Trimethoprim', 'Azithromycin', 'Levofloxacin', 'Norfloxacin', 'Ciprofloxacin'}"
+    },
+    {
+      "name": "Ciprofloxacin: R \u2265 1 for concentrating",
+      "passed": true,
+      "detail": "R = 3.0"
+    },
+    {
+      "name": "Levofloxacin: R \u2265 1 for concentrating",
+      "passed": true,
+      "detail": "R = 4.0"
+    },
+    {
+      "name": "Norfloxacin: R \u2265 1 for concentrating",
+      "passed": true,
+      "detail": "R = 2.0"
+    },
+    {
+      "name": "Trimethoprim: R \u2265 1 for concentrating",
+      "passed": true,
+      "detail": "R = 2.5"
+    },
+    {
+      "name": "Azithromycin: R \u2265 1 for concentrating",
+      "passed": true,
+      "detail": "R = 5.0"
+    },
+    {
+      "name": "CIP ranks 1st (highest \u03c4 in conc.)",
+      "passed": true,
+      "detail": "got Ciprofloxacin"
+    },
+    {
+      "name": "LEVO ranks 2nd",
+      "passed": true,
+      "detail": "got Levofloxacin"
+    },
+    {
+      "name": "NOR ranks 3rd",
+      "passed": true,
+      "detail": "got Norfloxacin"
+    },
+    {
+      "name": "AZI ranks last in conc. (\u03c4 < 0)",
+      "passed": true,
+      "detail": "got Azithromycin"
+    },
+    {
+      "name": "C TMP-SMX",
+      "passed": true,
+      "computed": 31.187719,
+      "expected": 31.19,
+      "diff": 0.002281
+    },
+    {
+      "name": "C Doxycycline",
+      "passed": true,
+      "computed": 2.464708,
+      "expected": 2.465,
+      "diff": 0.000292
+    },
+    {
+      "name": "C Fosfomycin",
+      "passed": true,
+      "computed": 0.695929,
+      "expected": 0.696,
+      "diff": 7.1e-05
+    },
+    {
+      "name": "C Amoxicillin",
+      "passed": true,
+      "computed": 0.111538,
+      "expected": 0.112,
+      "diff": 0.000462
+    },
+    {
+      "name": "C Cephalexin",
+      "passed": true,
+      "computed": 0.091152,
+      "expected": 0.091,
+      "diff": 0.000152
+    },
+    {
+      "name": "TMP-SMX tops exclusion regime",
+      "passed": true,
+      "detail": "got TMP-SMX"
+    },
+    {
+      "name": "Cephalexin last in exclusion",
+      "passed": true,
+      "detail": "got Cephalexin"
+    },
+    {
+      "name": "Amoxicillin second-to-last",
+      "passed": true,
+      "detail": "got Amoxicillin"
+    },
+    {
+      "name": "FQ dominance: Ciprofloxacin concentrating",
+      "passed": true,
+      "detail": "K_total = -0.367"
+    },
+    {
+      "name": "FQ dominance: Levofloxacin concentrating",
+      "passed": true,
+      "detail": "K_total = -0.450"
+    },
+    {
+      "name": "FQ dominance: Norfloxacin concentrating",
+      "passed": true,
+      "detail": "K_total = 0.000"
+    },
+    {
+      "name": "CIP \u2248 LEVO (\u03c4 difference < 0.1)",
+      "passed": true,
+      "detail": "\u0394\u03c4 = 0.069"
+    },
+    {
+      "name": "TMP-SMX is best non-concentrating drug",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Amoxicillin K > 5 (severe exclusion)",
+      "passed": true,
+      "detail": "K = 6.267"
+    },
+    {
+      "name": "Cephalexin K > 9 (near-total exclusion)",
+      "passed": true,
+      "detail": "K = 9.600"
+    },
+    {
+      "name": "Beta-lactam C < 0.15",
+      "passed": true,
+      "detail": "Amox=0.112, Ceph=0.091"
+    },
+    {
+      "name": "AZI has highest R in panel",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "AZI has lowest \u03c4 in panel (< 0)",
+      "passed": true,
+      "detail": "\u03c4 = -0.301"
+    },
+    {
+      "name": "AZI in concentrating but last by \u03c4",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Fosfomycin: good \u03c4 but excluded",
+      "passed": true,
+      "detail": "\u03c4=2.041, K=2.933"
+    },
+    {
+      "name": "TMP-SMX far above \u03b8",
+      "passed": true,
+      "detail": "C/\u03b8 = 20.8"
+    },
+    {
+      "name": "Doxycycline above \u03b8 (moderate efficacy)",
+      "passed": true,
+      "detail": "C/\u03b8 = 1.64"
+    },
+    {
+      "name": "Fosfomycin below \u03b8",
+      "passed": true,
+      "detail": "C/\u03b8 = 0.464"
+    },
+    {
+      "name": "Amoxicillin far below \u03b8",
+      "passed": true,
+      "detail": "C/\u03b8 = 0.074"
+    },
+    {
+      "name": "K_ADMET=0: TMP-SMX moves to concentrating",
+      "passed": true,
+      "detail": "K_total(no ADMET) = -0.133"
+    },
+    {
+      "name": "K_ADMET=0: Ciprofloxacin stays concentrating",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "K_ADMET=0: Levofloxacin stays concentrating",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "K_ADMET=0: Norfloxacin stays concentrating",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "K_ADMET=0: Trimethoprim stays concentrating",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "K_ADMET=0: Azithromycin stays concentrating",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "K_ADMET=0: Doxycycline stays excluded",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "K_ADMET=0: Fosfomycin stays excluded",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "K_ADMET=0: Amoxicillin stays excluded",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "K_ADMET=0: Cephalexin stays excluded",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "CIP regime boundary at R=10/7",
+      "passed": true,
+      "computed": -0.0,
+      "expected": 0.0,
+      "diff": 0.0
+    },
+    {
+      "name": "R=1.3 \u2192 exclusion",
+      "passed": true,
+      "detail": "K_total = 0.069"
+    },
+    {
+      "name": "R=1.5 \u2192 concentrating",
+      "passed": true,
+      "detail": "K_total = -0.033"
+    },
+    {
+      "name": "R=2.0 \u2192 concentrating",
+      "passed": true,
+      "detail": "K_total = -0.200"
+    },
+    {
+      "name": "R=2.5 \u2192 concentrating",
+      "passed": true,
+      "detail": "K_total = -0.300"
+    },
+    {
+      "name": "R=3.0 \u2192 concentrating",
+      "passed": true,
+      "detail": "K_total = -0.367"
+    },
+    {
+      "name": "R=3.5 \u2192 concentrating",
+      "passed": true,
+      "detail": "K_total = -0.414"
+    },
+    {
+      "name": "R=4.0 \u2192 concentrating",
+      "passed": true,
+      "detail": "K_total = -0.450"
+    },
+    {
+      "name": "K_prostate \u2265 -1 for Ciprofloxacin",
+      "passed": true,
+      "detail": "K_prostate = -0.667"
+    },
+    {
+      "name": "K_prostate \u2265 -1 for Levofloxacin",
+      "passed": true,
+      "detail": "K_prostate = -0.750"
+    },
+    {
+      "name": "K_prostate \u2265 -1 for Norfloxacin",
+      "passed": true,
+      "detail": "K_prostate = -0.500"
+    },
+    {
+      "name": "K_prostate \u2265 -1 for TMP-SMX",
+      "passed": true,
+      "detail": "K_prostate = -0.333"
+    },
+    {
+      "name": "K_prostate \u2265 -1 for Trimethoprim",
+      "passed": true,
+      "detail": "K_prostate = -0.600"
+    },
+    {
+      "name": "K_prostate \u2265 -1 for Amoxicillin",
+      "passed": true,
+      "detail": "K_prostate = 5.667"
+    },
+    {
+      "name": "K_prostate \u2265 -1 for Cephalexin",
+      "passed": true,
+      "detail": "K_prostate = 9.000"
+    },
+    {
+      "name": "K_prostate \u2265 -1 for Doxycycline",
+      "passed": true,
+      "detail": "K_prostate = 0.250"
+    },
+    {
+      "name": "K_prostate \u2265 -1 for Azithromycin",
+      "passed": true,
+      "detail": "K_prostate = -0.800"
+    },
+    {
+      "name": "K_prostate \u2265 -1 for Fosfomycin",
+      "passed": true,
+      "detail": "K_prostate = 2.333"
+    },
+    {
+      "name": "\u03c4 BDQ",
+      "passed": true,
+      "computed": 3.034762,
+      "expected": 3.035,
+      "diff": 0.000238
+    },
+    {
+      "name": "\u03c4 LZD",
+      "passed": true,
+      "computed": 2.30103,
+      "expected": 2.301,
+      "diff": 3e-05
+    },
+    {
+      "name": "\u03c4 INH",
+      "passed": true,
+      "computed": 2.176091,
+      "expected": 2.176,
+      "diff": 9.1e-05
+    },
+    {
+      "name": "\u03c4 MXF",
+      "passed": true,
+      "computed": 2.146128,
+      "expected": 2.146,
+      "diff": 0.000128
+    },
+    {
+      "name": "\u03c4 RIF",
+      "passed": true,
+      "computed": 1.778151,
+      "expected": 1.778,
+      "diff": 0.000151
+    },
+    {
+      "name": "\u03c4 PZA",
+      "passed": true,
+      "computed": 0.880814,
+      "expected": 0.881,
+      "diff": 0.000186
+    },
+    {
+      "name": "\u03c4 EMB",
+      "passed": true,
+      "computed": 0.60206,
+      "expected": 0.602,
+      "diff": 6e-05
+    },
+    {
+      "name": "K_total BDQ (cellular)",
+      "passed": true,
+      "computed": -0.7,
+      "expected": -0.7,
+      "diff": 0.0
+    },
+    {
+      "name": "K_total LZD (cellular)",
+      "passed": true,
+      "computed": -0.066667,
+      "expected": -0.067,
+      "diff": 0.000333
+    },
+    {
+      "name": "K_total INH (cellular)",
+      "passed": true,
+      "computed": 0.35,
+      "expected": 0.35,
+      "diff": 0.0
+    },
+    {
+      "name": "C INH (cellular)",
+      "passed": true,
+      "computed": 6.217404,
+      "expected": 6.217,
+      "diff": 0.000404
+    },
+    {
+      "name": "K_total MXF (cellular)",
+      "passed": true,
+      "computed": -0.566667,
+      "expected": -0.567,
+      "diff": 0.000333
+    },
+    {
+      "name": "K_total RIF (cellular)",
+      "passed": true,
+      "computed": 2.433333,
+      "expected": 2.433,
+      "diff": 0.000333
+    },
+    {
+      "name": "C RIF (cellular)",
+      "passed": true,
+      "computed": 0.730747,
+      "expected": 0.731,
+      "diff": 0.000253
+    },
+    {
+      "name": "K_total PZA (cellular)",
+      "passed": true,
+      "computed": 0.528571,
+      "expected": 0.529,
+      "diff": 0.000429
+    },
+    {
+      "name": "C PZA (cellular)",
+      "passed": true,
+      "computed": 1.666404,
+      "expected": 1.665,
+      "diff": 0.001404
+    },
+    {
+      "name": "K_total EMB (cellular)",
+      "passed": true,
+      "computed": 1.1,
+      "expected": 1.1,
+      "diff": 0.0
+    },
+    {
+      "name": "C EMB (cellular)",
+      "passed": true,
+      "computed": 0.547327,
+      "expected": 0.547,
+      "diff": 0.000327
+    },
+    {
+      "name": "K_total BDQ (caseum)",
+      "passed": true,
+      "computed": 9.1,
+      "expected": 9.1,
+      "diff": 0.0
+    },
+    {
+      "name": "C BDQ (caseum)",
+      "passed": true,
+      "computed": 0.33349,
+      "expected": 0.334,
+      "diff": 0.00051
+    },
+    {
+      "name": "K_total LZD (caseum)",
+      "passed": true,
+      "computed": 0.211111,
+      "expected": 0.211,
+      "diff": 0.000111
+    },
+    {
+      "name": "C LZD (caseum)",
+      "passed": true,
+      "computed": 10.899616,
+      "expected": 10.905,
+      "diff": 0.005384
+    },
+    {
+      "name": "K_total INH (caseum)",
+      "passed": true,
+      "computed": 1.1,
+      "expected": 1.1,
+      "diff": 0.0
+    },
+    {
+      "name": "C INH (caseum)",
+      "passed": true,
+      "computed": 1.978265,
+      "expected": 1.978,
+      "diff": 0.000265
+    },
+    {
+      "name": "K_total MXF (caseum)",
+      "passed": true,
+      "computed": 4.1,
+      "expected": 4.1,
+      "diff": 0.0
+    },
+    {
+      "name": "C MXF (caseum)",
+      "passed": true,
+      "computed": 0.523446,
+      "expected": 0.523,
+      "diff": 0.000446
+    },
+    {
+      "name": "K_total RIF (caseum)",
+      "passed": true,
+      "computed": -0.566667,
+      "expected": -0.567,
+      "diff": 0.000333
+    },
+    {
+      "name": "K_total PZA (caseum)",
+      "passed": true,
+      "computed": 0.35,
+      "expected": 0.35,
+      "diff": 0.0
+    },
+    {
+      "name": "C PZA (caseum)",
+      "passed": true,
+      "computed": 2.51661,
+      "expected": 2.517,
+      "diff": 0.00039
+    },
+    {
+      "name": "K_total EMB (caseum)",
+      "passed": true,
+      "computed": 9.1,
+      "expected": 9.1,
+      "diff": 0.0
+    },
+    {
+      "name": "C EMB (caseum)",
+      "passed": true,
+      "computed": 0.06616,
+      "expected": 0.066,
+      "diff": 0.00016
+    },
+    {
+      "name": "K_total BDQ (cavity)",
+      "passed": true,
+      "computed": 0.35,
+      "expected": 0.35,
+      "diff": 0.0
+    },
+    {
+      "name": "C BDQ (cavity)",
+      "passed": true,
+      "computed": 8.670749,
+      "expected": 8.671,
+      "diff": 0.000251
+    },
+    {
+      "name": "K_total LZD (cavity)",
+      "passed": true,
+      "computed": 0.1,
+      "expected": 0.1,
+      "diff": 0.0
+    },
+    {
+      "name": "C LZD (cavity)",
+      "passed": true,
+      "computed": 23.0103,
+      "expected": 23.01,
+      "diff": 0.0003
+    },
+    {
+      "name": "K_total INH (cavity)",
+      "passed": true,
+      "computed": 2.433333,
+      "expected": 2.433,
+      "diff": 0.000333
+    },
+    {
+      "name": "C INH (cavity)",
+      "passed": true,
+      "computed": 0.894284,
+      "expected": 0.894,
+      "diff": 0.000284
+    },
+    {
+      "name": "K_total MXF (cavity)",
+      "passed": true,
+      "computed": -0.7,
+      "expected": -0.7,
+      "diff": 0.0
+    },
+    {
+      "name": "K_total RIF (cavity)",
+      "passed": true,
+      "computed": -0.233333,
+      "expected": -0.233,
+      "diff": 0.000333
+    },
+    {
+      "name": "K_total PZA (cavity)",
+      "passed": true,
+      "computed": 1.1,
+      "expected": 1.1,
+      "diff": 0.0
+    },
+    {
+      "name": "C PZA (cavity)",
+      "passed": true,
+      "computed": 0.80074,
+      "expected": 0.801,
+      "diff": 0.00026
+    },
+    {
+      "name": "K_total EMB (cavity)",
+      "passed": true,
+      "computed": 2.433333,
+      "expected": 2.433,
+      "diff": 0.000333
+    },
+    {
+      "name": "C EMB (cavity)",
+      "passed": true,
+      "computed": 0.247422,
+      "expected": 0.247,
+      "diff": 0.000422
+    },
+    {
+      "name": "cellular rank 1 = BDQ",
+      "passed": true,
+      "detail": "got BDQ"
+    },
+    {
+      "name": "cellular rank 2 = LZD",
+      "passed": true,
+      "detail": "got LZD"
+    },
+    {
+      "name": "cellular rank 3 = MXF",
+      "passed": true,
+      "detail": "got MXF"
+    },
+    {
+      "name": "cellular rank 4 = INH",
+      "passed": true,
+      "detail": "got INH"
+    },
+    {
+      "name": "cellular rank 5 = PZA",
+      "passed": true,
+      "detail": "got PZA"
+    },
+    {
+      "name": "cellular rank 6 = RIF",
+      "passed": true,
+      "detail": "got RIF"
+    },
+    {
+      "name": "cellular rank 7 = EMB",
+      "passed": true,
+      "detail": "got EMB"
+    },
+    {
+      "name": "caseum rank 1 = RIF",
+      "passed": true,
+      "detail": "got RIF"
+    },
+    {
+      "name": "caseum rank 2 = LZD",
+      "passed": true,
+      "detail": "got LZD"
+    },
+    {
+      "name": "caseum rank 3 = PZA",
+      "passed": true,
+      "detail": "got PZA"
+    },
+    {
+      "name": "caseum rank 4 = INH",
+      "passed": true,
+      "detail": "got INH"
+    },
+    {
+      "name": "caseum rank 5 = MXF",
+      "passed": true,
+      "detail": "got MXF"
+    },
+    {
+      "name": "caseum rank 6 = BDQ",
+      "passed": true,
+      "detail": "got BDQ"
+    },
+    {
+      "name": "caseum rank 7 = EMB",
+      "passed": true,
+      "detail": "got EMB"
+    },
+    {
+      "name": "cavity rank 1 = MXF",
+      "passed": true,
+      "detail": "got MXF"
+    },
+    {
+      "name": "cavity rank 2 = RIF",
+      "passed": true,
+      "detail": "got RIF"
+    },
+    {
+      "name": "cavity rank 3 = LZD",
+      "passed": true,
+      "detail": "got LZD"
+    },
+    {
+      "name": "cavity rank 4 = BDQ",
+      "passed": true,
+      "detail": "got BDQ"
+    },
+    {
+      "name": "cavity rank 5 = INH",
+      "passed": true,
+      "detail": "got INH"
+    },
+    {
+      "name": "cavity rank 6 = PZA",
+      "passed": true,
+      "detail": "got PZA"
+    },
+    {
+      "name": "cavity rank 7 = EMB",
+      "passed": true,
+      "detail": "got EMB"
+    },
+    {
+      "name": "MXF: cellular #3 \u2192 caseum #5",
+      "passed": true,
+      "detail": "cell=3, case=5"
+    },
+    {
+      "name": "RIF: cellular #6 \u2192 caseum #1",
+      "passed": true,
+      "detail": "cell=6, case=1"
+    },
+    {
+      "name": "MXF concentrating at cellular (K < 0)",
+      "passed": true,
+      "detail": "K = -0.567"
+    },
+    {
+      "name": "MXF excluded at caseum (K > 0)",
+      "passed": true,
+      "detail": "K = 4.100"
+    },
+    {
+      "name": "RIF excluded at cellular (K > 0)",
+      "passed": true,
+      "detail": "K = 2.433"
+    },
+    {
+      "name": "RIF concentrating at caseum (K < 0)",
+      "passed": true,
+      "detail": "K = -0.567"
+    },
+    {
+      "name": "LZD top 3 at cellular",
+      "passed": true,
+      "detail": "rank = 2"
+    },
+    {
+      "name": "LZD top 3 at caseum",
+      "passed": true,
+      "detail": "rank = 2"
+    },
+    {
+      "name": "LZD top 3 at cavity",
+      "passed": true,
+      "detail": "rank = 3"
+    },
+    {
+      "name": "LZD R \u2265 0.9 at cellular",
+      "passed": true,
+      "detail": "R = 1.2"
+    },
+    {
+      "name": "LZD R \u2265 0.9 at caseum",
+      "passed": true,
+      "detail": "R = 0.9"
+    },
+    {
+      "name": "LZD R \u2265 0.9 at cavity",
+      "passed": true,
+      "detail": "R = 1.0"
+    },
+    {
+      "name": "EMB last at cellular",
+      "passed": true,
+      "detail": "last = EMB"
+    },
+    {
+      "name": "EMB last at caseum",
+      "passed": true,
+      "detail": "last = EMB"
+    },
+    {
+      "name": "EMB last at cavity",
+      "passed": true,
+      "detail": "last = EMB"
+    },
+    {
+      "name": "EMB has lowest \u03c4 in panel",
+      "passed": true,
+      "detail": "\u03c4 = 0.602"
+    },
+    {
+      "name": "BDQ has highest \u03c4",
+      "passed": true,
+      "detail": "\u03c4 = 3.035"
+    },
+    {
+      "name": "BDQ #1 at cellular",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "BDQ #6 at caseum",
+      "passed": true,
+      "detail": "rank = 6"
+    },
+    {
+      "name": "MXF caseum C < 1.0 (can't help persisters)",
+      "passed": true,
+      "detail": "C = 0.523"
+    },
+    {
+      "name": "MXF caseum improvement over EMB is modest",
+      "passed": true,
+      "detail": "ratio = 7.9"
+    },
+    {
+      "name": "MXF concentrating at cellular (huge improvement over EMB)",
+      "passed": true,
+      "detail": "K_cellular = -0.567"
+    },
+    {
+      "name": "K_ADMET=0: cellular ranking unchanged",
+      "passed": true,
+      "detail": "got ['BDQ', 'LZD', 'MXF', 'INH', 'PZA', 'RIF', 'EMB']"
+    },
+    {
+      "name": "K_ADMET=0: caseum ranking unchanged",
+      "passed": true,
+      "detail": "got ['RIF', 'LZD', 'PZA', 'INH', 'MXF', 'BDQ', 'EMB']"
+    },
+    {
+      "name": "K_ADMET=0: cavity bottom 4 unchanged",
+      "passed": true,
+      "detail": "got ['BDQ', 'INH', 'PZA', 'EMB']"
+    },
+    {
+      "name": "K_ADMET=0: cavity EMB still last",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "K_ADMET=0: LZD enters concentrating at cavity",
+      "passed": true,
+      "detail": "R=1.0, K_lesion=0, K_total=0"
+    },
+    {
+      "name": "R_caseum(MXF)=0.1: RIF still beats MXF",
+      "passed": true,
+      "detail": "MXF K=9.100"
+    },
+    {
+      "name": "R_caseum(MXF)=0.2: RIF still beats MXF",
+      "passed": true,
+      "detail": "MXF K=4.100"
+    },
+    {
+      "name": "R_caseum(MXF)=0.4: RIF still beats MXF",
+      "passed": true,
+      "detail": "MXF K=1.600"
+    },
+    {
+      "name": "R_caseum(MXF)=0.5: RIF still beats MXF",
+      "passed": true,
+      "detail": "MXF K=1.100"
+    },
+    {
+      "name": "R_caseum(MXF)=1.0: RIF still beats MXF",
+      "passed": true,
+      "detail": "MXF K=0.100"
+    },
+    {
+      "name": "K_lesion \u2265 -1: BDQ (cellular)",
+      "passed": true,
+      "detail": "K_lesion = -0.800"
+    },
+    {
+      "name": "K_lesion \u2265 -1: LZD (cellular)",
+      "passed": true,
+      "detail": "K_lesion = -0.167"
+    },
+    {
+      "name": "K_lesion \u2265 -1: INH (cellular)",
+      "passed": true,
+      "detail": "K_lesion = 0.250"
+    },
+    {
+      "name": "K_lesion \u2265 -1: MXF (cellular)",
+      "passed": true,
+      "detail": "K_lesion = -0.667"
+    },
+    {
+      "name": "K_lesion \u2265 -1: RIF (cellular)",
+      "passed": true,
+      "detail": "K_lesion = 2.333"
+    },
+    {
+      "name": "K_lesion \u2265 -1: PZA (cellular)",
+      "passed": true,
+      "detail": "K_lesion = 0.429"
+    },
+    {
+      "name": "K_lesion \u2265 -1: EMB (cellular)",
+      "passed": true,
+      "detail": "K_lesion = 1.000"
+    },
+    {
+      "name": "K_lesion \u2265 -1: BDQ (caseum)",
+      "passed": true,
+      "detail": "K_lesion = 9.000"
+    },
+    {
+      "name": "K_lesion \u2265 -1: LZD (caseum)",
+      "passed": true,
+      "detail": "K_lesion = 0.111"
+    },
+    {
+      "name": "K_lesion \u2265 -1: INH (caseum)",
+      "passed": true,
+      "detail": "K_lesion = 1.000"
+    },
+    {
+      "name": "K_lesion \u2265 -1: MXF (caseum)",
+      "passed": true,
+      "detail": "K_lesion = 4.000"
+    },
+    {
+      "name": "K_lesion \u2265 -1: RIF (caseum)",
+      "passed": true,
+      "detail": "K_lesion = -0.667"
+    },
+    {
+      "name": "K_lesion \u2265 -1: PZA (caseum)",
+      "passed": true,
+      "detail": "K_lesion = 0.250"
+    },
+    {
+      "name": "K_lesion \u2265 -1: EMB (caseum)",
+      "passed": true,
+      "detail": "K_lesion = 9.000"
+    },
+    {
+      "name": "K_lesion \u2265 -1: BDQ (cavity)",
+      "passed": true,
+      "detail": "K_lesion = 0.250"
+    },
+    {
+      "name": "K_lesion \u2265 -1: LZD (cavity)",
+      "passed": true,
+      "detail": "K_lesion = 0.000"
+    },
+    {
+      "name": "K_lesion \u2265 -1: INH (cavity)",
+      "passed": true,
+      "detail": "K_lesion = 2.333"
+    },
+    {
+      "name": "K_lesion \u2265 -1: MXF (cavity)",
+      "passed": true,
+      "detail": "K_lesion = -0.800"
+    },
+    {
+      "name": "K_lesion \u2265 -1: RIF (cavity)",
+      "passed": true,
+      "detail": "K_lesion = -0.333"
+    },
+    {
+      "name": "K_lesion \u2265 -1: PZA (cavity)",
+      "passed": true,
+      "detail": "K_lesion = 1.000"
+    },
+    {
+      "name": "K_lesion \u2265 -1: EMB (cavity)",
+      "passed": true,
+      "detail": "K_lesion = 2.333"
+    }
+  ],
+  "total": 260,
+  "passed": 260,
+  "failed": 0,
+  "pass_rate": "100.0%"
+}

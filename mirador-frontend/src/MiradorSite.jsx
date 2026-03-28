@@ -250,6 +250,7 @@ export default function MiradorSite() {
   const [proofTab, setProofTab] = useState("mrsa");
   const [demoDisease, setDemoDisease] = useState("mrsa");
   const [showCompliance, setShowCompliance] = useState(false);
+  const [expandedVal, setExpandedVal] = useState(null);
   const mob = useIsMobile();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -849,65 +850,219 @@ export default function MiradorSite() {
           </p>
         </FadeIn>
 
-        <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
-          {[
+        {(() => {
+          const tests = [
             {
-              title: "Prosthetic Joint Infection",
-              icon: "🦴",
-              count: "49/49",
-              color: "#22c55e",
-              regime: "Exclusion (K > 0)",
-              highlight: "Rifampin + backbone superiority",
+              id: "pji", title: "Prosthetic Joint Infection", icon: "🦴", count: "49/49", color: "#22c55e",
+              regime: "Exclusion (K > 0)", highlight: "Rifampin + backbone superiority",
               detail: "7-drug panel, 6 combinations, MRSA sub-analysis. Predicts VAN+RIF borderline, DAP+RIF failure, CIP+RIF dominance.",
               sources: "Zimmerli 1998 · Osmon 2013 IDSA · Byren 2009",
+              drugs: [
+                { name: "Rifampin", tau: 3.523, K: 6.209, C: 0.567, rank: 1 },
+                { name: "Linezolid", tau: 2.000, K: 3.555, C: 0.563, rank: 2 },
+                { name: "Ciprofloxacin", tau: 1.477, K: 2.657, C: 0.556, rank: 3 },
+                { name: "TMP-SMX", tau: 1.477, K: 5.007, C: 0.295, rank: 4 },
+                { name: "Ceftaroline", tau: 2.602, K: 8.941, C: 0.291, rank: 5 },
+                { name: "Vancomycin", tau: 2.602, K: 12.876, C: 0.202, rank: 6 },
+                { name: "Daptomycin", tau: 3.174, K: 29.642, C: 0.107, rank: 7 },
+              ],
+              combos: [
+                { name: "CIP+RIF", C: 3.871, pass: true },
+                { name: "LZD+RIF", C: 3.518, pass: true },
+                { name: "TMP+RIF", C: 2.597, pass: true },
+                { name: "CAR+RIF", C: 2.407, pass: true },
+                { name: "VAN+RIF", C: 2.106, pass: true, note: "borderline" },
+                { name: "DAP+RIF", C: 1.879, pass: false, note: "below θ" },
+              ],
+              findings: [
+                "Rifampin monotherapy ranks #1 despite moderate τ — lowest tissue barrier (K_biofilm for RIF is low)",
+                "Vancomycin ranks 6th — high τ destroyed by K_prosthetic + K_biofilm (K = 12.9)",
+                "Daptomycin last despite highest τ in panel — K_prosthetic = 19 annihilates penetration",
+                "VAN+RIF borderline pass at C/θ = 1.053 — matches Zimmerli \"add rifampin\" guidance",
+                "DAP+RIF is the only combination that fails θ = 2.0",
+                "Rankings robust to K_ADMET = 0 (top 3 and bottom 4 unchanged)",
+              ],
             },
             {
-              title: "Chronic Bacterial Prostatitis",
-              icon: "⚡",
-              count: "94/94",
-              color: "#3b82f6",
-              regime: "Negative curvature (K < 0)",
-              highlight: "Fluoroquinolone concentration",
+              id: "prostatitis", title: "Chronic Bacterial Prostatitis", icon: "⚡", count: "94/94", color: "#3b82f6",
+              regime: "Negative curvature (K < 0)", highlight: "Fluoroquinolone concentration",
               detail: "10-drug panel across two regimes. Prostate concentrates FQs (R > 1 → K < 0) while excluding β-lactams. Azithromycin paradox: best R, worst τ.",
               sources: "Naber 2008 · Bundrick 2003 · EAU 2024",
+              drugs: [
+                { name: "Ciprofloxacin", tau: 3.574, K: -0.367, C: null, regime: "concentrating", rank: 1 },
+                { name: "Levofloxacin", tau: 3.505, K: -0.450, C: null, regime: "concentrating", rank: 2 },
+                { name: "Norfloxacin", tau: 2.125, K: 0.000, C: null, regime: "concentrating", rank: 3 },
+                { name: "Trimethoprim", tau: 1.477, K: -0.250, C: null, regime: "concentrating", rank: 4 },
+                { name: "Azithromycin", tau: -0.301, K: -0.600, C: null, regime: "concentrating", rank: 5 },
+                { name: "TMP-SMX", tau: 2.079, K: 0.067, C: 31.19, regime: "exclusion", rank: 6 },
+                { name: "Doxycycline", tau: 1.602, K: 0.650, C: 2.465, regime: "exclusion", rank: 7 },
+                { name: "Fosfomycin", tau: 2.041, K: 2.933, C: 0.696, regime: "exclusion", rank: 8 },
+                { name: "Amoxicillin", tau: 0.699, K: 6.267, C: 0.112, regime: "exclusion", rank: 9 },
+                { name: "Cephalexin", tau: 0.875, K: 9.600, C: 0.091, regime: "exclusion", rank: 10 },
+              ],
+              combos: [],
+              findings: [
+                "All 3 fluoroquinolones in concentrating regime (K ≤ 0) — prostate R > 1",
+                "CIP ≈ LEVO therapeutic equivalence (Δτ = 0.069) — matches Bundrick 2003 head-to-head",
+                "Azithromycin paradox: best R (5.0) but worst τ (−0.301) — concentrating but useless",
+                "β-lactams have K > 6 — near-total exclusion matches < 25% clinical cure rates",
+                "TMP-SMX barely in exclusion (K = 0.067) — flips to concentrating when K_ADMET = 0",
+                "CIP enters concentrating at R > 10/7 ≈ 1.43 — all published values (2.0–4.0) well above",
+                "No Parallel Lines axiom satisfied: all K_prostate ≥ −1",
+              ],
             },
             {
-              title: "TB Lesion Penetration",
-              icon: "🔬",
-              count: "117/117",
-              color: "#a855f7",
-              regime: "Multi-compartment inversion",
-              highlight: "Geometry vs mass spectrometry",
+              id: "tb", title: "TB Lesion Penetration", icon: "🔬", count: "117/117", color: "#a855f7",
+              regime: "Multi-compartment inversion", highlight: "Geometry vs mass spectrometry",
               detail: "7 drugs × 3 compartments. MXF↔RIF rank inversion between cellular granuloma and caseum emerges from geometry alone. Validated against MALDI imaging.",
               sources: "Prideaux 2015 Nat Med · Kjellsson 2012",
+              drugs: [
+                { name: "BDQ", tau: 3.035, note: "Cell #1, Caseum #6 — best τ but excluded from caseum" },
+                { name: "LZD", tau: 2.301, note: "Top 3 everywhere — universal penetrator (R ≥ 0.9)" },
+                { name: "INH", tau: 2.176, note: "Cell #4, Caseum #4, Cavity #5" },
+                { name: "MXF", tau: 2.146, note: "Cell #3 → Caseum #5 — concentrates in cellular, excluded from caseum" },
+                { name: "RIF", tau: 1.778, note: "Cell #6 → Caseum #1 — excluded from cellular, concentrates in caseum" },
+                { name: "PZA", tau: 0.881, note: "Moderate everywhere — no extreme barriers" },
+                { name: "EMB", tau: 0.602, note: "Last everywhere — lowest τ and poor penetration" },
+              ],
+              combos: [],
+              findings: [
+                "MXF↔RIF rank inversion: MXF is #3 cellular → #5 caseum; RIF is #6 cellular → #1 caseum",
+                "Inversion emerges purely from R values: MXF R_cell=3.0, R_case=0.2; RIF R_cell=0.3, R_case=3.0",
+                "LZD is universal penetrator — top 3 in all 3 compartments (R ≥ 0.9 everywhere)",
+                "BDQ paradox: highest τ in panel, #1 at cellular, but #6 at caseum (R_case = 0.1)",
+                "EMB fails everywhere — lowest τ combined with poor R values",
+                "REMoxTB failure explained: MXF replaces EMB, improves cellular but can't help caseum persisters",
+                "Rankings unchanged with K_ADMET = 0 — barrier geometry dominates",
+                "Ground truth = MALDI mass spectrometry (direct drug concentration maps, d² ≈ 0)",
+              ],
+              compartments: [
+                { name: "Cellular Granuloma", ranking: "BDQ → LZD → MXF → INH → PZA → RIF → EMB" },
+                { name: "Necrotic Caseum", ranking: "RIF → LZD → PZA → INH → MXF → BDQ → EMB" },
+                { name: "Cavity Wall", ranking: "MXF → RIF → LZD → BDQ → INH → PZA → EMB" },
+              ],
             },
-          ].map((t, i) => (
-            <FadeIn key={i} style={{ flex: "1 1 280px", maxWidth: 300 }}>
-              <div style={{
-                background: "#0d0d1a", border: `1px solid ${t.color}33`, borderRadius: 12,
-                padding: 24, height: "100%", display: "flex", flexDirection: "column",
-              }}>
-                <div style={{ fontSize: 28, marginBottom: 8 }}>{t.icon}</div>
-                <div style={{ fontFamily: FM, fontSize: 11, color: t.color, letterSpacing: 2, marginBottom: 6 }}>{t.regime.toUpperCase()}</div>
-                <h3 style={{ fontFamily: F, fontSize: 20, fontWeight: 400, margin: "0 0 12px 0" }}>{t.title}</h3>
+          ];
+
+          const ValTable = ({ headers, rows }) => (
+            <div style={{ overflowX: "auto", marginTop: 12 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: FM }}>
+                <thead><tr>{headers.map((h, i) => (
+                  <th key={i} style={{ textAlign: "left", padding: "6px 8px", borderBottom: "1px solid #1e1e3a", color: "#64748b", fontWeight: 400 }}>{h}</th>
+                ))}</tr></thead>
+                <tbody>{rows.map((row, i) => (
+                  <tr key={i}>{row.map((cell, j) => (
+                    <td key={j} style={{ padding: "5px 8px", borderBottom: "1px solid #0f0f1f", color: typeof cell === "number" ? "#e2e8f0" : "#94a3b8" }}>
+                      {typeof cell === "number" ? cell.toFixed(3) : cell}
+                    </td>
+                  ))}</tr>
+                ))}</tbody>
+              </table>
+            </div>
+          );
+
+          return <>
+            <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
+              {tests.map((t) => (
+                <FadeIn key={t.id} style={{ flex: "1 1 280px", maxWidth: 300 }}>
+                  <div
+                    onClick={() => setExpandedVal(expandedVal === t.id ? null : t.id)}
+                    style={{
+                      background: "#0d0d1a", border: `1px solid ${expandedVal === t.id ? t.color : t.color + "33"}`,
+                      borderRadius: 12, padding: 24, cursor: "pointer",
+                      transition: "border-color 0.2s, box-shadow 0.2s",
+                      boxShadow: expandedVal === t.id ? `0 0 20px ${t.color}22` : "none",
+                      height: "100%", display: "flex", flexDirection: "column",
+                    }}
+                  >
+                    <div style={{ fontSize: 28, marginBottom: 8 }}>{t.icon}</div>
+                    <div style={{ fontFamily: FM, fontSize: 11, color: t.color, letterSpacing: 2, marginBottom: 6 }}>{t.regime.toUpperCase()}</div>
+                    <h3 style={{ fontFamily: F, fontSize: 20, fontWeight: 400, margin: "0 0 12px 0" }}>{t.title}</h3>
+                    <div style={{ fontFamily: FM, fontSize: 32, fontWeight: 700, color: t.color, margin: "0 0 4px 0", letterSpacing: -1 }}>{t.count}</div>
+                    <div style={{ fontFamily: FM, fontSize: 10, color: "#64748b", marginBottom: 12 }}>predictions confirmed</div>
+                    <div style={{ fontSize: 13, fontFamily: FS, fontWeight: 600, color: "#e2e8f0", marginBottom: 8, lineHeight: 1.4 }}>{t.highlight}</div>
+                    <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7, flex: 1 }}>{t.detail}</div>
+                    <div style={{ fontSize: 10, fontFamily: FM, color: "#475569", marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e3a", lineHeight: 1.6 }}>{t.sources}</div>
+                    <div style={{ fontFamily: FM, fontSize: 10, color: t.color, marginTop: 10, textAlign: "center", letterSpacing: 1 }}>
+                      {expandedVal === t.id ? "▲ COLLAPSE" : "▼ VIEW DETAILS"}
+                    </div>
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+
+            {/* Expanded detail panel */}
+            {tests.filter(t => t.id === expandedVal).map(t => (
+              <FadeIn key={t.id + "-detail"}>
                 <div style={{
-                  fontFamily: FM, fontSize: 32, fontWeight: 700, color: t.color,
-                  margin: "0 0 4px 0", letterSpacing: -1,
-                }}>{t.count}</div>
-                <div style={{ fontFamily: FM, fontSize: 10, color: "#64748b", marginBottom: 12 }}>predictions confirmed</div>
-                <div style={{
-                  fontSize: 13, fontFamily: FS, fontWeight: 600, color: "#e2e8f0",
-                  marginBottom: 8, lineHeight: 1.4,
-                }}>{t.highlight}</div>
-                <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7, flex: 1 }}>{t.detail}</div>
-                <div style={{
-                  fontSize: 10, fontFamily: FM, color: "#475569", marginTop: 12,
-                  paddingTop: 12, borderTop: "1px solid #1e1e3a", lineHeight: 1.6,
-                }}>{t.sources}</div>
-              </div>
-            </FadeIn>
-          ))}
-        </div>
+                  marginTop: 24, padding: mob ? 16 : 28, background: "#0a0a16",
+                  border: `1px solid ${t.color}44`, borderRadius: 12,
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
+                    <div>
+                      <span style={{ fontSize: 24, marginRight: 10 }}>{t.icon}</span>
+                      <span style={{ fontFamily: F, fontSize: 22, fontWeight: 400 }}>{t.title}</span>
+                      <span style={{ fontFamily: FM, fontSize: 14, color: t.color, marginLeft: 12, fontWeight: 700 }}>{t.count}</span>
+                    </div>
+                    <a href="/validation_results.json" download="mirador_validation_results.json"
+                      style={{
+                        padding: "8px 16px", background: `${t.color}15`, border: `1px solid ${t.color}44`,
+                        borderRadius: 6, color: t.color, fontFamily: FM, fontSize: 11, letterSpacing: 1,
+                        textDecoration: "none", cursor: "pointer",
+                      }}>
+                      ↓ DOWNLOAD JSON
+                    </a>
+                  </div>
+
+                  {/* Drug table */}
+                  <div style={{ fontFamily: FM, fontSize: 11, color: t.color, letterSpacing: 2, marginBottom: 8 }}>DRUG PANEL</div>
+                  {t.id === "tb" ? <>
+                    {t.compartments.map(comp => (
+                      <div key={comp.name} style={{ marginBottom: 12 }}>
+                        <div style={{ fontFamily: FS, fontSize: 12, color: "#e2e8f0", fontWeight: 600, marginBottom: 4 }}>{comp.name}</div>
+                        <div style={{ fontFamily: FM, fontSize: 11, color: "#94a3b8", padding: "6px 10px", background: "#0d0d1a", borderRadius: 4 }}>{comp.ranking}</div>
+                      </div>
+                    ))}
+                    <ValTable
+                      headers={["Drug", "τ", "Note"]}
+                      rows={t.drugs.map(d => [d.name, d.tau, d.note])}
+                    />
+                  </> : t.id === "prostatitis" ? (
+                    <ValTable
+                      headers={["#", "Drug", "τ", "K", "C", "Regime"]}
+                      rows={t.drugs.map(d => [d.rank, d.name, d.tau, d.K, d.C ?? "∞", d.regime])}
+                    />
+                  ) : <>
+                    <ValTable
+                      headers={["#", "Drug", "τ", "K", "C"]}
+                      rows={t.drugs.map(d => [d.rank, d.name, d.tau, d.K, d.C])}
+                    />
+                    {t.combos.length > 0 && <>
+                      <div style={{ fontFamily: FM, fontSize: 11, color: t.color, letterSpacing: 2, marginTop: 20, marginBottom: 8 }}>COMBINATIONS (+ RIFAMPIN, s=1.2, θ=2.0)</div>
+                      <ValTable
+                        headers={["Combination", "C_combo", "Pass θ?", "Note"]}
+                        rows={t.combos.map(c => [c.name, c.C, c.pass ? "✓ PASS" : "✗ FAIL", c.note || ""])}
+                      />
+                    </>}
+                  </>}
+
+                  {/* Key findings */}
+                  <div style={{ fontFamily: FM, fontSize: 11, color: t.color, letterSpacing: 2, marginTop: 20, marginBottom: 8 }}>KEY FINDINGS</div>
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    {t.findings.map((f, i) => (
+                      <li key={i} style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.8, fontFamily: FS }}>{f}</li>
+                    ))}
+                  </ul>
+
+                  {/* Sources */}
+                  <div style={{ fontFamily: FM, fontSize: 10, color: "#475569", marginTop: 16, paddingTop: 12, borderTop: "1px solid #1e1e3a" }}>
+                    Ground truth: {t.sources} · I ∩ G = ∅
+                  </div>
+                </div>
+              </FadeIn>
+            ))}
+          </>;
+        })()}
 
         <FadeIn>
           <div style={{
