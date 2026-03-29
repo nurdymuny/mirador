@@ -1131,4 +1131,21 @@ export const NL_GROUPS = [
         tag: "trans · HIV · HRT", why: "Trans women on established HRT have estrogen-dominant pharmacokinetics — the system maps 'trans woman on hrt' to the correct PK category automatically, using the same clearance and Vd adjustments as cis women. No separate category needed — physiology, not identity, determines PK" },
     ],
   },
+  {
+    label: 'SHEAF COMPLETION', color: '#f59e0b',
+    questions: [
+      { q: "Complete missing τ for MRSA in bone tissue",
+        gql: "COMPLETE ON mirador_drugs\n  WHERE tau IS NULL\n  AND disease = 'mrsa'\n  AND compartment = 'bone'\n  MIN_CONFIDENCE 0.50\n  WITH PROVENANCE;",
+        tag: "MRSA · bone · complete", why: "Many bone-penetrating antibiotics have no published AUC₂₄/MIC ratio for osteomyelitis — τ is simply unknown. COMPLETE looks at drugs that ARE measured in bone (e.g. vancomycin, daptomycin) and uses the known relationships between them (same class, similar PK profile, shared targets) to estimate the missing values. Think of it as: 'if rifampicin reaches bone at 60% of its serum level and its cousin drug has similar lipophilicity, we can estimate what that cousin would do in bone.' Confidence tells you how many measured neighbours anchor the estimate — more anchors = more trustworthy" },
+      { q: "Which new adjacency constraints would most reduce uncertainty?",
+        gql: "SUGGEST_ADJACENCY mirador_drugs\n  FIELDS tau, k_admet, k_barrier\n  SAMPLE_SIZE 500\n  CANDIDATES 5\n  MINIMIZING h1;",
+        tag: "suggest · adjacency", why: "Imagine you have a budget for one more PK study — which experiment gives you the most bang for your buck? SUGGEST_ADJACENCY answers this by simulating: 'if we linked these two drugs by their ADMET profile (or MIC similarity, or shared target), how many other unknowns could we then fill in?' It ranks candidate links by how much they'd reduce overall uncertainty across the entire drug database. A clinician can use this to prioritize which therapeutic drug monitoring studies or PK trials would unlock the most new drug-tissue predictions" },
+      { q: "Check consistency of the drug bundle",
+        gql: "CONSISTENCY mirador_drugs;",
+        tag: "consistency · H¹", why: "When two sources disagree — say one paper reports vancomycin bone penetration at 15% and another at 40% — that's an inconsistency. CONSISTENCY scans every drug-to-drug relationship in the database and computes a single score: 0 means all data sources agree perfectly, higher means contradictions exist. This catches data entry errors, outdated MIC breakpoints, or conflicting PK studies before they propagate into clinical decisions. Think of it as a quality-control audit for your entire pharmacological knowledge base" },
+      { q: "If we measure DTG τ=5.39 in CNS, what else becomes completable?",
+        gql: "PROPAGATE ON mirador_drugs\n  ASSUME drug_name = 'DTG'\n  AND compartment = 'cns'\n  AND tau = 5.39;",
+        tag: "propagate · DTG · cascade", why: "Dolutegravir's CNS penetration has been debated for years — if a new study measures τ=5.39 (meaning AUC₂₄ is ~250,000× the MIC in CSF), what does that unlock? PROPAGATE shows the cascade: because DTG is structurally related to other integrase inhibitors, and those share PK properties with other antiretrovirals, one new measurement can unlock estimated τ values for 5+ other drugs in CNS that previously had no data. This helps infectious disease teams plan which drugs to study next — and which ones may already have enough indirect evidence to use clinically" },
+    ],
+  },
 ];

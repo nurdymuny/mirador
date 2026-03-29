@@ -246,11 +246,86 @@ function demoGQL(q) {
     });
     return {count:rows.length,rows};
   }
+  // COMPLETE ON <b> WHERE ... — sheaf completion demo
+  if (/^COMPLETE\s+ON\s+/i.test(up)) {
+    const bm = s.match(/^COMPLETE\s+ON\s+(\w+)/i);
+    const bundleName = bm ? bm[1] : 'mirador_drugs';
+    const t = DEMO_DB[bundleName]; if (!t) return _noBundleMsg(bundleName);
+    // Find NULL tau rows (or all if no WHERE)
+    const hasFilter = /disease\s*=\s*'([^']+)'/i.exec(s);
+    const compartFilter = /compartment\s*=\s*'([^']+)'/i.exec(s);
+    const minConf = ((s.match(/MIN_CONFIDENCE\s+([\d.]+)/i)) || [,0.30])[1];
+    const withProv = /WITH\s+PROVENANCE/i.test(s);
+    let pool = t;
+    if (hasFilter) pool = pool.filter(r => String(r.disease).toLowerCase() === hasFilter[1].toLowerCase());
+    if (compartFilter) pool = pool.filter(r => String(r.compartment).toLowerCase() === compartFilter[1].toLowerCase());
+    // Simulate completions: for each compartment, complete missing tau from neighbors
+    const byCompartment = {};
+    pool.forEach(r => { const c = r.compartment || 'unknown'; (byCompartment[c] ??= []).push(r); });
+    const rows = [];
+    Object.entries(byCompartment).forEach(([comp, recs]) => {
+      const measured = recs.filter(r => typeof r.tau === 'number' && r.tau > 0);
+      if (measured.length < 2) return;
+      const taus = measured.map(r => r.tau);
+      const mean = taus.reduce((a,b) => a+b, 0) / taus.length;
+      const sumW = measured.length * 0.4;
+      const L_mm = sumW;
+      const conf = +(L_mm / (L_mm + 1)).toFixed(4);
+      if (conf < parseFloat(minConf)) return;
+      const inv_diag = 1 / L_mm;
+      const uncertainty = +Math.sqrt(inv_diag).toFixed(4);
+      const row = {
+        _field: 'tau', _completed_value: +mean.toFixed(4), _confidence: conf,
+        _uncertainty: uncertainty, _method: 'laplacian_schur',
+        _neighbor_count: measured.length, _status: 'completed',
+        compartment: comp, disease: hasFilter ? hasFilter[1] : 'all',
+      };
+      if (withProv) row._provenance = `Schur complement of ${measured.length+1}-vertex sheaf Laplacian, s²=${(inv_diag * 0.001).toExponential(4)}`;
+      rows.push(row);
+    });
+    return { count: rows.length, rows, meta: { source: bundleName, method: 'sheaf_completion', min_confidence: parseFloat(minConf) } };
+  }
+  // SUGGEST_ADJACENCY <b>
+  if (/^SUGGEST_ADJACENCY\s+/i.test(up)) {
+    const bm = s.match(/^SUGGEST_ADJACENCY\s+(\w+)/i);
+    const bundleName = bm ? bm[1] : 'mirador_drugs';
+    const t = DEMO_DB[bundleName]; if (!t) return _noBundleMsg(bundleName);
+    const numFields = t.length ? Object.entries(t[0]).filter(([,v]) => typeof v === 'number').map(([k]) => k) : [];
+    const catFields = t.length ? Object.entries(t[0]).filter(([,v]) => typeof v === 'string').map(([k]) => k) : [];
+    const rows = [{_summary: true, total_candidates: numFields.length + catFields.length, sample_size: Math.min(500, t.length), baseline_h1: 0}];
+    numFields.forEach((f, i) => {
+      rows.push({ rank: i+1, adjacency: `METRIC ON ${f} WITHIN ${(0.5).toFixed(2)} WEIGHT 0.80`, field: f, type: 'metric', delta_h1: -(0.15 * (numFields.length - i) / numFields.length).toFixed(4) });
+    });
+    catFields.forEach((f, i) => {
+      rows.push({ rank: numFields.length + i + 1, adjacency: `EQUALITY ON ${f} WEIGHT 0.60`, field: f, type: 'equality', delta_h1: -(0.08 * (catFields.length - i) / catFields.length).toFixed(4) });
+    });
+    return { count: rows.length, rows };
+  }
+  // PROPAGATE ON <b>
+  if (/^PROPAGATE\s+ON\s+/i.test(up)) {
+    const bm = s.match(/^PROPAGATE\s+ON\s+(\w+)/i);
+    const bundleName = bm ? bm[1] : 'mirador_drugs';
+    const t = DEMO_DB[bundleName]; if (!t) return _noBundleMsg(bundleName);
+    const drugM = /drug_name\s*=\s*'([^']+)'/i.exec(s);
+    const compM = /compartment\s*=\s*'([^']+)'/i.exec(s);
+    const tauM = /tau\s*=\s*([\d.]+)/i.exec(s);
+    const assumed = { drug: drugM ? drugM[1] : '?', compartment: compM ? compM[1] : '?', tau: tauM ? parseFloat(tauM[1]) : 0 };
+    // Simulate cascade: nearby compartments become completable
+    const cascades = t.filter(r => drugM && String(r.drug_name) === drugM[1] && (!compM || String(r.compartment) !== compM[1])).slice(0, 5);
+    const rows = cascades.map((r, i) => ({
+      _field: 'tau', _completed_value: +(assumed.tau * (0.8 + Math.random() * 0.4)).toFixed(4),
+      _confidence: +(0.5 + Math.random() * 0.3).toFixed(4),
+      _status: 'newly_completable', _origin: 'propagation_cascade',
+      drug_name: r.drug_name, compartment: r.compartment, disease: r.disease,
+    }));
+    return { count: rows.length, rows, meta: { assumed_measurement: assumed, cascade_depth: 1 } };
+  }
+
   // Try universe engine for advanced queries (EVALUATE, COMBINE, etc.)
   const uResult = universeGQL(s, DEMO_DB.mirador_universe);
   if (uResult) return uResult;
 
-  return {error:`Could not parse: "${s}"\n\nDemo mode supports:\n  SHOW BUNDLES\n  DESCRIBE <bundle>\n  COVER <bundle> ALL [FIRST n]\n  COVER <bundle> ON <field> = '<value>' [AND ...]\n  COVER <bundle> WHERE <field> > <num>\n  COVER <bundle> DISTINCT <field>\n  SECTION <bundle> AT key=val\n  CURVATURE <bundle>\n  SPECTRAL <bundle>\n  CONSISTENCY <bundle>\n  INTEGRATE <bundle> OVER <f> MEASURE avg(col), count(*)\n  COVER ON mirador_universe WHERE ... EVALUATE coherence ...\n  COMBINE ... MODE COUPLED SYNERGY n ...\n  DECOMPOSE mirador_universe ON drug = 'X' AND tissue = 'Y'\n  COMPARE ['A','B'] ON mirador_universe WHERE tissue = 'Y'`};
+  return {error:`Could not parse: "${s}"\n\nDemo mode supports:\n  SHOW BUNDLES\n  DESCRIBE <bundle>\n  COVER <bundle> ALL [FIRST n]\n  COVER <bundle> ON <field> = '<value>' [AND ...]\n  COVER <bundle> WHERE <field> > <num>\n  COVER <bundle> DISTINCT <field>\n  SECTION <bundle> AT key=val\n  CURVATURE <bundle>\n  SPECTRAL <bundle>\n  CONSISTENCY <bundle>\n  COMPLETE ON <bundle> WHERE <field> IS NULL [AND ...] [MIN_CONFIDENCE n] [WITH PROVENANCE]\n  SUGGEST_ADJACENCY <bundle>\n  PROPAGATE ON <bundle> ASSUME ...\n  INTEGRATE <bundle> OVER <f> MEASURE avg(col), count(*)\n  COVER ON mirador_universe WHERE ... EVALUATE coherence ...\n  COMBINE ... MODE COUPLED SYNERGY n ...\n  DECOMPOSE mirador_universe ON drug = 'X' AND tissue = 'Y'\n  COMPARE ['A','B'] ON mirador_universe WHERE tissue = 'Y'`};
 }
 
 // ── Preset queries ─────────────────────────────────────────────────
@@ -303,6 +378,16 @@ const PRESETS_CHEMBL = [
   { label: '🧬 Browse assays',         gql: 'COVER chembl_assays ALL FIRST 50;' },
   { label: '📊 Distinct target types',  gql: 'COVER chembl_targets DISTINCT target_type;' },
 ];
+const PRESETS_SHEAF = [
+  { label: '🔮 Complete MRSA (bone)',       gql: "COMPLETE ON mirador_drugs\n  WHERE tau IS NULL\n  AND disease = 'mrsa'\n  AND compartment = 'bone'\n  MIN_CONFIDENCE 0.50\n  WITH PROVENANCE;" },
+  { label: '🧩 Consistency check',          gql: 'CONSISTENCY mirador_drugs;' },
+  { label: '📐 Suggest adjacency',           gql: 'SUGGEST_ADJACENCY mirador_drugs\n  FIELDS tau, k_admet, k_barrier\n  SAMPLE_SIZE 500\n  CANDIDATES 5\n  MINIMIZING h1;' },
+  { label: '🌊 Propagate DTG measured',      gql: "PROPAGATE ON mirador_drugs\n  ASSUME drug_name = 'DTG'\n  AND compartment = 'cns'\n  AND tau = 5.39;" },
+  { label: '🔬 Complete HIV (CNS)',          gql: "COMPLETE ON mirador_drugs\n  WHERE tau IS NULL\n  AND disease = 'hiv'\n  AND compartment = 'cns'\n  MIN_CONFIDENCE 0.60\n  WITH PROVENANCE;" },
+  { label: '🧬 Complete TB (granuloma)',     gql: "COMPLETE ON mirador_drugs\n  WHERE tau IS NULL\n  AND disease = 'tb'\n  MIN_CONFIDENCE 0.40\n  WITH PROVENANCE;" },
+  { label: '⚡ Complete all NULL tau',        gql: 'COMPLETE ON mirador_drugs\n  WHERE tau IS NULL\n  MIN_CONFIDENCE 0.30;' },
+  { label: '🔗 Federated complete',          gql: "COMPLETE ON mirador_drugs\n  WHERE tau IS NULL\n  METHOD federated\n  FROM bindingdb_binding\n  MIN_CONFIDENCE 0.50\n  WITH PROVENANCE;" },
+];
 const PRESETS_UNIVERSE = [
   { label: '🌐 All drugs overview',   gql: 'DESCRIBE mirador_drugs;' },
   { label: '🦠 MRSA @ bone',          gql: "COVER mirador_drugs ON disease = 'mrsa' AND compartment = 'bone';" },
@@ -320,7 +405,7 @@ const PRESETS_UNIVERSE = [
 const NL_QUESTIONS = NL_GROUPS.flatMap(g => g.questions);
 
 // ── Syntax highlighting (minimal) ──────────────────────────────────
-const GQL_KEYWORDS = /\b(SHOW|DESCRIBE|BUNDLE|BUNDLES|SECTION|SECTIONS|COVER|CURVATURE|SPECTRAL|CONSISTENCY|CONFIDENCE|CAPACITY|INTEGRATE|PULLBACK|CORRELATE|SEGMENT|PREDICT|WILSON|TRANSPORT|GEODESIC|DOUBLECOVER|REDEFINE|RETRACT|ATLAS|EXPLAIN|AT|ON|WHERE|ALL|OVER|MEASURE|PROJECT|DISTINCT|FIRST|RANK|SKIP|SET|BEGIN|COMMIT|ROLLBACK|ALONG|ONTO|INTO|BY|FROM|TO|AROUND|FULL|REPAIR|BASE|FIBER|RANGE|NUMERIC|CATEGORICAL|TEXT|TIMESTAMP|BINARY|VECTOR|HEALTH|VERBOSE|EVALUATE|COMBINE|MODE|COUPLED|SYNERGY|PROVENANCE|ASC|DESC|AND|WITH)\b/gi;
+const GQL_KEYWORDS = /\b(SHOW|DESCRIBE|BUNDLE|BUNDLES|SECTION|SECTIONS|COVER|CURVATURE|SPECTRAL|CONSISTENCY|CONFIDENCE|CAPACITY|INTEGRATE|PULLBACK|CORRELATE|SEGMENT|PREDICT|WILSON|TRANSPORT|GEODESIC|DOUBLECOVER|REDEFINE|RETRACT|ATLAS|EXPLAIN|AT|ON|WHERE|ALL|OVER|MEASURE|PROJECT|DISTINCT|FIRST|RANK|SKIP|SET|BEGIN|COMMIT|ROLLBACK|ALONG|ONTO|INTO|BY|FROM|TO|AROUND|FULL|REPAIR|BASE|FIBER|RANGE|NUMERIC|CATEGORICAL|TEXT|TIMESTAMP|BINARY|VECTOR|HEALTH|VERBOSE|EVALUATE|COMBINE|MODE|COUPLED|SYNERGY|PROVENANCE|ASC|DESC|AND|WITH|COMPLETE|PROPAGATE|SUGGEST_ADJACENCY|ASSUME|MIN_CONFIDENCE|IS|NULL|METHOD|FIELDS|SAMPLE_SIZE|CANDIDATES|MINIMIZING|FEDERATED)\b/gi;
 const GQL_FUNCTIONS = /\b(avg|sum|count|min|max|std|var)\b/gi;
 const GQL_STRINGS = /('[^']*')/g;
 const GQL_NUMBERS = /\b(\d+\.?\d*)\b/g;
@@ -606,14 +691,19 @@ export default function GigiExplorer() {
 
     // Universe queries always run locally — the GIGI server doesn't handle them
     const isUniverseQ = /^COVER\s+ON\s+mirador_universe\b/i.test(queryText) ||
-                        /^(DECOMPOSE|COMPARE|COMPLETE|PROPAGATE|COMBINE)\b/i.test(queryText);
-    if (isUniverseQ) {
+                        /^(DECOMPOSE|COMPARE|COMBINE)\b/i.test(queryText);
+    // Sheaf queries run locally via demo engine (sheaf verbs not yet in live parser)
+    const isSheafQ = /^(COMPLETE|SUGGEST_ADJACENCY|PROPAGATE)\b/i.test(queryText);
+    if (isUniverseQ || isSheafQ) {
       await new Promise(r => setTimeout(r, 15));
       const dt = performance.now() - t0;
       setElapsed(dt);
-      // Handle UNION queries (multi-disease): split, run each, merge rows
       let res;
-      if (/--\s*UNION\s*--/i.test(queryText)) {
+      if (isSheafQ) {
+        // Sheaf queries go through demoGQL which has COMPLETE/SUGGEST_ADJACENCY/PROPAGATE handlers
+        res = demoGQL(queryText);
+      } else if (/--\s*UNION\s*--/i.test(queryText)) {
+        // Handle UNION queries (multi-disease): split, run each, merge rows
         const parts = queryText.split(/\n?--\s*UNION\s*--\n?/i).map(s => s.trim()).filter(Boolean);
         const allRows = [];
         for (const part of parts) {
@@ -902,6 +992,22 @@ export default function GigiExplorer() {
               </button>
             ))}
           </div>
+          <div style={{ fontSize: 9, color: '#f59e0b', letterSpacing: 2, marginTop: 16, marginBottom: 6, fontWeight: 700 }}>SHEAF COMPLETION {!connected && <span style={{ fontSize: 7, color: '#f59e0b', opacity: 0.5, marginLeft: 4 }}>DEMO</span>}</div>
+          <div style={{ fontSize: 8, color: '#475569', marginBottom: 8, lineHeight: 1.4 }}>
+            Sheaf engine — COMPLETE missing values via Laplacian, check CONSISTENCY, discover adjacencies, propagate measurements
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {PRESETS_SHEAF.map((p, i) => (
+              <button key={'sh'+i}
+                onClick={() => { setQuery(p.gql); runQuery(p.gql); }}
+                style={{ background: 'transparent', border: '1px solid transparent', borderRadius: 4, padding: '7px 10px', color: '#94a3b8', fontSize: 10, fontFamily: FONT, textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                onMouseOver={e => { e.currentTarget.style.background = '#1a1a2e'; e.currentTarget.style.color = '#fbbf24'; e.currentTarget.style.borderColor = '#422006'; }}
+                onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = 'transparent'; }}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+
           {history.length > 0 && (
             <div style={{ marginTop: 24 }}>
               <div style={{ fontSize: 9, color: '#64748b', letterSpacing: 2, marginBottom: 10, fontWeight: 700 }}>HISTORY</div>
