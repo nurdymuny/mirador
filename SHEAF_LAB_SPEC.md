@@ -12,6 +12,12 @@
 
 ## 0. Purpose
 
+*"MIRADOR is the constructive dual of HERALD. Where HERALD detects biological disruption as curvature anomaly, MIRADOR designs biological restoration by maximizing coherence. The same Davis Field Equation governs both: C = τ/K. The arrow reverses."*
+— MIRADOR_SPEC v0.2, §0 Preamble
+
+*"The upgrade moves sheaf completion into the GIGI Rust engine as a native operation on any bundle, with a cross-bundle federation layer that treats the entire 11M-record corpus as a single cellular sheaf."*
+— GIGI_SHEAF_COMPLETION_SPEC, §0 Motivation
+
 The Sheaf Lab is a new top-level page on the MIRADOR site that demonstrates three capabilities of sheaf completion that no existing system can replicate:
 
 1. **Auto-Validation via PROPAGATE** — the cascade output *is* the next validation study
@@ -23,6 +29,12 @@ Each capability is grounded in the formal sheaf-theoretic framework of Branch VI
 ---
 
 ## 1. Auto-Validation via PROPAGATE
+
+*"PROPAGATE computes the pushforward of a hypothetical new measurement through the sheaf. Given a new observation $x_v^{\text{new}}$ at vertex $v$: add $v$ to $V_{\text{obs}}$, re-solve the Schur complement system with the augmented observation set, and the cascade set identifies all records whose completed values change."*
+— GIGI_SHEAF_COMPLETION_SPEC, §1.6
+
+*"The first sheaf cohomology group $H^1(G, \mathcal{F}) = \ker(\delta_1) / \operatorname{im}(\delta_0)$ detects contradictions in the data that cannot be resolved by any consistent global section."*
+— GIGI_SHEAF_COMPLETION_SPEC, §1.5
 
 ### 1.1 The Thesis
 
@@ -111,6 +123,15 @@ The validation suite is not hand-picked. It is *derived* from the geometry of th
 ---
 
 ## 2. Cross-Domain COMPLETE
+
+*"$L_{\mathcal{F}} x = 0$ if and only if $x$ is a global section — the data is perfectly sheaf-consistent across all adjacencies. The eigenvalues of $L_\mathcal{F}$ quantify the degree of inconsistency."*
+— GIGI_SHEAF_COMPLETION_SPEC, §1.2
+
+*"This is the minimum-energy extension of the observed data to the missing vertices — the unique completion that minimizes sheaf inconsistency."*
+— GIGI_SHEAF_COMPLETION_SPEC, §1.3
+
+*"This is the killer feature: automated scientific discovery of data relationships. The sheaf tells you which field relationships reduce inconsistency. The operator reviews suggestions and accepts the ones that make domain sense — the geometry proposes, the scientist disposes."*
+— GIGI_SHEAF_COMPLETION_SPEC, §3.4 (SUGGEST_ADJACENCY)
 
 ### 2.1 The Thesis
 
@@ -273,6 +294,15 @@ The sheaf completion framework (SH1–SH3) is not a pharmacology tool. It is a *
 
 ## 3. Reverse COMPLETE for Drug Discovery
 
+*"The core thesis: given a fully diagnosed disease state in a specific patient, MIRADOR constructs the optimal therapeutic molecule (or combination) by solving for maximum coherence on the patient-specific therapeutic manifold. This is personalized medicine derived from first principles, not statistical correlation."*
+— MIRADOR_SPEC v0.2, §0 Preamble
+
+*"The pharmacophore τ is the topological invariant of the therapeutic interaction. It is the minimal geometric arrangement of features that is necessary and sufficient for biological activity."*
+— MIRADOR_SPEC v0.2, §6.0 (Layer 4)
+
+*"Each $K_i$ is a sectional curvature of the molecule's trajectory through the corresponding biological compartment. This is not metaphor — the molecule's trajectory through the body is a curve on a Riemannian manifold, and curvature measures how much the trajectory deviates from a geodesic (the 'ideal' path with no loss)."*
+— MIRADOR_SPEC v0.2, §7.3 Validation V5.1
+
 ### 3.1 The Thesis
 
 > Instead of "what's the R value for tedizolid at bone?", ask "what PROPERTIES would a molecule need to fill the biggest gap in the therapeutic landscape?" The missing vertex isn't a measurement — it's a molecule that doesn't exist yet. The bundle geometry designs the drug.
@@ -428,6 +458,12 @@ Drug discovery is traditionally a forward search: propose a molecule, test it, i
 
 ## 4. Site Architecture
 
+*"This formulation introduces zero free parameters. The interval IS the uncertainty. The Davis Field Equation framework has no tunable constants ($C = \tau / K$ is exact for measured data), and the completed extension preserves this property."*
+— GIGI_SHEAF_COMPLETION_SPEC, §1.7
+
+*"If HERALD is the radar that tracks the target, MIRADOR is the engineer that positions the interceptors."*
+— theory/mirador.tex, §1 Introduction
+
 ### 4.1 Page Placement
 
 The Sheaf Lab is a new top-level route (`/sheaf-lab` or `#sheaf-lab`) accessible from the main navigation. It sits between "Demo" and "Science" in the nav ordering:
@@ -518,6 +554,9 @@ Or as a hash section within MiradorSite.jsx, following the existing pattern:
 
 ## 5. Mathematical Rigor Checklist
 
+*"A completion of 'this drug fails here' can be high-confidence; the old formula would incorrectly report confidence = 0 regardless of evidence strength. The corrected formula has these properties: $\sigma_v \to 0$ (perfectly constrained by neighbors): confidence → 1; $\sigma_v = s$ (uncertainty equals population variance): confidence = 0.5; $\sigma_v \gg s$ (poorly constrained): confidence → 0."*
+— GIGI_SHEAF_COMPLETION_SPEC, §1.4
+
 Every equation displayed on the Sheaf Lab page must satisfy:
 
 | # | Requirement | Grounding |
@@ -537,6 +576,12 @@ Every equation displayed on the Sheaf Lab page must satisfy:
 
 ## 6. Data Requirements
 
+*"COMPLETE on vancomycin bone penetration uses 700 neighbors, not the 4.9M ChEMBL activity records that contain real binding affinity data for vancomycin against hundreds of targets."*
+— GIGI_SHEAF_COMPLETION_SPEC, §0 Motivation
+
+*"Each bundle ships with exactly one seed adjacency — the obvious equality on its primary grouping field. Additional adjacencies are discovered from the data using SUGGEST_ADJACENCY, not prescribed."*
+— GIGI_SHEAF_COMPLETION_SPEC, §6 Seed Adjacency Configurations
+
 ### 6.1 Bundle Data Sources
 
 | Bundle | Source | Estimated Records | Ingestion |
@@ -554,6 +599,12 @@ For the demo page (when not connected to live GIGI), each bundle carries 20–50
 ---
 
 ## 7. Testing
+
+*"Sheaf completion fills gaps; it does not overwrite measurements."*
+— GIGI_SHEAF_COMPLETION_SPEC, §9.1 INV-4
+
+*"The completed section minimizes sheaf energy — it is the most consistent extension of the data. Adding more neighbors can only increase confidence. Cascades cannot teleport across the graph. Completing data resolves all resolvable contradictions."*
+— GIGI_SHEAF_COMPLETION_SPEC, §9.1 Correctness Invariants (INV-1 through INV-5)
 
 ### 7.1 Forward Completion Tests (per bundle)
 
@@ -589,6 +640,12 @@ For each of the 5 bundles, withhold 10% of known values and verify:
 
 ## 8. Implementation Phases
 
+*"The Schur complement operates on the local neighborhood (typically $k = 50$–$500$ records), not the entire bundle (4.9M). The neighborhood size is bounded by max_neighbors, making COMPLETE $O(1)$ with respect to bundle size after the $O(\log n)$ index lookup."*
+— GIGI_SHEAF_COMPLETION_SPEC, §7.1 Complexity Analysis
+
+*"The engine doesn't pretend to know what it can't determine — it tells you exactly what to measure next."*
+— GIGI_SHEAF_COMPLETION_SPEC, §9.2
+
 ### Phase 1: Page Shell + Demo Mode (no live bundles)
 - Create `SheafLab.jsx` with three-tab layout
 - Embed seed data for all 5 bundles (20–50 records each)
@@ -613,6 +670,12 @@ For each of the 5 bundles, withhold 10% of known values and verify:
 ---
 
 ## 9. References
+
+*"Lipinski's Rule of Five is the statement $K_{\text{abs}} < K_{\text{crit}}$ for a specific choice of metric. MIRADOR derives Lipinski as a special case and then generalizes: the curvature framework applies to any route of administration, any metabolic phenotype, any patient."*
+— MIRADOR_SPEC v0.2, §7.3 Validation V5.2
+
+*"CYP450 enzymes are holonomy operators: they parallel-transport the molecule around the metabolic loop, and the molecule comes back transformed. The holonomy group of the metabolic connection encodes the full set of metabolites."*
+— MIRADOR_SPEC v0.2, §7.3 Validation V5.3
 
 1. **Branch VII** — B. R. Davis, "The Cohomology of Completion," 2026. SH1–SH8, Čech cohomology, obstruction theory.
 2. **GIGI_SHEAF_COMPLETION_SPEC** — COMPLETE, PROPAGATE, CONSISTENCY, SUGGEST_ADJACENCY verb specifications.
