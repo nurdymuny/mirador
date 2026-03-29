@@ -208,15 +208,43 @@ function localComplete(drugId, tissueId) {
   };
 }
 
+// Normalize GIGI COMPLETE response → internal format
+function normalizeComplete(res) {
+  if (!res) return null;
+  // GIGI returns { completed: [...], constraint_graph: [...] }
+  if (res.completed?.length > 0) {
+    const c = res.completed[0];
+    return {
+      rows: [{
+        _completed_value: c.value,
+        _confidence: c.confidence,
+        _uncertainty: c.uncertainty,
+        _method: c.method || 'sheaf_extension',
+        _neighbor_count: c.neighbor_count,
+        _status: 'completed',
+        _origin: c.origin || 'sheaf_completed',
+        _provenance: (res.constraint_graph || []).map(e => ({
+          drug_name: e.from, compartment: e.adjacency, adjacency_type: e.adjacency,
+          value: e.value, weight: e.weight,
+        })),
+      }],
+    };
+  }
+  // Already in rows format (e.g. from local fallback)
+  if (res.rows?.length > 0) return res;
+  return null;
+}
+
 async function gigiComplete(drugId, tissueId) {
   const d = safeDrugId(drugId), t = safeTissueId(tissueId);
   if (!d || !t) return null;
   const comp = TISSUE_TO_COMPARTMENT[t] || t;
   try {
     const res = await gigiQuery(
-      `COMPLETE ON mirador_drugs WHERE tau = NULL AND drug_name = '${d}' AND compartment = '${comp}' MIN_CONFIDENCE 0.30 WITH PROVENANCE`
+      `COMPLETE ON mirador_drugs WHERE tau = NULL AND drug_name = '${d}' AND compartment = '${comp}' CONFIDENCE_FLOOR 0.30 WITH CONSTRAINT_GRAPH`
     );
-    if (res?.rows?.length > 0) return res;
+    const norm = normalizeComplete(res);
+    if (norm) return norm;
   } catch (_) { /* fall through to local */ }
   return localComplete(d, t);
 }
@@ -238,6 +266,29 @@ function localPropagate(drugId, tissueId, tauVal) {
   return { rows: cascades };
 }
 
+// Normalize GIGI PROPAGATE response → internal format
+function normalizePropagate(res) {
+  if (!res) return null;
+  // GIGI returns { cascades: [...], total_affected, source }
+  if (res.cascades?.length > 0) {
+    return {
+      rows: res.cascades.map(c => ({
+        _completed_value: c.new_value,
+        _confidence: c.confidence,
+        _uncertainty: c.uncertainty ?? (1 - (c.confidence || 0)),
+        drug_name: c.record || c.drug_name || '',
+        compartment: c.field || c.compartment || '',
+        _status: 'newly_completable',
+        _origin: 'cascade',
+        _depth: c.depth,
+      })),
+    };
+  }
+  // Already in rows format
+  if (res.rows?.length > 0) return res;
+  return null;
+}
+
 async function gigiPropagate(drugId, tissueId, tau) {
   const d = safeDrugId(drugId), t = safeTissueId(tissueId);
   if (!d || !t) return null;
@@ -246,9 +297,10 @@ async function gigiPropagate(drugId, tissueId, tau) {
   const comp = TISSUE_TO_COMPARTMENT[t] || t;
   try {
     const res = await gigiQuery(
-      `PROPAGATE ON mirador_drugs ASSUME drug_name = '${d}' AND compartment = '${comp}' AND tau = ${v}`
+      `PROPAGATE ON mirador_drugs ASSUMING drug_name = '${d}' AND compartment = '${comp}' AND tau = ${v} SHOW newly_determined`
     );
-    if (res?.rows?.length > 0) return res;
+    const norm = normalizePropagate(res);
+    if (norm) return norm;
   } catch (_) { /* fall through to local */ }
   return localPropagate(d, t, v);
 }

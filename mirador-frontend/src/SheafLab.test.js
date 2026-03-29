@@ -117,7 +117,7 @@ function buildCompleteQuery(drugId, tissueId) {
   const d = safeDrugId(drugId), t = safeTissueId(tissueId);
   if (!d || !t) return null;
   const comp = TISSUE_TO_COMPARTMENT[t] || t;
-  return `COMPLETE ON mirador_drugs WHERE tau = NULL AND drug_name = '${d}' AND compartment = '${comp}' MIN_CONFIDENCE 0.30 WITH PROVENANCE`;
+  return `COMPLETE ON mirador_drugs WHERE tau = NULL AND drug_name = '${d}' AND compartment = '${comp}' CONFIDENCE_FLOOR 0.30 WITH CONSTRAINT_GRAPH`;
 }
 
 function buildPropagateQuery(drugId, tissueId, tau) {
@@ -126,13 +126,13 @@ function buildPropagateQuery(drugId, tissueId, tau) {
   const v = Number(tau);
   if (!Number.isFinite(v)) return null;
   const comp = TISSUE_TO_COMPARTMENT[t] || t;
-  return `PROPAGATE ON mirador_drugs ASSUME drug_name = '${d}' AND compartment = '${comp}' AND tau = ${v}`;
+  return `PROPAGATE ON mirador_drugs ASSUMING drug_name = '${d}' AND compartment = '${comp}' AND tau = ${v} SHOW newly_determined`;
 }
 
 function buildUniversalCompleteQuery(domainId) {
   const domConf = DOMAIN_BUNDLES[domainId];
   if (!domConf) return null;
-  return `COMPLETE ON ${domConf.bundle} WHERE ${domConf.field} = NULL MIN_CONFIDENCE 0.30 WITH PROVENANCE`;
+  return `COMPLETE ON ${domConf.bundle} WHERE ${domConf.field} = NULL CONFIDENCE_FLOOR 0.30 WITH CONSTRAINT_GRAPH`;
 }
 
 
@@ -260,10 +260,10 @@ describe('buildCompleteQuery()', () => {
     expect(buildCompleteQuery('VAN', 'csf')).toContain("compartment = 'csf_uninflamed'");
   });
 
-  it('includes MIN_CONFIDENCE and WITH PROVENANCE', () => {
+  it('includes CONFIDENCE_FLOOR and WITH CONSTRAINT_GRAPH', () => {
     const q = buildCompleteQuery('VAN', 'biofilm');
-    expect(q).toContain('MIN_CONFIDENCE 0.30');
-    expect(q).toContain('WITH PROVENANCE');
+    expect(q).toContain('CONFIDENCE_FLOOR 0.30');
+    expect(q).toContain('WITH CONSTRAINT_GRAPH');
   });
 
   it('returns null for invalid inputs', () => {
@@ -273,15 +273,15 @@ describe('buildCompleteQuery()', () => {
 
   it('produces correct full query', () => {
     expect(buildCompleteQuery('VAN', 'biofilm')).toBe(
-      "COMPLETE ON mirador_drugs WHERE tau = NULL AND drug_name = 'VAN' AND compartment = 'planktonic' MIN_CONFIDENCE 0.30 WITH PROVENANCE"
+      "COMPLETE ON mirador_drugs WHERE tau = NULL AND drug_name = 'VAN' AND compartment = 'planktonic' CONFIDENCE_FLOOR 0.30 WITH CONSTRAINT_GRAPH"
     );
   });
 });
 
 describe('buildPropagateQuery()', () => {
-  it('uses ASSUME keyword', () => {
+  it('uses ASSUMING keyword', () => {
     const q = buildPropagateQuery('VAN', 'bone', 2.60);
-    expect(q).toContain('ASSUME');
+    expect(q).toContain('ASSUMING');
   });
 
   it('maps tissue to GIGI compartment', () => {
@@ -290,7 +290,7 @@ describe('buildPropagateQuery()', () => {
 
   it('includes tau as a number (not string)', () => {
     const q = buildPropagateQuery('VAN', 'bone', 2.60);
-    expect(q).toMatch(/tau = 2\.6$/);
+    expect(q).toMatch(/tau = 2\.6 SHOW/);
   });
 
   it('returns null for non-finite tau', () => {
@@ -304,9 +304,14 @@ describe('buildPropagateQuery()', () => {
     expect(buildPropagateQuery('VAN', 'fake', 1.0)).toBeNull();
   });
 
+  it('includes SHOW newly_determined', () => {
+    const q = buildPropagateQuery('VAN', 'bone', 2.60);
+    expect(q).toMatch(/SHOW newly_determined$/);
+  });
+
   it('produces correct full query', () => {
     expect(buildPropagateQuery('VAN', 'bone', 2.60)).toBe(
-      "PROPAGATE ON mirador_drugs ASSUME drug_name = 'VAN' AND compartment = 'bone' AND tau = 2.6"
+      "PROPAGATE ON mirador_drugs ASSUMING drug_name = 'VAN' AND compartment = 'bone' AND tau = 2.6 SHOW newly_determined"
     );
   });
 });
@@ -580,6 +585,138 @@ describe('DOMAIN_BUNDLES', () => {
     const expected = ['mirador_drugs', 'gtex_expression', 'fluxnet_flux', 'materials_project', 'who_flunet'];
     const actual = Object.values(DOMAIN_BUNDLES).map(c => c.bundle);
     expect(actual).toEqual(expected);
+  });
+});
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// §8b Response Normalization
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// normalizeComplete (mirrors SheafLab.jsx logic)
+function normalizeComplete(res) {
+  if (!res) return null;
+  if (res.completed?.length > 0) {
+    const c = res.completed[0];
+    return {
+      rows: [{
+        _completed_value: c.value,
+        _confidence: c.confidence,
+        _uncertainty: c.uncertainty,
+        _method: c.method || 'sheaf_extension',
+        _neighbor_count: c.neighbor_count,
+        _status: 'completed',
+        _origin: c.origin || 'sheaf_completed',
+        _provenance: (res.constraint_graph || []).map(e => ({
+          drug_name: e.from, compartment: e.adjacency, adjacency_type: e.adjacency,
+          value: e.value, weight: e.weight,
+        })),
+      }],
+    };
+  }
+  if (res.rows?.length > 0) return res;
+  return null;
+}
+
+// normalizePropagate (mirrors SheafLab.jsx logic)
+function normalizePropagate(res) {
+  if (!res) return null;
+  if (res.cascades?.length > 0) {
+    return {
+      rows: res.cascades.map(c => ({
+        _completed_value: c.new_value,
+        _confidence: c.confidence,
+        _uncertainty: c.uncertainty ?? (1 - (c.confidence || 0)),
+        drug_name: c.record || c.drug_name || '',
+        compartment: c.field || c.compartment || '',
+        _status: 'newly_completable',
+        _origin: 'cascade',
+        _depth: c.depth,
+      })),
+    };
+  }
+  if (res.rows?.length > 0) return res;
+  return null;
+}
+
+describe('normalizeComplete()', () => {
+  it('returns null for null input', () => {
+    expect(normalizeComplete(null)).toBeNull();
+  });
+
+  it('returns null for empty response', () => {
+    expect(normalizeComplete({ status: 'ok' })).toBeNull();
+  });
+
+  it('normalizes GIGI completed[] format to rows[]', () => {
+    const gigiRes = {
+      status: 'ok',
+      completed: [{
+        field: 'tau', value: 6.82, uncertainty: 0.34,
+        confidence: 0.89, method: 'sheaf_extension',
+        neighbor_count: 47, origin: 'sheaf_completed',
+      }],
+      constraint_graph: [
+        { from: 'VAN', adjacency: 'same_class', value: 7.1, weight: 1.0 },
+        { from: 'LZD', adjacency: 'same_class', value: 6.5, weight: 1.0 },
+      ],
+      timing_ms: 12,
+    };
+    const norm = normalizeComplete(gigiRes);
+    expect(norm.rows).toHaveLength(1);
+    expect(norm.rows[0]._completed_value).toBe(6.82);
+    expect(norm.rows[0]._confidence).toBe(0.89);
+    expect(norm.rows[0]._uncertainty).toBe(0.34);
+    expect(norm.rows[0]._method).toBe('sheaf_extension');
+    expect(norm.rows[0]._neighbor_count).toBe(47);
+    expect(norm.rows[0]._origin).toBe('sheaf_completed');
+    expect(norm.rows[0]._provenance).toHaveLength(2);
+    expect(norm.rows[0]._provenance[0].value).toBe(7.1);
+  });
+
+  it('passes through existing rows[] format unchanged', () => {
+    const localRes = { rows: [{ _completed_value: 0.12, _confidence: 0.47 }] };
+    const norm = normalizeComplete(localRes);
+    expect(norm).toBe(localRes);
+  });
+});
+
+describe('normalizePropagate()', () => {
+  it('returns null for null input', () => {
+    expect(normalizePropagate(null)).toBeNull();
+  });
+
+  it('returns null for empty cascades', () => {
+    expect(normalizePropagate({ status: 'ok', cascades: [], total_affected: 0 })).toBeNull();
+  });
+
+  it('normalizes GIGI cascades[] format to rows[]', () => {
+    const gigiRes = {
+      status: 'ok',
+      source: { molecule_chembl_id: 'VAN', tissue: 'bone' },
+      cascades: [
+        { bundle: 'mirador_drugs', record: 'VAN', field: 'caseum', new_value: 0.12, confidence: 0.85, depth: 1 },
+        { bundle: 'mirador_drugs', record: 'VAN', field: 'biofilm', new_value: 0.09, confidence: 0.72, depth: 2 },
+      ],
+      total_affected: 2,
+      max_depth_reached: 2,
+      timing_ms: 84,
+    };
+    const norm = normalizePropagate(gigiRes);
+    expect(norm.rows).toHaveLength(2);
+    expect(norm.rows[0]._completed_value).toBe(0.12);
+    expect(norm.rows[0]._confidence).toBe(0.85);
+    expect(norm.rows[0]._status).toBe('newly_completable');
+    expect(norm.rows[0]._origin).toBe('cascade');
+    expect(norm.rows[0]._depth).toBe(1);
+    expect(norm.rows[1]._completed_value).toBe(0.09);
+    expect(norm.rows[1]._depth).toBe(2);
+  });
+
+  it('passes through existing rows[] format unchanged', () => {
+    const localRes = { rows: [{ _completed_value: 0.12, _origin: 'cascade' }] };
+    const norm = normalizePropagate(localRes);
+    expect(norm).toBe(localRes);
   });
 });
 
