@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 const MONO = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 
 /**
- * Mock Python REPL terminal. Auto-runs on scroll into view.
+ * Mock Python REPL terminal. Runs only when the ▶ Run button is clicked.
  * 
  * lines: [{ text: string, out?: bool, cont?: bool, cmt?: bool }]
  *   - Default → ">>> text" (green prompt, white code)
@@ -14,18 +14,8 @@ const MONO = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 export default function PyTerminal({ lines, title = 'Computation' }) {
   const [count, setCount] = useState(0);
   const [blink, setBlink] = useState(true);
+  const [hasRun, setHasRun] = useState(false);
   const ref = useRef(null);
-  const ran = useRef(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !ran.current) { ran.current = true; run(); obs.disconnect(); }
-    }, { threshold: 0.15 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
 
   useEffect(() => {
     if (count < lines.length) return;
@@ -34,6 +24,7 @@ export default function PyTerminal({ lines, title = 'Computation' }) {
   }, [count, lines.length]);
 
   function run() {
+    setHasRun(true);
     setCount(0);
     let i = 0;
     const iv = setInterval(() => {
@@ -46,7 +37,7 @@ export default function PyTerminal({ lines, title = 'Computation' }) {
   const dot = (c) => ({ width: 10, height: 10, borderRadius: '50%', background: c, display: 'inline-block' });
 
   return (
-    <div ref={ref} style={{ background: '#0a0e17', border: '1px solid #1e293b', borderRadius: 8, overflow: 'hidden', margin: '1rem 0', fontFamily: MONO, fontSize: 13 }}>
+    <div ref={ref} style={{ background: '#0a0e17', border: '1px solid #1e293b', borderRadius: 8, overflow: 'hidden', margin: '1rem 0', fontFamily: MONO, fontSize: 13, maxWidth: '100%' }}>
       {/* Header */}
       <div style={{ background: '#111827', padding: '8px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1e293b' }}>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -62,7 +53,13 @@ export default function PyTerminal({ lines, title = 'Computation' }) {
       </div>
       {/* Body */}
       <div style={{ padding: '12px 16px', lineHeight: 1.85, overflowX: 'auto', minHeight: 40 }}>
-        {lines.slice(0, count).map((l, i) => (
+        {!hasRun && (
+          <div style={{ whiteSpace: 'pre' }}>
+            <span style={{ color: '#22c55e' }}>{'>>> '}</span>
+            <span style={{ color: '#6b7280', fontStyle: 'italic' }}>Press ▶ Run to execute</span>
+          </div>
+        )}
+        {hasRun && lines.slice(0, count).map((l, i) => (
           <div key={i} style={{ whiteSpace: 'pre' }}>
             {l.out ? (
               <span style={{ color: '#22d3ee' }}>{l.text}</span>
@@ -74,7 +71,7 @@ export default function PyTerminal({ lines, title = 'Computation' }) {
             )}
           </div>
         ))}
-        {count >= lines.length && (
+        {hasRun && count >= lines.length && (
           <div>
             <span style={{ color: '#22c55e' }}>{'>>> '}</span>
             <span style={{ color: '#22c55e', opacity: blink ? 1 : 0, transition: 'opacity 0.15s' }}>▌</span>

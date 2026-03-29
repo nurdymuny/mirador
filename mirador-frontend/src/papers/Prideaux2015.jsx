@@ -183,6 +183,13 @@ const PY_REMOXTB = [
 /* ═══ INTERACTIVE EXPLORER ═══ */
 function Explorer() {
   const [drugs, setDrugs] = useState(DRUGS.map(d => ({ ...d })));
+  const [explorerMob, setExplorerMob] = useState(typeof window !== 'undefined' && window.innerWidth < 900);
+
+  useEffect(() => {
+    const onResize = () => setExplorerMob(window.innerWidth < 900);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const setR = useCallback((idx, key, val) => {
     setDrugs(prev => {
@@ -227,27 +234,29 @@ function Explorer() {
       <div>
         <div style={{ ...S.sectionNum, fontSize: 11, marginBottom: 8 }}>{label}</div>
         {drugs.map((d, i) => <Slider key={d.name} drug={d} idx={i} rKey={rKey} />)}
-        <table style={{ ...S.table, marginTop: 12 }}>
-          <thead><tr>
-            {['Drug', 'τ', 'R', 'K_total', 'C', 'Regime'].map(h =>
-              <th key={h} style={S.th()}>{h}</th>
-            )}
-          </tr></thead>
-          <tbody>
-            {rows.map(r => (
-              <tr key={r.name}>
-                <td style={{ ...S.td, color: r.color, fontWeight: 600 }}>{r.name}</td>
-                <td style={S.td}>{r.tau.toFixed(3)}</td>
-                <td style={S.td}>{r.R.toFixed(2)}</td>
-                <td style={S.td}>{r.Kt.toFixed(3)}</td>
-                <td style={{ ...S.td, ...(r.regime === 'CONC' ? S.good : r.c < 1 ? S.bad : S.warn) }}>
-                  {r.regime === 'CONC' ? '∞' : r.c.toFixed(3)}
-                </td>
-                <td style={{ ...S.td, ...(r.regime === 'CONC' ? S.good : S.bad) }}>{r.regime}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <table style={{ ...S.table, marginTop: 12, minWidth: 340 }}>
+            <thead><tr>
+              {['Drug', 'τ', 'R', 'K_total', 'C', 'Regime'].map(h =>
+                <th key={h} style={S.th()}>{h}</th>
+              )}
+            </tr></thead>
+            <tbody>
+              {rows.map(r => (
+                <tr key={r.name}>
+                  <td style={{ ...S.td, color: r.color, fontWeight: 600 }}>{r.name}</td>
+                  <td style={S.td}>{r.tau.toFixed(3)}</td>
+                  <td style={S.td}>{r.R.toFixed(2)}</td>
+                  <td style={S.td}>{r.Kt.toFixed(3)}</td>
+                  <td style={{ ...S.td, ...(r.regime === 'CONC' ? S.good : r.c < 1 ? S.bad : S.warn) }}>
+                    {r.regime === 'CONC' ? '∞' : r.c.toFixed(3)}
+                  </td>
+                  <td style={{ ...S.td, ...(r.regime === 'CONC' ? S.good : S.bad) }}>{r.regime}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   };
@@ -257,7 +266,7 @@ function Explorer() {
       <div style={S.panelLabel(C.cyan)}>
         <span style={S.dot(C.cyan)} /> Live Computation — C = τ / K
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: explorerMob ? '1fr' : '1fr 1fr', gap: '1.5rem' }}>
         <Table rKey="R_cell" label="Cellular Granuloma" />
         <Table rKey="R_case" label="Necrotic Caseum" />
       </div>
@@ -281,7 +290,13 @@ const SECTIONS = [
 /* ═══ MAIN COMPONENT ═══ */
 export default function Prideaux2015() {
   const [active, setActive] = useState('');
-  const mob = typeof window !== 'undefined' && window.innerWidth < 800;
+  const [mob, setMob] = useState(typeof window !== 'undefined' && window.innerWidth < 900);
+
+  useEffect(() => {
+    const onResize = () => setMob(window.innerWidth < 900);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     const secs = SECTIONS.map(s => document.getElementById(s.id)).filter(Boolean);
@@ -310,8 +325,25 @@ export default function Prideaux2015() {
           <div style={{ fontFamily: FONTS.SANS, fontSize: 14, color: C.textMuted, lineHeight: 1.5, marginTop: 4 }}>
             The association between sterilizing activity and drug distribution into tuberculosis lesions
           </div>
-          <div style={{ fontFamily: FONTS.MONO, fontSize: 12, color: C.textDim, marginTop: 16, lineHeight: 1.8 }}>
-            <strong style={{ color: C.textMuted }}>Original:</strong> <em>Nature Medicine</em> 21, 1223–1227 (2015) · DOI: 10.1038/nm.3937<br />
+          <div style={{ marginTop: 14 }}>
+            <a
+              href="https://doi.org/10.1038/nm.3937"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                fontFamily: FONTS.MONO, fontSize: 12, color: C.cyan,
+                background: C.cyan + '12', border: `1px solid ${C.cyan}33`,
+                borderRadius: 6, padding: '8px 16px', textDecoration: 'none',
+                transition: 'background 0.2s',
+              }}
+              onMouseOver={e => e.currentTarget.style.background = C.cyan + '22'}
+              onMouseOut={e => e.currentTarget.style.background = C.cyan + '12'}
+            >
+              <span style={{ fontSize: 14 }}>📄</span> Read Original Paper — <em>Nature Medicine</em> 21, 1223–1227 (2015)
+            </a>
+          </div>
+          <div style={{ fontFamily: FONTS.MONO, fontSize: 12, color: C.textDim, marginTop: 12, lineHeight: 1.8 }}>
             <strong style={{ color: C.textMuted }}>Reanalysis:</strong> B. Rosa Davis · Davis Geometric · C = τ/K · 2026<br />
             <strong style={{ color: C.textMuted }}>Live API:</strong>{' '}
             <a href="https://usemirador.sh" style={{ color: C.cyan, textDecoration: 'underline' }} target="_blank" rel="noopener noreferrer">usemirador.sh</a>
@@ -408,7 +440,8 @@ export default function Prideaux2015() {
               <p style={{ ...S.p, fontSize: 14, maxWidth: '100%' }}>
                 Concentrations in homogenized lesions (μg/g tissue). MIC and MAC ranges shown as reference boxes.
               </p>
-              <table style={S.table}>
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ ...S.table, minWidth: 340 }}>
                 <thead><tr>
                   {['Drug', 'Cellular', 'Caseum', 'Cavity Wall'].map(h =>
                     <th key={h} style={S.th(C.nature)}>{h}</th>)}
@@ -420,6 +453,7 @@ export default function Prideaux2015() {
                   <tr style={{ background: C.yellow + '0c' }}><td style={{ ...S.td, color: C.yellow }}>MXF</td><td style={S.td}>&gt;3× plasma</td><td style={S.td}>&lt;0.5× plasma</td><td style={S.td}>9–16× plasma</td></tr>
                 </tbody>
               </table>
+              </div>
               <p style={{ fontSize: 12, color: C.textDim, marginTop: 8 }}>
                 SS = steady state (after multiple doses). Single-dose RIF penetration into cellular granuloma was poor.
               </p>
@@ -432,7 +466,8 @@ export default function Prideaux2015() {
               <p style={{ ...S.p, fontSize: 14, maxWidth: '100%' }}>
                 The same data expressed as R values and converted to barrier impedance K:
               </p>
-              <table style={S.table}>
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ ...S.table, minWidth: 340 }}>
                 <thead><tr>
                   {['Drug', 'R_cell', 'K_cell', 'R_case', 'K_case'].map(h =>
                     <th key={h} style={S.th()}>{h}</th>)}
@@ -444,6 +479,7 @@ export default function Prideaux2015() {
                   <tr><td style={S.td}>RIF</td><td style={{ ...S.td, ...S.bad }}>0.3</td><td style={{ ...S.td, ...S.bad }}>2.33</td><td style={{ ...S.td, ...S.good }}>3.0</td><td style={{ ...S.td, ...S.good }}>−0.67</td></tr>
                 </tbody>
               </table>
+              </div>
               <div style={S.eq}>
                 K_barrier = max(1/R − 1, −1)<br /><br />
                 When R &gt; 1: K &lt; 0 → drug <strong>concentrates</strong> (barrier helps)<br />
@@ -520,7 +556,8 @@ export default function Prideaux2015() {
               <div style={S.panelLabel(C.nature)}>
                 <span style={S.dot(C.nature)} /> Their Observed Ranking
               </div>
-              <table style={S.table}>
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ ...S.table, minWidth: 300 }}>
                 <thead><tr>
                   {['Rank', 'Cellular', 'Caseum'].map(h =>
                     <th key={h} style={S.th(C.nature)}>{h}</th>)}
@@ -532,6 +569,7 @@ export default function Prideaux2015() {
                   <tr style={{ background: C.yellow + '0c' }}><td style={S.td}>4</td><td style={{ ...S.td, fontWeight: 600, color: C.text }}>RIF (poor penetration)</td><td style={{ ...S.td, fontWeight: 600, color: C.text }}>MXF (excluded)</td></tr>
                 </tbody>
               </table>
+              </div>
               <span style={S.verdict('inversion')}>MXF ↔ RIF rank inversion</span>
             </div>
 
@@ -539,7 +577,8 @@ export default function Prideaux2015() {
               <div style={S.panelLabel(C.cyan)}>
                 <span style={S.dot(C.cyan)} /> Geometric Ranking (C = τ/K)
               </div>
-              <table style={S.table}>
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+              <table style={{ ...S.table, minWidth: 300 }}>
                 <thead><tr>
                   {['Rank', 'Cellular (C)', 'Caseum (C)'].map(h =>
                     <th key={h} style={S.th()}>{h}</th>)}
@@ -551,6 +590,7 @@ export default function Prideaux2015() {
                   <tr style={{ background: C.yellow + '0c' }}><td style={S.td}>4</td><td style={{ ...S.td, ...S.bad }}>RIF 0.73</td><td style={{ ...S.td, ...S.bad }}>MXF 0.52</td></tr>
                 </tbody>
               </table>
+              </div>
               <span style={S.verdict('match')}>Inversion predicted ✓</span>
             </div>
           </div>
@@ -702,7 +742,8 @@ export default function Prideaux2015() {
             <div style={S.panelLabel(C.cyan)}>
               <span style={S.dot(C.cyan)} /> Summary of Predictions vs Ground Truth
             </div>
-            <table style={S.table}>
+            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table style={{ ...S.table, minWidth: 520 }}>
               <thead><tr>
                 {['Prediction', 'Geometric Result', 'MALDI Ground Truth', ''].map((h, i) =>
                   <th key={i} style={S.th()}>{h}</th>)}
@@ -725,6 +766,7 @@ export default function Prideaux2015() {
                 ))}
               </tbody>
             </table>
+            </div>
 
             <div style={{ textAlign: 'center', marginTop: '2rem', fontFamily: FONTS.MONO }}>
               <span style={{ fontSize: '1.4rem', color: C.green }}>6 predictions · 6 matches · 0 parameters</span><br />
@@ -751,7 +793,8 @@ export default function Prideaux2015() {
         <strong style={{ color: C.text }}>MIRADOR</strong> · Davis Field Equations · C = τ / K<br />
         Patent Pending US 64/012,328 ·{' '}
         <a href="https://usemirador.sh" style={{ color: C.cyan }} target="_blank" rel="noopener noreferrer">usemirador.sh</a><br /><br />
-        <span style={{ fontSize: 11, lineHeight: 1.8 }}>
+        <span style={{ fontSize: 11, lineHeight: 1.8 }}>{' '}
+          <a href="https://doi.org/10.1038/nm.3937" style={{ color: C.cyan }} target="_blank" rel="noopener noreferrer">DOI: 10.1038/nm.3937</a>
           Original: Prideaux B, Via LE, Zimmerman MD et al. <em>Nat Med</em> 21, 1223–1227 (2015). DOI: 10.1038/nm.3937<br />
           R values: Kjellsson MC, Via LE, Goh A et al. <em>AAC</em> 56, 446–457 (2012).<br />
           Geometric reanalysis: B. Rosa Davis, Davis Geometric, 2026.

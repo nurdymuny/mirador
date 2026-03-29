@@ -60,10 +60,13 @@ export const paperStyles = {
   navInner: {
     maxWidth: 1100,
     margin: '0 auto',
-    padding: '0 2rem',
+    padding: '0 1rem',
     display: 'flex',
     gap: 4,
     overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch',
+    msOverflowStyle: 'none',
+    scrollbarWidth: 'none',
   },
   navLink: (active) => ({
     fontFamily: MONO,
@@ -129,12 +132,16 @@ export const paperStyles = {
     border: `1px solid ${C.border}`,
     borderRadius: 8,
     padding: '1.5rem',
+    minWidth: 0,
+    overflow: 'hidden',
   },
   panelGeo: {
     background: C.bgPanel,
     border: `1px solid ${C.borderLt}`,
     borderRadius: 8,
     padding: '1.5rem',
+    minWidth: 0,
+    overflow: 'hidden',
   },
   panelLabel: (color) => ({
     fontFamily: MONO,
