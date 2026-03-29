@@ -1011,7 +1011,8 @@ function UniversalTab() {
                         const domConf = DOMAIN_BUNDLES[dom.id] || { bundle: dom.id, field: 'tau' };
                         let res = null;
                         try {
-                          res = await gigiQuery(`COMPLETE ON ${domConf.bundle} WHERE ${domConf.field} = NULL MIN_CONFIDENCE 0.30 WITH PROVENANCE`);
+                          const raw = await gigiQuery(`COMPLETE ON ${domConf.bundle} WHERE ${domConf.field} = NULL CONFIDENCE_FLOOR 0.30 WITH CONSTRAINT_GRAPH`);
+                          res = normalizeComplete(raw);
                         } catch (_) { /* fall through to local */ }
                         if (!res?.rows?.length) {
                           // Local fallback: weighted average of measured neighbors
