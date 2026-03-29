@@ -152,15 +152,30 @@ const TISSUE_TO_COMPARTMENT = {
   prostate: 'prostate',
 };
 
-async function gigiQuery(query) {
-  const resp = await fetch(`${GIGI_HOST}/v1/gql`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query }),
-  });
-  if (!resp.ok) throw new Error(`GIGI ${resp.status}`);
-  return resp.json();
+async function gigiQuery(query, { retries = 1, timeoutMs = 12000 } = {}) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const resp = await fetch(`${GIGI_HOST}/v1/gql`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (!resp.ok) throw new Error(`GIGI ${resp.status}`);
+      return resp.json();
+    } catch (err) {
+      clearTimeout(timer);
+      if (attempt < retries) continue;
+      throw err;
+    }
+  }
 }
+
+// Warm up the GIGI connection on first import (fire-and-forget)
+fetch(`${GIGI_HOST}/v1/health`, { method: 'GET' }).catch(() => {});
 
 // Safe drug/tissue identifiers for GQL (validated against known lists)
 const safeDrugId = (id) => DRUGS.find(d => d.id === id)?.id;
@@ -189,6 +204,15 @@ function localComplete(drugId, tissueId) {
     if (t.id === tissueId) continue;
     const v = R[`${drugId}-${t.id}`];
     if (v != null) neighbors.push({ drug_name: drug.name, compartment: t.id, adjacency_type: 'same_tissue', value: v, weight: 0.3 });
+  }
+  // Second-order fallback: same-class drugs at ANY tissue (coarser cover extension)
+  if (neighbors.length === 0) {
+    for (const nd of sameClass) {
+      for (const t of TISSUES) {
+        const v = R[`${nd.id}-${t.id}`];
+        if (v != null) neighbors.push({ drug_name: nd.name, compartment: t.id, adjacency_type: 'cross_tissue_class', value: v, weight: 0.15 });
+      }
+    }
   }
   if (neighbors.length === 0) return null;
   const sumW = neighbors.reduce((s, n) => s + n.weight, 0);
@@ -246,7 +270,10 @@ async function gigiComplete(drugId, tissueId) {
     const norm = normalizeComplete(res);
     if (norm) return norm;
   } catch (_) { /* fall through to local */ }
-  return localComplete(d, t);
+  const local = localComplete(d, t);
+  if (local) return local;
+  // Both GIGI and local failed — return explicit empty result so UI can show a message
+  return { rows: [], _noData: true };
 }
 
 // Local cascade fallback
@@ -302,7 +329,9 @@ async function gigiPropagate(drugId, tissueId, tau) {
     const norm = normalizePropagate(res);
     if (norm) return norm;
   } catch (_) { /* fall through to local */ }
-  return localPropagate(d, t, v);
+  const local = localPropagate(d, t, v);
+  if (local?.rows?.length) return local;
+  return { rows: [], _noData: true };
 }
 
 // ─── Micro UI ───
@@ -576,6 +605,7 @@ function ValidateTab() {
                     padding: "6px 14px", fontSize: 11, fontWeight: 700, cursor: loading ? "wait" : "pointer",
                   }}>{loading ? "Querying GIGI…" : "Predict with GIGI →"}</button>
                   {gigiError && <div style={{ fontSize: 10, color: C.rd, marginTop: 6 }}>{gigiError}</div>}
+                  {completeResult?._noData && <div style={{ fontSize: 11, color: C.am, marginTop: 8 }}>No neighbors found for this drug/tissue — GIGI needs more data to predict this cell. Try a different cell.</div>}
                 </div>
               )}
               {isNull && !showNeighbors && !loading && (

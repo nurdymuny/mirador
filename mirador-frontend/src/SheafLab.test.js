@@ -71,6 +71,15 @@ function localComplete(drugId, tissueId) {
     const v = R[`${drugId}-${t.id}`];
     if (v != null) neighbors.push({ drug_name: drug.name, compartment: t.id, adjacency_type: 'same_tissue', value: v, weight: 0.3 });
   }
+  // Second-order fallback: same-class drugs at ANY tissue (coarser cover extension)
+  if (neighbors.length === 0) {
+    for (const nd of sameClass) {
+      for (const t of TISSUES) {
+        const v = R[`${nd.id}-${t.id}`];
+        if (v != null) neighbors.push({ drug_name: nd.name, compartment: t.id, adjacency_type: 'cross_tissue_class', value: v, weight: 0.15 });
+      }
+    }
+  }
   if (neighbors.length === 0) return null;
   const sumW = neighbors.reduce((s, n) => s + n.weight, 0);
   const predicted = neighbors.reduce((s, n) => s + n.weight * n.value, 0) / sumW;
@@ -358,12 +367,17 @@ describe('localComplete()', () => {
     expect(localComplete('FAKE', 'bone')).toBeNull();
   });
 
-  it('returns null when no neighbors exist (CAR-biofilm)', () => {
-    // CAR has no measured R values except bone (added later — actually CAR-bone is null too)
-    // and CRO is same class but CRO-biofilm is also null
+  it('uses cross-tissue class fallback when no direct neighbors (CAR-biofilm)', () => {
+    // CAR is Cephalosporin, same class as CRO. CRO-biofilm = null, CAR all null.
+    // No direct neighbors → falls back to CRO values at ANY tissue:
+    // CRO-bone=0.15, CRO-csf=0.15, CRO-prostate=0.10 (all weight 0.15)
     const res = localComplete('CAR', 'biofilm');
-    // CAR same_class = CRO. CRO-biofilm = null. No same_tissue for CAR (all null).
-    expect(res).toBeNull();
+    expect(res).not.toBeNull();
+    const row = res.rows[0];
+    // (0.15*0.15 + 0.15*0.15 + 0.15*0.10) / (0.15+0.15+0.15) = 0.06/0.45 = 0.1333
+    expect(row._completed_value).toBeCloseTo(0.1333, 3);
+    expect(row._neighbor_count).toBe(3);
+    expect(row._provenance[0].adjacency_type).toBe('cross_tissue_class');
   });
 
   it('predicts VAN-caseum from neighbors', () => {
