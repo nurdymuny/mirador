@@ -388,7 +388,32 @@ export default function Prideaux2015() {
                 Moxifloxacin does not diffuse well in caseum, concordant with its failure to shorten therapy
                 in clinical trials (REMoxTB).
               </p>
-              <p style={{ ...S.p, fontSize: 13, maxWidth: '100%' }}>
+
+              <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+                <div style={{ fontFamily: FONTS.MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: C.amber, marginBottom: 10 }}>
+                  In Plain English
+                </div>
+                <p style={{ ...S.p, maxWidth: '100%', fontSize: 14 }}>
+                  TB bacteria hide inside dense, cheese-like plugs of dead tissue called <strong style={{ color: C.text }}>caseum</strong>.
+                  Drugs need to physically reach these plugs to kill the bacteria. This study cut open actual
+                  human lung lesions and photographed where each drug ended up at microscopic resolution.
+                </p>
+                <p style={{ ...S.p, maxWidth: '100%', fontSize: 14 }}>
+                  <strong style={{ color: C.text }}>What they found, drug by drug:</strong>
+                </p>
+                <ul style={{ ...S.p, maxWidth: '100%', fontSize: 14, paddingLeft: '1.2rem', listStyleType: 'none' }}>
+                  <li style={{ marginBottom: 6 }}><span style={{ color: C.yellow }}>●</span> <strong style={{ color: C.text }}>MXF</strong> — Piles up in the living cells around the lesion, but barely enters the caseum core. It reaches the walls but not the center.</li>
+                  <li style={{ marginBottom: 6 }}><span style={{ color: C.green }}>●</span> <strong style={{ color: C.text }}>RIF</strong> — Poor at first, but after months of daily doses it accumulates heavily in caseum. Slow but steady.</li>
+                  <li style={{ marginBottom: 6 }}><span style={{ color: C.cyan }}>●</span> <strong style={{ color: C.text }}>PZA</strong> — Gets everywhere evenly. No preference for one tissue type over another.</li>
+                  <li style={{ marginBottom: 6 }}><span style={{ color: C.textMuted }}>●</span> <strong style={{ color: C.text }}>INH</strong> — Moderate penetration at both sites. Neither great nor terrible.</li>
+                </ul>
+                <p style={{ ...S.p, maxWidth: '100%', fontSize: 14 }}>
+                  The clinical implication is stark: if MXF can't reach caseum, adding it to a regimen
+                  won't kill persister bacteria hiding there — no matter how potent it is in a test tube.
+                </p>
+              </div>
+
+              <p style={{ ...S.p, fontSize: 12, maxWidth: '100%', color: C.textDim }}>
                 173 lesions from 15 subjects. MALDI-MSI at 30–100 μm resolution. LC/MS-MS quantification.
               </p>
             </div>
