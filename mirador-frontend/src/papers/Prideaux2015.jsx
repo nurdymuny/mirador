@@ -482,6 +482,28 @@ export default function Prideaux2015() {
               <p style={{ fontSize: 12, color: C.textDim, marginTop: 8 }}>
                 SS = steady state (after multiple doses). Single-dose RIF penetration into cellular granuloma was poor.
               </p>
+
+              <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+                <div style={{ fontFamily: FONTS.MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: C.amber, marginBottom: 10 }}>
+                  In Plain English
+                </div>
+                <p style={{ ...S.p, maxWidth: '100%', fontSize: 14 }}>
+                  The table above shows how much drug ended up in each type of tissue compared to the amount
+                  floating in the bloodstream. A value of "3× plasma" means three times more drug accumulated in
+                  that tissue than was circulating in the blood.
+                </p>
+                <p style={{ ...S.p, maxWidth: '100%', fontSize: 14 }}>
+                  <strong style={{ color: C.text }}>The standout row is MXF (moxifloxacin).</strong> It piles up
+                  at 3× or higher in living cells and cavity walls — but drops below 0.5× in the dead, cheese-like
+                  caseum where persister bacteria hide. The drug is going everywhere <em>except</em> where it's
+                  needed most.
+                </p>
+                <p style={{ ...S.p, maxWidth: '100%', fontSize: 14 }}>
+                  RIF (rifampin) shows the opposite pattern: poor initial delivery, but after months of daily
+                  dosing it slowly builds up to 3× plasma in caseum. The body's own tissue chemistry is acting
+                  like a slow sponge for rifampin.
+                </p>
+              </div>
             </div>
 
             <div style={S.panelGeo}>
@@ -596,6 +618,24 @@ export default function Prideaux2015() {
               </table>
               </div>
               <span style={S.verdict('inversion')}>MXF ↔ RIF rank inversion</span>
+
+              <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+                <div style={{ fontFamily: FONTS.MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: C.amber, marginBottom: 10 }}>
+                  In Plain English
+                </div>
+                <p style={{ ...S.p, maxWidth: '100%', fontSize: 14 }}>
+                  Imagine ranking the four drugs from "best penetrator" to "worst penetrator" at each tissue
+                  site. In living cells, <strong style={{ color: C.text }}>moxifloxacin wins</strong> and
+                  rifampin comes last. But in the dead caseum core, the ranking <em>flips completely</em>:
+                  <strong style={{ color: C.text }}> rifampin wins</strong> and moxifloxacin comes last.
+                </p>
+                <p style={{ ...S.p, maxWidth: '100%', fontSize: 14 }}>
+                  This is not a small shift — the #1 and #4 drugs swap places entirely depending on which
+                  tissue you look at. PZA and INH stay in the middle at both sites. The inversion means
+                  that "best drug" is meaningless without specifying <em>where in the lesion</em> the
+                  bacteria are hiding.
+                </p>
+              </div>
             </div>
 
             <div style={S.panelGeo}>
@@ -733,6 +773,23 @@ export default function Prideaux2015() {
                 <strong style={{ color: C.text }}>Result:</strong> Neither MXF-containing regimen achieved
                 noninferiority. The trial failed. Relapse rates were higher in the MXF arms.
               </p>
+
+              <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+                <div style={{ fontFamily: FONTS.MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', color: C.amber, marginBottom: 10 }}>
+                  In Plain English
+                </div>
+                <p style={{ ...S.p, maxWidth: '100%', fontSize: 14 }}>
+                  Standard TB treatment takes 6 months. Researchers asked: if we swap out ethambutol (a weak
+                  drug) for moxifloxacin (a powerful one in lab tests), can we cure patients in just 4 months?
+                </p>
+                <p style={{ ...S.p, maxWidth: '100%', fontSize: 14 }}>
+                  They enrolled nearly 2,000 patients across multiple countries and ran one of the largest
+                  TB trials ever. <strong style={{ color: C.text }}>It didn't work.</strong> Patients on
+                  the shorter MXF regimen relapsed more often. The drug looked great in a test tube but
+                  failed in real lungs — because, as Prideaux showed, MXF simply cannot reach the caseum
+                  pockets where the hardest-to-kill bacteria persist.
+                </p>
+              </div>
             </div>
 
             <div style={S.panelGeo}>
