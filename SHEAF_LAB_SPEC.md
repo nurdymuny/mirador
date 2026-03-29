@@ -60,11 +60,11 @@ where $\hat{x}_u^{\text{new}}$ is the Schur-complement completion after adding $
 
 $$\hat{x}_m^{\text{new}} = -\bigl(L_{mm}^{\text{new}}\bigr)^{-1} L_{mo}^{\text{new}} \, x_o^{\text{new}}$$
 
-**Confidence-Decay (SH5-derived).** Cascade confidence decays with graph distance via the holonomy budget (SH5(d), eq. 44 of Branch VII):
+**Confidence-Decay (SH5-motivated).** Cascade confidence decays with graph distance via the holonomy budget (SH5(d), eq. 44 of Branch VII):
 
-$$\text{confidence}_{\text{cascade}}(u) = \text{confidence}(u) \times 0.85^{d_G(v,u)}$$
+$$\text{confidence}_{\text{cascade}}(u) = \text{confidence}(u) \times \alpha^{d_G(v,u)}, \quad \alpha = e^{-c/L}$$
 
-where $d_G(v,u)$ is the shortest-path distance in the adjacency graph. The decay factor $0.85$ derives from the cocycle norm bound $\|\alpha\|_{\check{C}^1} < \tau_{\text{budget}} / k$ — each hop through a constraint patch contributes an accumulated BCH error, and the multiplicative discount ensures the holonomy norm remains within the linearization convergence radius $\|\alpha\| < \log 2 / L$ (Remark 5.1 of Branch VII).
+where $d_G(v,u)$ is the shortest-path distance in the adjacency graph and $L$ is the nerve diameter. The decay parameter $\alpha$ is motivated by the cocycle norm bound $\|\alpha\|_{\check{C}^1} < \tau_{\text{budget}} / k$ — each hop through a constraint patch contributes an accumulated BCH error, and the multiplicative discount ensures the holonomy norm remains within the linearization convergence radius $\|\alpha\| < \log 2 / L$ (Remark 5.1 of Branch VII). For typical pharmacological nerves with $L \approx 4$–$5$, this yields $\alpha \approx 0.85$. The constant is graph-dependent, not universal.
 
 **Clinical Impact Score.** Each newly-determined vertex $u$ carries a clinical impact weight:
 
@@ -85,7 +85,7 @@ $$\check{H}^1(\mathcal{U}, \mathcal{F}) \neq 0 \implies \text{contradictions exi
 **Algorithm:**
 1. Compute coboundary residuals $r_e = \mathcal{F}_{v \leftarrow u}(x_u) - x_v$ for all edges $e = (u,v)$
 2. Robust median + MAD test: flag edges where $|r_e - \text{median}(r)| > 3.0 \times \text{MAD}(r)$
-3. Flagged edges partition into independent contradiction clusters → $\dim H^1$ = count of clusters
+3. Flagged edges partition into independent contradiction clusters → $\dim H^1 \geq$ count of clusters (each component contributes at least one independent cocycle; the actual dimension can be higher if a single component contains multiple independent obstruction classes)
 
 Any newly-determined vertex $u$ touching a flagged edge is marked `CONFLICTED` and excluded from the validation ranking. The obstruction class identifies *which* constraints are incompatible — these become the *negative* validation targets (studies expected to fail, confirming the contradiction).
 
@@ -149,11 +149,15 @@ $$\hat{x}_m = -L_{mm}^{-1} L_{mo} \, x_o$$
 
 The only requirement is that the data admits a weighted graph Laplacian $L$ built from the four adjacency types (equality, metric, threshold, transform). This is the content of SH2 — the Čech complex construction is purely combinatorial and depends only on the nerve $\mathcal{N}(\mathcal{U})$, not on the domain semantics.
 
-**Confidence Formula (domain-invariant).** For any completed vertex $v$:
+**Confidence Formula (domain-invariant).** For any completed vertex $v$, the posterior variance is:
 
-$$\text{confidence}(v) = \frac{1}{1 + (L_{mm}^{-1})_{vv}}$$
+$$\sigma_v^2 = (L_{mm}^{-1})_{vv} \cdot s^2$$
 
-This is the normalized inverse of the posterior variance from the Schur complement. It is domain-agnostic: the Laplacian encodes the adjacency structure, and the confidence measures how well-constrained the vertex is by its neighbors.
+where $s^2$ is the empirical variance of the observed data in the bundle. The confidence is:
+
+$$\text{confidence}(v) = \frac{1}{1 + \sigma_v^2 / s^2} = \frac{1}{1 + (L_{mm}^{-1})_{vv}}$$
+
+The $s^2$ normalization is critical for cross-domain comparability: $(L_{mm}^{-1})_{vv}$ has units of (edge weight)$^{-1}$, which differ between bundles (pharmacological weights $\approx 1.0$ vs. geospatial weights $\approx 50$km). Dividing by the data variance $s^2$ makes the confidence dimensionless and comparable across all five domains. Note: this formula avoids the CoV-based normalization $1/(1 + \text{CoV}^2)$ which fails when $\hat{x}_v = 0$ (GIGI_SHEAF_COMPLETION_SPEC §1.4 correction).
 
 **Obstruction Theorem (SH3) — Domain-Invariant.**
 
@@ -336,21 +340,19 @@ where:
 - $\mathcal{K}_{\text{feasible}}$ is the set of ADMET curvature profiles achievable by drug-like molecules (Lipinski/Veber constraints define a compact submanifold of curvature space)
 - $\mathcal{T}_{\text{synthesizable}}$ is the set of pharmacophore values realizable by synthetic chemistry
 
-### 3.3 The Dual Sheaf Construction (SH8-Derived)
+### 3.3 Well-Posedness via Serre Duality (SH8)
 
-Reverse COMPLETE is not an ad-hoc optimization. It is the *dual problem* arising from Serre duality on the completion presheaf (SH8, Conjecture 8.1):
+Serre duality (SH8, Conjecture 8.1) guarantees that the reverse problem inherits the well-posedness properties of the forward problem:
 
 $$\check{H}^k(M, \mathcal{F}) \cong \check{H}^{d-k}(M, \mathcal{F}^\vee \otimes \omega_M)^\vee$$
 
-**Forward completion** operates on sections of $\mathcal{F}$: given a partial section (observed data), extend to a global section (completed data).
-
-**Reverse completion** operates on sections of the dual sheaf $\mathcal{F}^\vee \otimes \omega_M$: given a *desired output* (target coherence), find the input coordinates (molecular properties) that would produce it.
-
-This is the $k=0$ case of Serre duality:
+At $k=0$:
 
 $$\check{H}^0(M, \mathcal{F}) \cong \check{H}^d(M, \mathcal{F}^\vee \otimes \omega_M)^\vee$$
 
-The space of global completions (forward) is dual to the top cohomology of the cache sheaf (reverse). A unique forward completion ($\dim \check{H}^0 = 1$) implies a unique reverse solution ($\dim \check{H}^d(\mathcal{F}^\vee \otimes \omega) = 1$).
+When $\dim \check{H}^0 = 1$ (unique forward completion), then $\dim \check{H}^d(\mathcal{F}^\vee \otimes \omega_M) = 1$ (unique reverse solution). This is the existence and uniqueness guarantee: the duality tells us the forward and reverse problems have **matching dimensions**, so a well-posed forward completion implies a well-posed reverse completion.
+
+The *algorithm* for reverse completion (§3.2) is constrained optimization — standard least-squares with feasibility constraints on $\mathcal{K}_{\text{feasible}}$ and $\mathcal{T}_{\text{synthesizable}}$. Serre duality does not drive the computation; it guarantees the solution exists and is unique before we solve for it.
 
 ### 3.4 The Decomposition: τ* and K* as Independent Constraints
 
@@ -388,17 +390,21 @@ These translate directly to medicinal chemistry design rules:
 
 The reverse completion doesn't just find *one* molecule. It identifies the gap that, if filled, maximally reduces the global obstruction:
 
-**Definition (Gap Severity).** For a therapeutic gap $G$, its severity is:
+**Definition (Gap Severity).** Gaps are split into two categories based on their cohomological status:
 
-$$S(G) = \text{disease\_burden}(G) \times \Bigl(\theta - \max_{m \in \pi^{-1}(G)} C(m)\Bigr) \times \bigl(1 + \dim \check{H}^1_G\bigr)$$
+**Drug Design Targets** ($\check{H}^1_G = 0$): Gaps where the sheaf geometry can actually complete them. Severity:
 
-where $\dim \check{H}^1_G$ counts the independent obstructions touching $G$ — gaps with cohomological obstructions are *harder* to fill and therefore more valuable targets.
+$$S_{\text{design}}(G) = \text{disease\_burden}(G) \times \Bigl(\theta - \max_{m \in \pi^{-1}(G)} C(m)\Bigr) \times \text{confidence}(G)$$
 
-**The Coverage Optimization.** Find the vertex $v^*$ and property profile $(τ^*, K^*)$ that maximizes:
+**Contradiction Targets** ($\check{H}^1_G > 0$): Gaps touching obstructions where existing data is contradictory. These are valuable as research targets for resolving contradictions, not as drug design targets. Severity:
 
-$$v^* = \arg\max_{v \in V_{\text{gaps}}} \; S(\text{gap}(v)) \times \text{confidence}(v)$$
+$$S_{\text{contradiction}}(G) = \text{disease\_burden}(G) \times \dim \check{H}^1_G$$
 
-This is the geometric analog of a *maximum coverage* problem: what single new molecule would most reduce the unmet need across the entire therapeutic landscape?
+**The Coverage Optimization.** For drug design, find the vertex $v^*$ and property profile $(τ^*, K^*)$ that maximizes:
+
+$$v^* = \arg\max_{v \in V_{\text{gaps}},\; \check{H}^1 = 0} \; S_{\text{design}}(\text{gap}(v))$$
+
+For contradiction resolution, rank gaps by $S_{\text{contradiction}}$ separately — these identify where a new molecule would reveal which data source is wrong.
 
 ### 3.6 Cascade Potential via PROPAGATE
 
@@ -562,11 +568,11 @@ Every equation displayed on the Sheaf Lab page must satisfy:
 | # | Requirement | Grounding |
 |---|-------------|-----------|
 | 1 | Completion equation $\hat{x}_m = -L_{mm}^{-1} L_{mo} x_o$ derived from Schur complement of graph Laplacian | Standard spectral graph theory; implemented in GIGI `laplacian::solve()` |
-| 2 | Confidence formula $\text{conf}(v) = 1/(1 + (L_{mm}^{-1})_{vv})$ normalized by data variance | GIGI_SHEAF_COMPLETION_SPEC §3.2 |
-| 3 | Cascade decay $0.85^{d_G}$ justified by cocycle norm bound $\|\alpha\| < \tau_{\text{budget}} / k$ | SH5(d), eq. 44 of Branch VII; BCH convergence radius |
+| 2 | Confidence formula $\text{conf}(v) = 1/(1 + \sigma_v^2/s^2) = 1/(1 + (L_{mm}^{-1})_{vv})$ with $s^2$ normalization for cross-domain comparability | GIGI_SHEAF_COMPLETION_SPEC §3.2, §1.4 correction |
+| 3 | Cascade decay $\alpha^{d_G}$ with $\alpha = e^{-c/L}$ motivated by cocycle norm bound ($\alpha \approx 0.85$ for pharmacological nerves, graph-dependent) | SH5(d), eq. 44 of Branch VII; BCH convergence radius |
 | 4 | Obstruction $\check{H}^1 \neq 0$ detected via robust MAD estimator on coboundary residuals | SH3, Theorem 3.1; Maronna et al. (2006) for MAD robustness |
 | 5 | Euler characteristic $\chi(\mathcal{F}) = \sum (-1)^p \dim \check{H}^p$ computable from nerve | SH7, Theorem 7.1; McKean-Singer for temperature independence |
-| 6 | Serre duality $\check{H}^k \cong (\check{H}^{d-k})^\vee$ grounding reverse COMPLETE | SH8, Conjecture 8.1; classical when $M$ is compact complex |
+| 6 | Serre duality $\check{H}^k \cong (\check{H}^{d-k})^\vee$ provides existence/uniqueness guarantee for reverse COMPLETE (algorithm is constrained optimization) | SH8, Conjecture 8.1; classical when $M$ is compact complex |
 | 7 | Künneth decomposition $\tau = |b_0| \cdot \tau_{\text{chiral}} \cdot |\pi_1|$ additive in log-space | MIRADOR_SPEC Layer 4, Test V4.2 |
 | 8 | ADMET curvature decomposition $K = \sum K_i$ with each $K_i$ non-negative | MIRADOR_SPEC Layer 5; each barrier is a non-negative energy |
 | 9 | Clinical impact × confidence ranking is a well-defined total order on $V_{\text{miss}}$ | Product of reals; ties broken by vertex ID |

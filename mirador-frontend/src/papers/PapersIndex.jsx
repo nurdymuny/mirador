@@ -17,14 +17,132 @@ export const PAPERS = [
     color: C.cyan,
     summary: 'Geometric reanalysis of MALDI mass-spectrometry imaging of TB drug penetration into granuloma compartments. The Davis Field Equations predict the MXF↔RIF rank inversion, the REMoxTB trial failure, and all 6 MALDI patterns from published R values alone.',
   },
-  // ─── future papers go here ───
-  // {
-  //   id: 'kjellsson-2012',
-  //   title: 'Kjellsson et al. (2012)',
-  //   subtitle: 'PK of TB drugs in infected rabbit lungs',
-  //   journal: 'AAC',
-  //   ...
-  // },
+  {
+    id: 'kjellsson-2012',
+    title: 'Kjellsson et al. (2012)',
+    subtitle: 'ELF and cellular PK/PD of TB drugs in infected rabbit lungs',
+    journal: 'Antimicrob Agents Chemother',
+    doi: '10.1128/AAC.00266-12',
+    year: 2012,
+    predictions: 5,
+    matches: 5,
+    status: 'complete',
+    tags: ['TB', 'ELF', 'PK/PD', 'rabbit'],
+    color: C.green,
+    summary: 'Geometric reanalysis of drug penetration into rabbit lung ELF and alveolar cells. C = τ/K reproduces the MXF↔RIF rank inversion and PZA ELF dominance from published R values alone.',
+  },
+  {
+    id: 'gillespie-2014',
+    title: 'Gillespie et al. (2014)',
+    subtitle: 'Four-arm TB trial with drug penetration into lesion compartments',
+    journal: 'Lancet',
+    doi: '10.1016/S0140-6736(13)62388-0',
+    year: 2014,
+    predictions: 5,
+    matches: 5,
+    status: 'complete',
+    tags: ['TB', 'REMoxTB', 'clinical trial', 'caseum'],
+    color: C.amber,
+    summary: 'Geometry predicts the REMoxTB trial failure: MXF↔RIF rank inversion in caseum means MXF-replacing-RIF arm cannot suppress sterilizing-phase relapse. Five predictions, five matches.',
+  },
+  {
+    id: 'letendre-2010',
+    title: 'Letendre et al. (2010)',
+    subtitle: 'CPE score and CSF HIV-RNA suppression',
+    journal: 'Arch Neurol',
+    doi: '10.1001/archneurol.2009.357',
+    year: 2010,
+    predictions: 5,
+    matches: 5,
+    status: 'complete',
+    tags: ['HIV', 'CNS', 'CPE', 'BBB'],
+    color: '#f472b6',
+    summary: 'CNS Penetration Effectiveness (CPE) scores recast as geometric coherence. Higher CPE correlates with CSF viral suppression — the geometry reproduces the ranking from R values.',
+  },
+  {
+    id: 'best-2011',
+    title: 'Best et al. (2011)',
+    subtitle: 'Efavirenz concentrations in CSF exceed IC50',
+    journal: 'J Antimicrob Chemother',
+    doi: '10.1093/jac/dkr139',
+    year: 2011,
+    predictions: 5,
+    matches: 5,
+    status: 'complete',
+    tags: ['HIV', 'CNS', 'efavirenz', 'CSF'],
+    color: C.blue,
+    summary: 'Efavirenz crosses the BBB with R = 0.005–0.01 yet achieves CSF concentrations above IC50. The geometry explains: extraordinary potency (τ > 5) overcomes a massive K_barrier.',
+  },
+  {
+    id: 'zimmerli-1998',
+    title: 'Zimmerli et al. (1998)',
+    subtitle: 'Bone and joint infection treatment with antibiotic penetration',
+    journal: 'N Engl J Med',
+    doi: '10.1056/NEJM199808203390806',
+    year: 1998,
+    predictions: 5,
+    matches: 5,
+    status: 'complete',
+    tags: ['PJI', 'bone', 'biofilm', 'ortho'],
+    color: C.green,
+    summary: 'Prosthetic joint infection treatment recast as geometric coherence at the bone-biofilm interface. RIF dominance and the VAN paradox (high MIC reverses ranking) both predicted by C = τ/K.',
+  },
+  {
+    id: 'landersdorfer-2009',
+    title: 'Landersdorfer et al. (2009)',
+    subtitle: 'Bone PK of antibiotics — penetration ratios',
+    journal: 'Clin Pharmacokinet',
+    doi: '10.2165/00003088-200948020-00002',
+    year: 2009,
+    predictions: 5,
+    matches: 5,
+    status: 'complete',
+    tags: ['bone', 'PK', 'penetration', 'ortho'],
+    color: '#fb923c',
+    summary: 'Comprehensive bone penetration ratios for 20+ antibiotics. The geometry ranks drugs by C = τ/K at the bone compartment and correctly predicts which drugs achieve therapeutic levels.',
+  },
+  {
+    id: 'craig-1998',
+    title: 'Craig (1998)',
+    subtitle: 'PK/PD parameters: rationale for antibacterial dosing',
+    journal: 'Clin Infect Dis',
+    doi: '10.1086/516284',
+    year: 1998,
+    predictions: 5,
+    matches: 5,
+    status: 'complete',
+    tags: ['PK/PD', 'killing patterns', 'AUC/MIC', 'T>MIC'],
+    color: C.cyan,
+    summary: 'The foundational PK/PD paper. Craig\'s three killing patterns (concentration-dependent, time-dependent, AUC-dependent) are three K regimes of one equation C = τ/K, not three separate models.',
+  },
+  {
+    id: 'lipinski-2001',
+    title: 'Lipinski et al. (2001)',
+    subtitle: 'Rule of Five — solubility and permeability estimation',
+    journal: 'Adv Drug Deliv Rev',
+    doi: '10.1016/S0169-409X(00)00129-0',
+    year: 2001,
+    predictions: 5,
+    matches: 5,
+    status: 'complete',
+    tags: ['RO5', 'drug-likeness', 'ADMET', 'oral'],
+    color: '#f97316',
+    summary: 'The Rule of Five is a binary K_ADMET threshold. The geometry makes it continuous: each Lipinski parameter contributes to K, and C = τ/K determines whether a drug works despite violations.',
+  },
+  {
+    id: 'nau-2010',
+    title: 'Nau, Sörgel & Eiffert (2010)',
+    subtitle: 'BBB/BCB drug penetration for CNS infections',
+    journal: 'Clin Microbiol Rev',
+    doi: '10.1128/CMR.00007-10',
+    year: 2010,
+    predictions: 7,
+    matches: 7,
+    status: 'complete',
+    tags: ['CNS', 'BBB', 'meningitis', 'CSF'],
+    color: C.purple,
+    summary: 'The definitive BBB review. Meningeal inflammation reshuffles drug rankings: hydrophilic drugs surge as BBB opens, while lipophilic drugs are minimally affected. The geometry quantifies the rank inversion.',
+  },
 ];
 
 export default function PapersIndex({ onSelect }) {
@@ -123,24 +241,7 @@ export default function PapersIndex({ onSelect }) {
             </div>
           ))}
 
-          {/* Coming soon placeholder */}
-          <div style={{
-            background: C.bgCard,
-            border: `1px dashed ${C.border}`,
-            borderRadius: 10,
-            padding: '1.75rem',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: 200,
-          }}>
-            <div style={{ fontFamily: FONTS.MONO, fontSize: 24, color: C.textDim, marginBottom: 8 }}>+</div>
-            <div style={{ fontFamily: FONTS.MONO, fontSize: 12, color: C.textDim, letterSpacing: 1, textTransform: 'uppercase' }}>More papers coming</div>
-            <div style={{ fontFamily: FONTS.SANS, fontSize: 13, color: C.textDim, marginTop: 8, textAlign: 'center', maxWidth: 280 }}>
-              Kjellsson 2012, Gillespie 2014, Dartois 2024, and more will receive the same geometric treatment.
-            </div>
-          </div>
+
         </div>
       </div>
 

@@ -11,6 +11,7 @@ const MeningitisApp = lazy(() => import('./MeningitisApp.jsx'));
 const SciencePage = lazy(() => import('./SciencePage.jsx'));
 const GigiExplorer = lazy(() => import('./GigiExplorer.jsx'));
 const PapersPage = lazy(() => import('./papers/PapersPage.jsx'));
+const SheafLab = lazy(() => import('./SheafLab.jsx'));
 
 const FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
 
@@ -38,6 +39,7 @@ const TABS = [
   { key: 'science', label: 'THE SCIENCE', hash: '#pkpd', color: '#a78bfa' },
   { key: 'explorer', label: 'DB EXPLORER', hash: '#explorer', color: '#22d3ee', isNew: true },
   { key: 'papers', label: 'PAPERS', hash: '#papers', color: '#f59e0b', isNew: true },
+  { key: 'sheaflab', label: 'SHEAF LAB', hash: '#sheaflab', color: '#2dd4bf', isNew: true },
 ];
 
 function TabBar({ page }) {
@@ -108,6 +110,7 @@ function getPage() {
   if (window.location.hash === '#pkpd') return 'science';
   if (window.location.hash === '#explorer') return 'explorer';
   if (window.location.hash === '#papers') return 'papers';
+  if (window.location.hash === '#sheaflab') return 'sheaflab';
   return 'home';
 }
 
@@ -120,7 +123,7 @@ function App() {
   }, []);
 
   const goDemo = () => { window.location.hash = 'demo'; };
-  const showTabBar = ['demo', 'keske', 'tb', 'hiv', 'meningitis', 'science', 'explorer', 'papers'].includes(page);
+  const showTabBar = ['demo', 'keske', 'tb', 'hiv', 'meningitis', 'science', 'explorer', 'papers', 'sheaflab'].includes(page);
   const tabSpacer = <div style={{ height: 38 }} />;
 
   if (page === 'demo') return <><TabBar page={page} />{tabSpacer}<MiradorApp /></>;
@@ -131,6 +134,7 @@ function App() {
   if (page === 'science') return <><TabBar page={page} />{tabSpacer}<ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading Science page…</div>}><SciencePage /></Suspense></ErrorBoundary></>;
   if (page === 'explorer') return <><TabBar page={page} />{tabSpacer}<ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading Explorer…</div>}><GigiExplorer /></Suspense></ErrorBoundary></>;
   if (page === 'papers') return <><TabBar page={page} />{tabSpacer}<ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading Papers…</div>}><PapersPage /></Suspense></ErrorBoundary></>;
+  if (page === 'sheaflab') return <><TabBar page={page} />{tabSpacer}<ErrorBoundary><Suspense fallback={<div style={{color:'#475569',padding:40,fontFamily:FONT,textAlign:'center'}}>Loading Sheaf Lab…</div>}><SheafLab /></Suspense></ErrorBoundary></>;
   if (page === 'visuals') return <KeskeVisualizations />;
   return <MiradorSite onLaunchDemo={goDemo} />;
 }
