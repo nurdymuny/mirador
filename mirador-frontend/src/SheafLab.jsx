@@ -259,17 +259,20 @@ function normalizeComplete(res) {
 async function gigiComplete(drugId, tissueId) {
   const d = safeDrugId(drugId), t = safeTissueId(tissueId);
   if (!d || !t) return null;
-  const comp = TISSUE_TO_COMPARTMENT[t] || t;
+  const drug = DRUGS.find(dr => dr.id === d);
   try {
-    const res = await gigiQuery(
-      `COMPLETE ON mirador_drugs WHERE tau = NULL AND drug_name = '${d}' AND compartment = '${comp}' CONFIDENCE_FLOOR 0.30 WITH CONSTRAINT_GRAPH`
-    );
+    const resp = await fetch('/v1/sheaf/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ drugId: d, tissueId: t, drugClass: drug?.cls }),
+    });
+    if (!resp.ok) throw new Error(`Sheaf complete ${resp.status}`);
+    const res = await resp.json();
     const norm = normalizeComplete(res);
     if (norm) return norm;
-  } catch (err) { console.warn('[SheafLab] GIGI COMPLETE failed, using local:', err.message); }
+  } catch (err) { console.warn('[SheafLab] Server sheaf complete failed, using local:', err.message); }
   const local = localComplete(d, t);
   if (local) return local;
-  // Both GIGI and local failed — return explicit empty result so UI can show a message
   return { rows: [], _noData: true };
 }
 
@@ -316,17 +319,19 @@ function normalizePropagate(res) {
 async function gigiPropagate(drugId, tissueId, tau) {
   const d = safeDrugId(drugId), t = safeTissueId(tissueId);
   if (!d || !t) return null;
-  const v = Number(tau);
-  if (!Number.isFinite(v)) return null;
-  const comp = TISSUE_TO_COMPARTMENT[t] || t;
+  const drug = DRUGS.find(dr => dr.id === d);
   try {
-    const res = await gigiQuery(
-      `PROPAGATE ON mirador_drugs ASSUMING drug_name = '${d}' AND compartment = '${comp}' AND tau = ${v} SHOW newly_determined`
-    );
+    const resp = await fetch('/v1/sheaf/propagate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ drugId: d, tissueId: t, drugClass: drug?.cls }),
+    });
+    if (!resp.ok) throw new Error(`Sheaf propagate ${resp.status}`);
+    const res = await resp.json();
     const norm = normalizePropagate(res);
     if (norm) return norm;
-  } catch (err) { console.warn('[SheafLab] GIGI PROPAGATE failed, using local:', err.message); }
-  const local = localPropagate(d, t, v);
+  } catch (err) { console.warn('[SheafLab] Server sheaf propagate failed, using local:', err.message); }
+  const local = localPropagate(d, t, Number(tau));
   if (local?.rows?.length) return local;
   return { rows: [], _noData: true };
 }
