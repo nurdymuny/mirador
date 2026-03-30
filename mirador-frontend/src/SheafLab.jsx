@@ -140,8 +140,8 @@ const TAU_SRC = {
   MXF:"eucast2024", CRO:"eucast2024", DAP:"eucast2024",
 };
 
-// ─── GIGI Backend ───
-const GIGI_HOST = 'https://gigi-stream.fly.dev';
+// ─── GIGI Backend (routed through Vercel proxy to avoid CORS) ───
+const GIGI_GQL_PROXY = '/v1/sheaf/gql';
 
 // Map SheafLab tissue IDs to GIGI bundle compartment names
 const TISSUE_TO_COMPARTMENT = {
@@ -157,14 +157,14 @@ async function gigiQuery(query, { retries = 1, timeoutMs = 12000 } = {}) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      const resp = await fetch(`${GIGI_HOST}/v1/gql`, {
+      const resp = await fetch(GIGI_GQL_PROXY, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query }),
         signal: ctrl.signal,
       });
       clearTimeout(timer);
-      if (!resp.ok) throw new Error(`GIGI ${resp.status}`);
+      if (!resp.ok) throw new Error(`GIGI proxy ${resp.status}`);
       return resp.json();
     } catch (err) {
       clearTimeout(timer);
@@ -173,9 +173,6 @@ async function gigiQuery(query, { retries = 1, timeoutMs = 12000 } = {}) {
     }
   }
 }
-
-// Warm up the GIGI connection on first import (fire-and-forget)
-fetch(`${GIGI_HOST}/v1/health`, { method: 'GET' }).catch(() => {});
 
 // Safe drug/tissue identifiers for GQL (validated against known lists)
 const safeDrugId = (id) => DRUGS.find(d => d.id === id)?.id;
@@ -269,7 +266,7 @@ async function gigiComplete(drugId, tissueId) {
     );
     const norm = normalizeComplete(res);
     if (norm) return norm;
-  } catch (_) { /* fall through to local */ }
+  } catch (err) { console.warn('[SheafLab] GIGI COMPLETE failed, using local:', err.message); }
   const local = localComplete(d, t);
   if (local) return local;
   // Both GIGI and local failed — return explicit empty result so UI can show a message
@@ -328,7 +325,7 @@ async function gigiPropagate(drugId, tissueId, tau) {
     );
     const norm = normalizePropagate(res);
     if (norm) return norm;
-  } catch (_) { /* fall through to local */ }
+  } catch (err) { console.warn('[SheafLab] GIGI PROPAGATE failed, using local:', err.message); }
   const local = localPropagate(d, t, v);
   if (local?.rows?.length) return local;
   return { rows: [], _noData: true };
