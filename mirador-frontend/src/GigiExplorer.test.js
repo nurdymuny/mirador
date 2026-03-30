@@ -16,26 +16,56 @@ import { describe, it, expect, beforeAll } from 'vitest';
 const HOST = 'https://gigi-stream.fly.dev';
 const LONG = 30_000; // 30s timeout for large bundle queries
 const XLONG = 90_000; // 90s timeout for ChEMBL 5M+ scans
+const MAX_RETRIES = 3;
+const RETRY_DELAYS = [2000, 4000, 8000]; // exponential back-off
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ── Helper: execute GQL against the live GIGI server ──────────────
+// Retries on 503 (WAL replay) and network errors with exponential back-off
 async function gql(query, timeout = 15_000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
-  try {
-    const resp = await fetch(`${HOST}/v1/gql`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
-      signal: controller.signal,
-    });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
-    return resp.json();
-  } finally { clearTimeout(timer); }
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+      const resp = await fetch(`${HOST}/v1/gql`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+        signal: controller.signal,
+      });
+      if (resp.status === 503 && attempt < MAX_RETRIES) {
+        clearTimeout(timer);
+        await sleep(RETRY_DELAYS[attempt]);
+        continue;
+      }
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+      return resp.json();
+    } catch (err) {
+      clearTimeout(timer);
+      if (attempt < MAX_RETRIES && (err.name === 'AbortError' || err.cause?.code === 'ECONNREFUSED')) {
+        await sleep(RETRY_DELAYS[attempt]);
+        continue;
+      }
+      throw err;
+    } finally { clearTimeout(timer); }
+  }
 }
 
+// Health check with retry — waits for status: 'ok' (WAL replay → 'loading')
 async function health() {
-  const resp = await fetch(`${HOST}/v1/health`);
-  return resp.json();
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const resp = await fetch(`${HOST}/v1/health`);
+      const data = await resp.json();
+      if (data.status === 'ok') return data;
+      if (attempt < MAX_RETRIES) { await sleep(RETRY_DELAYS[attempt]); continue; }
+      return data; // return whatever we got on last attempt
+    } catch {
+      if (attempt < MAX_RETRIES) { await sleep(RETRY_DELAYS[attempt]); continue; }
+      return { status: 'unreachable', bundles: 0, total_records: 0 };
+    }
+  }
 }
 
 // ── 1. Server health & aggregate totals ───────────────────────────

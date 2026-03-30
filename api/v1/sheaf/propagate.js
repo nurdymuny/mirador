@@ -3,6 +3,9 @@
 // Body: { drugId, tissueId, drugClass }
 
 const GIGI_HOST = 'https://gigi-stream.fly.dev';
+const MAX_RETRIES = 2;
+const RETRY_DELAYS = [1500, 3000];
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const TISSUE_TO_COMPARTMENT = {
   bone: 'bone',
@@ -15,23 +18,31 @@ const TISSUE_TO_COMPARTMENT = {
 const TISSUES = ['bone', 'csf', 'caseum', 'biofilm', 'prostate'];
 
 async function gigiCover(query) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 10000);
-  try {
-    const resp = await fetch(`${GIGI_HOST}/v1/gql`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
-      signal: ctrl.signal,
-    });
-    clearTimeout(timer);
-    if (!resp.ok) return [];
-    const data = await resp.json();
-    return data.rows || [];
-  } catch {
-    clearTimeout(timer);
-    return [];
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    try {
+      const resp = await fetch(`${GIGI_HOST}/v1/gql`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (resp.status === 503 && attempt < MAX_RETRIES) {
+        await sleep(RETRY_DELAYS[attempt]);
+        continue;
+      }
+      if (!resp.ok) return [];
+      const data = await resp.json();
+      return data.rows || [];
+    } catch {
+      clearTimeout(timer);
+      if (attempt < MAX_RETRIES) { await sleep(RETRY_DELAYS[attempt]); continue; }
+      return [];
+    }
   }
+  return [];
 }
 
 module.exports = async function handler(req, res) {
