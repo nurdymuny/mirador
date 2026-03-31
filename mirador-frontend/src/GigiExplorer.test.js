@@ -539,3 +539,104 @@ describe('NL preset queries (server-targeted)', () => {
     expect(res.rows.length).toBeGreaterThan(0);
   }, LONG);
 });
+
+// ── 9. Sprint A: Topological & Thermodynamic endpoints ────────────
+
+// REST GET helper with retry (same exponential backoff as gql())
+async function restGet(path, timeout = 15_000) {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+      const resp = await fetch(`${HOST}${path}`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+      if (resp.status === 503 && attempt < MAX_RETRIES) {
+        clearTimeout(timer);
+        await sleep(RETRY_DELAYS[attempt]);
+        continue;
+      }
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
+      return resp.json();
+    } catch (err) {
+      clearTimeout(timer);
+      if (attempt < MAX_RETRIES && (err.name === 'AbortError' || err.cause?.code === 'ECONNREFUSED')) {
+        await sleep(RETRY_DELAYS[attempt]);
+        continue;
+      }
+      throw err;
+    } finally { clearTimeout(timer); }
+  }
+}
+
+describe('Sprint A: Betti numbers (REST)', () => {
+  it('GET /v1/bundles/bindingdb_binding/betti returns β₀ and β₁', async () => {
+    const res = await restGet('/v1/bundles/bindingdb_binding/betti', LONG);
+    expect(res.beta_0).toBeDefined();
+    expect(res.beta_1).toBeDefined();
+    expect(typeof res.beta_0).toBe('number');
+    expect(typeof res.beta_1).toBe('number');
+    expect(res.beta_0).toBeGreaterThanOrEqual(0); // connected components ≥ 0
+    expect(res.beta_1).toBeGreaterThanOrEqual(0); // cycle rank ≥ 0
+  }, LONG);
+
+  it('GET /v1/bundles/clintrials_studies/betti returns β₀ and β₁', async () => {
+    const res = await restGet('/v1/bundles/clintrials_studies/betti', LONG);
+    expect(res.beta_0).toBeGreaterThanOrEqual(0);
+    expect(res.beta_1).toBeGreaterThanOrEqual(0);
+  }, LONG);
+});
+
+describe('Sprint A: Entropy (REST)', () => {
+  it('GET /v1/bundles/bindingdb_binding/entropy returns S ≥ 0', async () => {
+    const res = await restGet('/v1/bundles/bindingdb_binding/entropy', LONG);
+    expect(res.entropy).toBeDefined();
+    expect(typeof res.entropy).toBe('number');
+    expect(res.entropy).toBeGreaterThanOrEqual(0);
+  }, LONG);
+
+  it('GET /v1/bundles/pgx_clinical/entropy returns S ≥ 0', async () => {
+    const res = await restGet('/v1/bundles/pgx_clinical/entropy', LONG);
+    expect(res.entropy).toBeGreaterThanOrEqual(0);
+  }, LONG);
+});
+
+describe('Sprint A: Free energy (REST)', () => {
+  it('GET /v1/bundles/bindingdb_binding/free-energy?tau=1.0 returns finite F', async () => {
+    const res = await restGet('/v1/bundles/bindingdb_binding/free-energy?tau=1.0', LONG);
+    expect(res.free_energy).toBeDefined();
+    expect(typeof res.free_energy).toBe('number');
+    expect(Number.isFinite(res.free_energy)).toBe(true);
+  }, LONG);
+
+  it('F(high τ) < F(low τ) — entropy dominates at high temperature', async () => {
+    const lo = await restGet('/v1/bundles/bindingdb_binding/free-energy?tau=0.1', LONG);
+    const hi = await restGet('/v1/bundles/bindingdb_binding/free-energy?tau=10.0', LONG);
+    expect(Number.isFinite(lo.free_energy)).toBe(true);
+    expect(Number.isFinite(hi.free_energy)).toBe(true);
+    // Free energy should decrease (or stay equal) as temperature increases
+    expect(hi.free_energy).toBeLessThanOrEqual(lo.free_energy);
+  }, LONG);
+});
+
+describe('Sprint A: GQL equivalents', () => {
+  it('BETTI bindingdb_binding via GQL', async () => {
+    const res = await gql('BETTI bindingdb_binding');
+    expect(res).toHaveProperty('value');
+    expect(res.value).toBeGreaterThanOrEqual(0);
+  }, LONG);
+
+  it('ENTROPY bindingdb_binding via GQL', async () => {
+    const res = await gql('ENTROPY bindingdb_binding');
+    expect(res).toHaveProperty('value');
+    expect(res.value).toBeGreaterThanOrEqual(0);
+  }, LONG);
+
+  it('FREEENERGY bindingdb_binding AT 1.0 via GQL', async () => {
+    const res = await gql('FREEENERGY bindingdb_binding AT 1.0');
+    expect(res).toHaveProperty('value');
+    expect(typeof res.value).toBe('number');
+    expect(Number.isFinite(res.value)).toBe(true);
+  }, LONG);
+});
