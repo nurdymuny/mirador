@@ -40,6 +40,8 @@ MIRADOR_HIV_Report.pdf
 MIRADOR_HIV_Report.json
 
 # Debug / temp scripts
+_*
+_archive/
 mirador-frontend/_check*
 
 # OS
