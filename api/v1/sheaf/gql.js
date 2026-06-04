@@ -3,6 +3,7 @@
 // Returns GIGI's JSON response directly
 
 const GIGI_HOST = 'https://gigi-stream.fly.dev';
+const GIGI_API_KEY = (process.env.GIGI_API_KEY || '').trim();
 const MAX_RETRIES = 2;
 const RETRY_DELAYS = [1500, 3000];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -23,7 +24,7 @@ module.exports = async function handler(req, res) {
       const timer = setTimeout(() => ctrl.abort(), 12000);
       const resp = await fetch(`${GIGI_HOST}/v1/gql`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': GIGI_API_KEY },
         body: JSON.stringify({ query }),
         signal: ctrl.signal,
       });

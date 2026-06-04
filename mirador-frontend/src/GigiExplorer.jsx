@@ -2,7 +2,10 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { initEngine, buildUniverse, universeGQL, nlToGql, expandUniverseWithAge, expandUniverseWithSex, NL_GROUPS } from './gql-engine';
 
 const FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', monospace";
-const DEFAULT_HOST = 'https://gigi-stream.fly.dev';
+// Same-origin: live queries go to our /v1/gql proxy (api/v1/gql.js), which holds
+// the GIGI_API_KEY server-side and forwards only read queries. Never call
+// gigi-stream.fly.dev directly from the browser — the key is write-capable.
+const DEFAULT_HOST = '';
 const MAINTENANCE_MODE = false;
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -622,7 +625,11 @@ function MetaPanel({ meta }) {
 export default function GigiExplorer() {
   const [host, setHost] = useState(() => {
     const saved = localStorage.getItem('gigi_host');
-    if (saved && saved.includes('localhost')) { localStorage.removeItem('gigi_host'); return DEFAULT_HOST; }
+    // Migrate anyone pinned to localhost or the direct (now key-gated) GIGI host
+    // onto the same-origin proxy.
+    if (saved && (saved.includes('localhost') || saved.includes('gigi-stream.fly.dev'))) {
+      localStorage.removeItem('gigi_host'); return DEFAULT_HOST;
+    }
     return saved || DEFAULT_HOST;
   });
   const [query, setQuery] = useState("COVER mirador_drugs ON disease = 'hiv';");
@@ -859,7 +866,7 @@ export default function GigiExplorer() {
             </div>
             <input value={host} onChange={e => setHost(e.target.value)}
               style={{ background: '#0a0a14', border: '1px solid #1a1a2e', borderRadius: 4, padding: '5px 10px', color: '#94a3b8', fontSize: 10, fontFamily: FONT, width: isMob ? '100%' : 220 }}
-              placeholder="http://localhost:3142" spellCheck={false} />
+              placeholder="(same-origin proxy · /v1/gql)" spellCheck={false} />
           </div>
         </div>
       </div>
