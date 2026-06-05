@@ -1,0 +1,33 @@
+# Vercel CLI deploys upload the working tree by default. Without this
+# file, `vercel --prod` from local would try to upload these multi-GB
+# data ingestion artifacts and fail with "File size > 2 GiB". The
+# GitHub-triggered build pulls only what's in git, so it's unaffected,
+# but local CLI deploys need this to work.
+#
+# These are all generated / downloaded — never live in git.
+
+# Raw ingestion data (ChEMBL ~30GB, BindingDB ~21GB, ChEMBL tar ~5.6GB)
+data/
+
+# Local build / venv / cache cruft (already gitignored but vercel
+# ignores .gitignore unless we restate)
+node_modules/
+__pycache__/
+.venv/
+venv/
+mirador_rs/target/
+mirador-frontend/dist-ssr/
+
+# Local-only secrets
+.env
+.env.*
+!.env.example
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
