@@ -8,8 +8,29 @@
 //
 // Body: { query: "COVER ..." }  → returns GIGI's JSON response verbatim.
 
-const GIGI_HOST = (process.env.GIGI_URL || 'https://gigi-stream.fly.dev').trim();
-const GIGI_API_KEY = (process.env.GIGI_API_KEY || '').trim();
+// **2026-06-04 hardening.** Strip BOM + whitespace before using either env
+// value on the wire. Windows PowerShell `Add-Content` (and several other
+// editors) silently prepend a UTF-16 BOM (U+FEFF) and append CRLF when
+// they write to .env / .env.local; Vercel reads those bytes literally
+// into process.env; the X-API-Key header below then contains a code
+// point > 0xFF and the outgoing fetch dies with "String contains non
+// ISO-8859-1 code point". Sanitize at load-time so a sloppy upstream
+// can't take down /v1/gql.
+function sanitizeEnv(raw) {
+  if (!raw) return '';
+  let s = String(raw);
+  while (s.charCodeAt(0) === 0xfeff) s = s.slice(1);
+  return s.trim();
+}
+const GIGI_HOST = sanitizeEnv(process.env.GIGI_URL) || 'https://gigi-stream.fly.dev';
+const GIGI_API_KEY = sanitizeEnv(process.env.GIGI_API_KEY);
+if (process.env.GIGI_API_KEY && process.env.GIGI_API_KEY !== GIGI_API_KEY) {
+  console.warn('[v1/gql] GIGI_API_KEY env had BOM / whitespace — sanitized at load.', {
+    raw_length: process.env.GIGI_API_KEY.length,
+    clean_length: GIGI_API_KEY.length,
+    had_bom: process.env.GIGI_API_KEY.charCodeAt(0) === 0xfeff,
+  });
+}
 const MAX_RETRIES = 2;
 const RETRY_DELAYS = [1500, 3000];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
