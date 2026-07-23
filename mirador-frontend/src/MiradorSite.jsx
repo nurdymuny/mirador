@@ -494,10 +494,10 @@ export default function MiradorSite() {
         <FadeIn delay={0.6} style={{ marginTop: 60, maxWidth: 900, width: "100%" }}>
           <div style={{ display: "grid", gridTemplateColumns: mob ? "1fr" : "1fr 1fr", gap: 16 }}>
             {[
-              { title: "MRSA BONE", color: "#3b82f6", hash: "#demo", lines: ["Derived FDA dose from geometry.", "Predicted 3 resistance mutations confirmed by crystal structure."], stat: "161 tests" },
-              { title: "TUBERCULOSIS", color: "#22c55e", hash: "#tb", lines: ["Derived the 4-drug regimen.", "Detected which drug removal causes the largest C drop."], stat: "52 tests" },
+              { title: "MRSA BONE", color: "#3b82f6", hash: "#demo", lines: ["Derived FDA dose from geometry.", "3 top-ranked resistance mutations match known clinical isolates."], stat: "3/3 escapes" },
+              { title: "TUBERCULOSIS", color: "#22c55e", hash: "#tb", lines: ["Derived the 4-drug regimen.", "Detected which drug removal causes the largest C drop."], stat: "r = 0.81 vs trials" },
               { title: "MENINGITIS", color: "#f59e0b", hash: "#meningitis", lines: ["Computed the exact day steroids lock antibiotics out of the brain.", "Matches published survival data."], stat: "LIVE" },
-              { title: "HIV RESERVOIRS", color: "#ef4444", hash: "#hiv", lines: ["Shows why ART cannot cure, from first principles.", "Identified one reservoir already clearable."], stat: "83 tests" },
+              { title: "HIV RESERVOIRS", color: "#ef4444", hash: "#hiv", lines: ["Shows why ART cannot cure, from first principles.", "Identified one reservoir with the smallest cure gap."], stat: "5 reservoirs" },
             ].map(d => (
               <a key={d.title} href={d.hash || undefined} style={{ display: "block", padding: "20px 24px", background: "#0c0c18", border: `1px solid ${d.color}22`, borderTop: `3px solid ${d.color}`, borderRadius: 8, textDecoration: "none", opacity: d.hash ? 1 : 0.7, cursor: d.hash ? "pointer" : "default" }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = d.color}
@@ -509,7 +509,7 @@ export default function MiradorSite() {
             ))}
           </div>
           <div style={{ textAlign: "center", marginTop: 20, fontSize: 13, fontFamily: FM, color: "#64748b", letterSpacing: 2 }}>
-            4 diseases · 37+ independent tests · 0 fitted parameters
+            4 diseases · 290 tests across 29 crates · 0 fitted parameters
           </div>
         </FadeIn>
       </section>
@@ -606,7 +606,7 @@ export default function MiradorSite() {
         <FadeIn delay={0.3}>
           <div style={{ display: "flex", gap: 12, marginTop: 20, flexWrap: "wrap" }}>
             <div style={{ flex: "1 1 200px", padding: "12px 16px", background: "#22c55e08", border: "1px solid #22c55e22", borderRadius: 6 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>3/3 top predictions confirmed</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", marginBottom: 4 }}>3/3 top-ranked match known resistance</div>
               <div style={{ fontSize: 10, color: "#94a3b8", lineHeight: 1.5 }}>E150K, N146K, Y446N — all observed in clinical ceftaroline-resistant MRSA isolates. E150K and N146K have independently published crystal structures (PDB 4BL2, 4BL3).</div>
             </div>
             <div style={{ flex: "1 1 200px", padding: "12px 16px", background: "#3b82f608", border: "1px solid #3b82f622", borderRadius: 6 }}>
@@ -1137,7 +1137,7 @@ export default function MiradorSite() {
                     <div style={{ fontFamily: FM, fontSize: 11, color: t.color, letterSpacing: 2, marginBottom: 6 }}>{t.regime.toUpperCase()}</div>
                     <h3 style={{ fontFamily: F, fontSize: 20, fontWeight: 400, margin: "0 0 12px 0" }}>{t.title}</h3>
                     <div style={{ fontFamily: FM, fontSize: 32, fontWeight: 700, color: t.color, margin: "0 0 4px 0", letterSpacing: -1 }}>{t.count}</div>
-                    <div style={{ fontFamily: FM, fontSize: 10, color: "#64748b", marginBottom: 12 }}>predictions confirmed</div>
+                    <div style={{ fontFamily: FM, fontSize: 10, color: "#64748b", marginBottom: 12 }}>checks vs published data</div>
                     <div style={{ fontSize: 13, fontFamily: FS, fontWeight: 600, color: "#e2e8f0", marginBottom: 8, lineHeight: 1.4 }}>{t.highlight}</div>
                     <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7, flex: 1 }}>{t.detail}</div>
                     <div style={{ fontSize: 10, fontFamily: FM, color: "#475569", marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e3a", lineHeight: 1.6 }}>{t.sources}</div>
@@ -1444,7 +1444,7 @@ export default function MiradorSite() {
               <div style={{ fontSize: 12, color: "#94a3b8", fontFamily: FS, lineHeight: 1.6 }}>
                 Not metadata — structural properties of the fiber bundle itself.
                 Every τ coordinate carries its derivation path: which MIC, which AUC, which breakpoint standard.
-                The geometry is the proof.
+                The geometry is the evidence.
               </div>
             </div>
           </div>
