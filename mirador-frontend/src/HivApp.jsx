@@ -295,7 +295,7 @@ function SidebarContent({ stage, activeDrugs, resData, lraIdx, clearOrder, sVal,
         The blood-brain barrier is the most formidable obstacle. Every drug in the standard arsenal
         has R ≤ 0.05 at the CNS — meaning 95%+ of the drug never crosses. Even Darunavir, the best
         CNS penetrator, only gets 5% through. This is why CSF viral escape happens in 5-10% of patients
-        on otherwise suppressive therapy. The math predicts it before the clinic sees it.
+        on otherwise suppressive therapy. The geometry reproduces this already-documented clinical pattern.
       </Explain>
     </>);
   }
@@ -383,7 +383,7 @@ function SidebarContent({ stage, activeDrugs, resData, lraIdx, clearOrder, sVal,
         <Divider />
         <div style={{ fontSize: 9, color: "#14b8a6", letterSpacing: 2, marginBottom: 8 }}>NOVEL PREDICTIONS</div>
         {[
-          { t: "Genital tract curable now", c: "#22c55e" },
+          { t: "Genital tract: smallest cure gap (model estimate)", c: "#22c55e" },
           { t: "CSF escape is geometric", c: "#ef4444" },
           { t: "Φ gap at GALT: 7×", c: "#f59e0b" },
           { t: "DRV dominates CNS", c: "#a855f7" },
@@ -732,7 +732,7 @@ export default function HivApp() {
             Standard ART suppresses HIV but cannot clear latent reservoirs. <span style={{ color: "#e2e8f0" }}>MIRADOR HIV</span> extends
             C = τ/K across five anatomical sanctuaries with a catalytic LRA modification — computing
             which reservoirs are penetration-limited, which are reactivation-limited, and which are already
-            clearable with existing technology. Zero fitted parameters. 10/10 validated.
+            clearable with existing technology. Zero fitted parameters.
           </div>
         </div>
       </div>

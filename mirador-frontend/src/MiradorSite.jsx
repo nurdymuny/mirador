@@ -454,7 +454,7 @@ export default function MiradorSite() {
 
         <FadeIn delay={0.1}>
           <h1 style={{ fontSize: "clamp(32px, 5vw, 56px)", fontFamily: F, fontWeight: 400, lineHeight: 1.15, maxWidth: 720, margin: "0 0 20px 0" }}>
-            The first computationally accurate terrain map for drug efficacy.
+            A computationally accurate terrain map for drug efficacy.
           </h1>
         </FadeIn>
 
@@ -466,7 +466,7 @@ export default function MiradorSite() {
 
         <FadeIn delay={0.2}>
           <p style={{ fontSize: 14, color: "#94a3b8", maxWidth: 560, lineHeight: 1.7, margin: "0 0 12px 0" }}>
-            Published tissue ratios in. Site-specific drug rankings out. No training data. No fitted parameters. Accurate enough to derive FDA dosing and predict resistance mutations from geometry alone.
+            Published tissue ratios in. Site-specific drug rankings out. No training data. No fitted parameters. Accurate enough to reproduce FDA dosing and known resistance mutations from geometry alone.
           </p>
         </FadeIn>
 
@@ -497,7 +497,7 @@ export default function MiradorSite() {
               { title: "MRSA BONE", color: "#3b82f6", hash: "#demo", lines: ["Derived FDA dose from geometry.", "Predicted 3 resistance mutations confirmed by crystal structure."], stat: "161 tests" },
               { title: "TUBERCULOSIS", color: "#22c55e", hash: "#tb", lines: ["Derived the 4-drug regimen.", "Detected which drug removal causes the largest C drop."], stat: "52 tests" },
               { title: "MENINGITIS", color: "#f59e0b", hash: "#meningitis", lines: ["Computed the exact day steroids lock antibiotics out of the brain.", "Matches published survival data."], stat: "LIVE" },
-              { title: "HIV RESERVOIRS", color: "#ef4444", hash: "#hiv", lines: ["Proved ART cannot cure from first principles.", "Identified one reservoir already clearable."], stat: "83 tests" },
+              { title: "HIV RESERVOIRS", color: "#ef4444", hash: "#hiv", lines: ["Shows why ART cannot cure, from first principles.", "Identified one reservoir already clearable."], stat: "83 tests" },
             ].map(d => (
               <a key={d.title} href={d.hash || undefined} style={{ display: "block", padding: "20px 24px", background: "#0c0c18", border: `1px solid ${d.color}22`, borderTop: `3px solid ${d.color}`, borderRadius: 8, textDecoration: "none", opacity: d.hash ? 1 : 0.7, cursor: d.hash ? "pointer" : "default" }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = d.color}
@@ -777,9 +777,9 @@ export default function MiradorSite() {
           <FadeIn delay={0.1}>
             <div style={{ background: "#0c0c18", border: "1px solid #1e1e30", borderRadius: 8, padding: "20px 28px", margin: "24px 0" }}>
               <div style={{ fontSize: 10, fontFamily: FM, color: "#64748b", letterSpacing: 2, marginBottom: 8 }}>HEADLINE RESULT</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#ef4444", fontFamily: FS, marginBottom: 8 }}>ART cannot cure HIV. The math proves it from first principles.</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#ef4444", fontFamily: FS, marginBottom: 8 }}>ART cannot cure HIV. The model shows why, from first principles.</div>
               <div style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.7 }}>
-                MIRADOR models five anatomical reservoirs (CNS, lymph node, GALT, genital tract, bone marrow) with published tissue penetration ratios. Standard ART (DTG/TFV/FTC) achieves C ≥ 1.0 at only 4 of 5 reservoirs. CNS is the geometric bottleneck: C<sub>CNS</sub> = 0.28. Even the best latency-reversing agent (LRA) delivers Φ = 0.015, but GALT requires Φ = 0.111 — a 7.4× gap. Cure is mathematically impossible with current pharmacology.
+                MIRADOR models five anatomical reservoirs (CNS, lymph node, GALT, genital tract, bone marrow) with published tissue penetration ratios. Standard ART (DTG/TFV/FTC) achieves C ≥ 1.0 at only 4 of 5 reservoirs. CNS is the geometric bottleneck: C<sub>CNS</sub> = 0.28. Even the best latency-reversing agent (LRA) delivers Φ = 0.015, but GALT requires Φ = 0.111 — a 7.4× gap. In this model, cure is out of reach with current pharmacology.
               </div>
             </div>
           </FadeIn>
@@ -840,9 +840,9 @@ export default function MiradorSite() {
       {/* ============ CLINICAL VALIDATION ============ */}
       <section id="validation" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 960, margin: "0 auto" }}>
         <FadeIn>
-          <div style={{ fontSize: 11, fontFamily: FM, color: "#f59e0b", letterSpacing: 3, marginBottom: 12, textAlign: "center" }}>CLINICAL VALIDATION</div>
+          <div style={{ fontSize: 11, fontFamily: FM, color: "#f59e0b", letterSpacing: 3, marginBottom: 12, textAlign: "center" }}>RETROSPECTIVE VALIDATION</div>
           <h2 style={{ fontSize: mob ? 26 : 32, fontFamily: F, fontWeight: 400, margin: "0 0 8px 0", textAlign: "center" }}>
-            691 predictions. 691 confirmed. Zero failures.          </h2>
+            691 retrospective checks. 691 consistent with published data. Zero contradictions.          </h2>
           <p style={{ fontSize: 14, color: "#64748b", textAlign: "center", maxWidth: 640, margin: "0 auto 32px", lineHeight: 1.7 }}>
             Every number computed from pharmacokinetic inputs alone — then checked against
             independent clinical ground truth. Input set ∩ Ground truth = ∅.
@@ -1423,7 +1423,7 @@ export default function MiradorSite() {
               <div style={{ fontSize: 10, color: "#475569", fontFamily: FM, marginBottom: 16 }}>→ VAN + RIF combination crosses θ at 3.3×</div>
 
               <div style={{ marginTop: 8, padding: "8px 12px", background: "#0a1a1a", borderRadius: 4, fontSize: 11, fontFamily: FM, color: "#22d3ee", textAlign: "center", letterSpacing: 1 }}>
-                Result: all drugs, all tissues, mathematically proven
+                Result: all drugs, all tissues, ranked with confidence and provenance
               </div>
             </div>
           </FadeIn>
@@ -1491,7 +1491,7 @@ export default function MiradorSite() {
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 40 }}>
             <SciCard icon="🦠" title="Resistance = shape change" body="When MRSA evolves E150K, it's not gaining a gene. It's changing the electrostatic surface of PBP2a's allosteric site. The drug that fit yesterday doesn't fit today. Resistance is a geometric event on the target manifold." source="Otero et al. JACS 2014 (PDB 4BL2)" color="#ef4444" />
             <SciCard icon="⚡" title="PBP2a allostery = curvature" body="Ceftaroline works because it triggers a conformational change across 60 Å — from the allosteric site to the active site. That's signal propagation along a curved manifold. The salt bridge network IS the connection on the fiber bundle." source="Mobashery et al. PNAS 2013" color="#a855f7" />
-            <SciCard icon="🔄" title="Collateral resistance = manifold switching" body="Meropenem exposure primes ceftaroline resistance through rpoB mutations — a completely different manifold. No existing system models escape routes on multiple manifolds simultaneously. MIRADOR does." source="Schaffer/Rosato AAC Feb 2026" color="#ec4899" />
+            <SciCard icon="🔄" title="Collateral resistance = manifold switching" body="Meropenem exposure primes ceftaroline resistance through rpoB mutations — a completely different manifold. MIRADOR models escape routes on multiple manifolds simultaneously." source="Schaffer/Rosato AAC Feb 2026" color="#ec4899" />
           </div>
         </FadeIn>
 
@@ -1550,12 +1550,12 @@ export default function MiradorSite() {
       {/* ============ PAPER PREVIEW ============ */}
       <section id="paper" style={{ padding: mob ? "40px 16px" : "80px 24px", maxWidth: 900, margin: "0 auto" }}>
         <FadeIn>
-          <div style={{ fontSize: 11, fontFamily: FM, color: "#f97316", letterSpacing: 3, marginBottom: 12 }}>PUBLISHED RESEARCH</div>
+          <div style={{ fontSize: 11, fontFamily: FM, color: "#f97316", letterSpacing: 3, marginBottom: 12 }}>PREPRINTS (ZENODO)</div>
           <h2 style={{ fontSize: 32, fontFamily: F, fontWeight: 400, margin: "0 0 12px 0" }}>
             Read the paper.
           </h2>
           <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.7, maxWidth: 640, marginBottom: 32 }}>
-            The complete mathematical framework, four disease validations, and 37 independent tests — peer-reviewable, reproducible, open.
+            The complete mathematical framework, four disease validations, and 290 automated engine tests — reviewable, reproducible, open.
           </p>
         </FadeIn>
 
@@ -1662,7 +1662,7 @@ export default function MiradorSite() {
                 hyphens: "auto",
               }}>
                 We validate MIRADOR across four disease instances — pediatric bone MRSA (osteomyelitis), pulmonary tuberculosis, bacterial meningitis, and HIV latent reservoirs — spanning four pathogens, four organ systems, and four barrier types, using the same equation throughout.
-                Across 37 independent validation tests with strict separation of pharmacokinetic inputs from clinical ground truths, the framework reproduces established drug rankings, predicts documented clinical phenomena not used in model construction, and identifies five novel predictions.
+                Across four disease instances, with strict separation of pharmacokinetic inputs from clinical ground truths, the framework retrospectively reproduces established drug rankings, matches documented clinical phenomena not used in model construction, and identifies five novel predictions.
                 The framework's predictive boundary is formally characterized by the Double Cover Identity (<span style={{ fontStyle: "italic" }}>S</span> + <span style={{ fontStyle: "italic" }}>d</span><sup>2</sup> = 1), which partitions every therapeutic problem into what penetration geometry explains and what it cannot.
               </p>
 
@@ -1721,7 +1721,7 @@ export default function MiradorSite() {
             "3/3 top escape mutations predicted (E150K, N146K, Y446N) — all confirmed by crystal structures",
             "FDA dose independently derived (400mg IV q12h for CrCl 15-50)",
             "Collateral resistance pathway detection (rpoB → pbp1 → mecA from carbapenem exposure)",
-            "149/149 Rust tests passing across 12 crates",
+            "Runs on the shared Rust engine (290 tests across 29 crates)",
             "Interactive demo with editable patient, 3D viewer, provenance citations",
           ]} />
         </FadeIn>        <FadeIn delay={0.08}>
@@ -1730,7 +1730,7 @@ export default function MiradorSite() {
             "Parallel-resistor combination engine with synergy term — rifampin mono hard-blocked",
             "Preloaded with Steven's scenario: 10yr, 32kg, CRP 250, 2190 days of infection",
             "C_bone vancomycin mono ≈ 0.77 → C_bone ceftaroline + rifampin ≈ 11.2 (14× improvement derivable from first principles)",
-            "161 Rust tests across 5 crates · Full PDF + JSON report generation",
+            "Full PDF + JSON report generation",
             <span key="ded" style={{ color: "#f97316" }}>Dedicated to Steven Keske — 6 years, 5 antibiotics, 4 surgeries, still fighting. One child who deserved better.</span>,
           ]} />
         </FadeIn>        <FadeIn delay={0.12}>
@@ -1868,7 +1868,7 @@ export default function MiradorSite() {
             </a>
           </div>
           <div style={{ textAlign: "center", fontSize: 10, color: "#64748b", fontFamily: FM, marginTop: 10 }}>
-            Explorer queries live GIGI on Fly.io · 28M+ records · No API key required
+            Explorer queries live GIGI on Fly.io when reachable, with a bundled demo dataset as fallback · No API key required
           </div>
         </FadeIn>
       </section>
@@ -1931,7 +1931,7 @@ export default function MiradorSite() {
           <div style={{ background: "linear-gradient(135deg, #0a0a1a, #12082a)", border: "1px solid #2a1a3e", borderRadius: 10, padding: mob ? "24px 18px" : "36px 44px", textAlign: "center" }}>
             <div style={{ fontSize: 11, color: "#a855f7", fontFamily: FM, letterSpacing: 3, marginBottom: 16 }}>ONE MATH</div>
             <p style={{ fontSize: "clamp(15px, 2vw, 19px)", color: "#e2e8f0", lineHeight: 1.8, margin: "0 0 16px 0", fontFamily: F, fontStyle: "italic", maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
-              Every product, every paper, every patent traces back to a single geometric framework. The Davis Law governs how systems behave. The Davis Identity proves every decision. MIRADOR is what it looks like when that framework walks into a hospital.
+              Every product, every paper, every patent traces back to a single geometric framework. The Davis Law governs how systems behave. The Davis Identity frames every decision. MIRADOR is what it looks like when that framework walks into a hospital.
             </p>
             <div style={{ fontFamily: FM, fontSize: 22, letterSpacing: 6, color: "#e2e8f0", marginBottom: 4 }}>C = <span style={{color:"#22c55e"}}>τ</span> / <span style={{color:"#ef4444"}}>K</span>&nbsp;&nbsp;·&nbsp;&nbsp;<span style={{color:"#a855f7"}}>S + d² = 1</span></div>
             <div style={{ fontSize: 10, color: "#475569", fontFamily: FS }}>The Davis Law · The Davis Identity</div>

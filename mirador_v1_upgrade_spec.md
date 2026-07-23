@@ -69,7 +69,7 @@ Question (English)
                ↓
 ┌─────────────────────────────────┐
 │  LAYER 3: GIGI Engine           │
-│  Rust engine (12 crates)        │
+│  Rust engine (29 crates)        │
 │  Returns DHOOM wire format      │
 │  Every result has confidence    │
 │  + provenance + decomposition   │
@@ -151,7 +151,7 @@ Option B: Route `/v1/query` to the Rust engine on
 keep JS engine as offline fallback.
 
 **Recommendation: Option B.** The Rust engine already
-has 316 tests and 12 crates. Don't reimplement in JS
+has 290 tests across 29 crates. Don't reimplement in JS
 what Rust already does. The JS engine becomes the
 offline demo; the Rust engine becomes the production
 computation layer.

@@ -612,7 +612,7 @@ function ValidateTab() {
               )}
               {isNull && !showNeighbors && !loading && (
                 <div style={{ marginTop: 8, fontSize: 11.5, color: C.mt, lineHeight: 1.5, fontStyle: "italic" }}>
-                  Prediction runs on the GIGI backend (Rust engine at gigi-stream.fly.dev) — no computation happens in this browser.
+                  When connected, prediction runs on the GIGI backend (Rust engine at gigi-stream.fly.dev); if the backend is unreachable or returns no rows, an in-browser weighted-average fallback is used instead.
                 </div>
               )}
             </div>
@@ -871,7 +871,7 @@ const DOMAINS = [
     ],
     adj: [{ name: "same_class", w: 0.4 }, { name: "same_tissue", w: 0.3 }],
   },
-  { id: "genomics", name: "Gene Expression", icon: "🧬", color: C.pk, records: "2M+", base: "Gene × Tissue × Condition", fiber: "(TPM, fold_change)", eq: "Expression coherence",
+  { id: "genomics", name: "Gene Expression", icon: "🧬", color: C.pk, records: "3 demo", base: "Gene × Tissue × Condition", fiber: "(TPM, fold_change)", eq: "Expression coherence",
     sourceLabel: "GTEx v8 (Broad Institute)", sourceUrl: "https://gtexportal.org/",
     rows: [
       { label: "TP53 × Liver × Normoxia", val: 48.2, complete: false },
@@ -880,7 +880,7 @@ const DOMAINS = [
     ],
     adj: [{ name: "same_gene", w: 0.4 }, { name: "same_tissue", w: 0.3 }],
   },
-  { id: "climate", name: "Carbon Flux", icon: "🌍", color: C.tl, records: "200K", base: "Station × Season × Ecosystem", fiber: "(NEE, GPP)", eq: "NEE = GPP − R_eco",
+  { id: "climate", name: "Carbon Flux", icon: "🌍", color: C.tl, records: "3 demo", base: "Station × Season × Ecosystem", fiber: "(NEE, GPP)", eq: "NEE = GPP − R_eco",
     sourceLabel: "FLUXNET2015 (CC-BY-4.0)", sourceUrl: "https://fluxnet.org/data/fluxnet2015-dataset/",
     rows: [
       { label: "CA-Oas × Summer × Boreal", val: -3.21, complete: false },
@@ -889,7 +889,7 @@ const DOMAINS = [
     ],
     adj: [{ name: "same_ecosystem", w: 0.4 }, { name: "same_season", w: 0.25 }],
   },
-  { id: "materials", name: "Materials", icon: "⚛️", color: C.pp, records: "150K", base: "Composition × Structure × Temp", fiber: "(bandgap, κ)", eq: "κ/(σT) = L₀",
+  { id: "materials", name: "Materials", icon: "⚛️", color: C.pp, records: "3 demo", base: "Composition × Structure × Temp", fiber: "(bandgap, κ)", eq: "κ/(σT) = L₀",
     sourceLabel: "Materials Project (CC-BY-4.0)", sourceUrl: "https://materialsproject.org/",
     rows: [
       { label: "BaTiO₃ × Perovskite × 300K", val: 5.10, complete: false },
@@ -898,7 +898,7 @@ const DOMAINS = [
     ],
     adj: [{ name: "same_structure", w: 0.4 }, { name: "metric_temp", w: 0.3 }],
   },
-  { id: "epi", name: "Epidemiology", icon: "🦠", color: C.am, records: "500K", base: "Pathogen × Region × Time", fiber: "(R_t, CFR)", eq: "Renewal equation",
+  { id: "epi", name: "Epidemiology", icon: "🦠", color: C.am, records: "3 demo", base: "Pathogen × Region × Time", fiber: "(R_t, CFR)", eq: "Renewal equation",
     sourceLabel: "WHO FluNet + GISAID + OWID", sourceUrl: "https://www.who.int/tools/flunet",
     rows: [
       { label: "H3N2 × East Africa × W03", val: 1.52, complete: false },

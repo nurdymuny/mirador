@@ -755,7 +755,7 @@ export default function SciencePage() {
               MIRADOR sits at the intersection. It reads PK data (tissue ratios), microbiology data (MIC/MBEC/IC<sub>50</sub>),
               patient data (weight, eGFR, CRP), and clinical data (infection duration, surgical history) — and computes
               the coherence score that connects all of them. The equation C = {"τ"}/K is not a new idea. It is four old
-              ideas multiplied together for the first time.
+              ideas multiplied together.
             </p>
           </div>
         </FadeIn>

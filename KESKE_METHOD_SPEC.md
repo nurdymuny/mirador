@@ -405,7 +405,7 @@ K_pathway_vanc = 0.50 + 9.00 + 2.71 + (0.10 + 2.70 + 0.48) = 15.49
 C_bone_vanc   = τ_vanc / K_pathway_vanc  ≈ 12 / 15.5 = 0.77
 ```
 
-The Keske Method would have told Steven's doctors on day 1: vancomycin
+Retrospectively, the Keske Method flags that vancomycin
 monotherapy cannot work in bone (C_bone = 0.77). Switch to ceftaroline +
 rifampin (C_bone = 11.2) — more than 14x the therapeutic coherence.
 The difference lives in the bone penetration barrier (K_pen_vanc = 9.0 vs

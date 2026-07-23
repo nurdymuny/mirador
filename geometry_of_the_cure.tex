@@ -116,13 +116,15 @@ explains and what it cannot.
 We validate \mirador{} across four disease instances---pediatric bone MRSA
 (osteomyelitis), pulmonary tuberculosis, bacterial meningitis, and HIV latent
 reservoirs---spanning four pathogens, four organ systems, and four barrier
-types, using the same equation throughout. Across 37 independent validation
-tests with strict separation of pharmacokinetic inputs from clinical ground
-truths, the framework reproduces established drug rankings, predicts documented
-clinical phenomena not used in model construction, and identifies five novel
-predictions including the geometric curability of the HIV genital tract
-reservoir and CSF viral escape as a geometric inevitability. All code is
-implemented in Rust with 316 passing tests across 12 crates.
+types, using the same equation throughout. Across four disease instances, with strict separation of pharmacokinetic
+inputs from clinical ground truths, the framework retrospectively reproduces
+established drug rankings, matches documented clinical phenomena not used in
+model construction, and identifies five novel predictions including the
+geometric curability of the HIV genital tract reservoir and CSF viral escape
+as a geometric inevitability; for tuberculosis, computed lesion coherence
+additionally correlates with clinical week-8 culture conversion
+($r = 0.81$, $n = 6188$ across 15 trial arms). All code is
+implemented in Rust with 290 passing tests across 29 crates.
 \end{abstract}
 
 \clearpage
@@ -319,7 +321,7 @@ model has detected its own boundary.
 MRSA (osteomyelitis), pulmonary tuberculosis, bacterial meningitis,
 and HIV latent reservoirs. The mathematical structure---$C = \tau/K$
 with disease-specific $K$ content---is identical in each case. Across
-37 independent validation tests, with strict separation of
+the four disease instances, with strict separation of
 pharmacokinetic inputs from clinical ground truths and zero
 pharmacokinetic fitted parameters, the framework:
 %
@@ -2754,12 +2756,17 @@ from published PK data to coherence values is fully auditable.
 \label{sec:test-counts}
 % -----------------------------------------------------------------
 
-Across the four disease instances: 161 Rust tests (bone MRSA), 52
-Rust tests (TB), 10 tests in the generalized compartment engine
-(meningitis), 10 Python validation tests plus 83 specified Rust TDD
-tests (HIV). Total: 37 independent validation tests with strict
-$\mathcal{I} \cap \mathcal{G} = \varnothing$ separation, and 316
-automated implementation tests.
+The four disease instances are served by a single Rust engine, which
+passes 290 automated tests across 29 crates (the $C = \tau/K$ core,
+ADMET and dosing modules, and the per-disease compartment models).
+Every reported drug-ranking comparison maintains strict
+$\mathcal{I} \cap \mathcal{G} = \varnothing$ separation between the
+pharmacokinetic inputs and the clinical ground truths. These
+comparisons are retrospective reproductions of already-established
+clinical rankings (ordinal agreement); the single continuous external
+correlation is the tuberculosis result---computed lesion coherence
+against week-8 culture conversion, $r = 0.81$ ($R^2 = 0.65$),
+$n = 6188$ across 15 trial arms.
 
 % =================================================================
 \section{Limitations and Honest Accounting}
@@ -2929,8 +2936,8 @@ known.
 Therapeutic coherence $C = \tau / K$ is a geometric invariant of
 drug delivery in compartmentalized infections. Validated across four
 diseases---bone MRSA, pulmonary tuberculosis, bacterial meningitis,
-and HIV latent reservoirs---with 37 independent tests, zero
-pharmacokinetic fitted parameters, and five novel predictions, the
+and HIV latent reservoirs---with zero
+pharmacokinetic fitted parameters and five novel predictions, the
 Davis Field Equations provide a unified mathematical foundation for
 what has historically been disease-specific intuition.
 
@@ -2942,12 +2949,12 @@ clinicians and researchers with an honest, quantitative answer to
 the question: is this a drug delivery problem or a biology problem?
 
 The four disease instances demonstrate the framework's range. Bone
-MRSA proved that static anatomical barriers and chronic biofilm
+MRSA showed that static anatomical barriers and chronic biofilm
 dictate drug failure, predictable from PK data alone. Pulmonary TB
-proved that the framework detects its own boundary when kill
-kinetics override spatial geometry. Bacterial meningitis proved that
+showed that the framework detects its own boundary when kill
+kinetics override spatial geometry. Bacterial meningitis showed that
 time-varying barriers produce a formal treatment paradox derivable
-from the equations. HIV latent reservoirs proved that catalytic
+from the equations. HIV latent reservoirs showed that catalytic
 phenotype modification is a distinct mathematical structure, and
 that the $10^5\times$ shortfall to cure is a geometric inevitability
 under current agents.

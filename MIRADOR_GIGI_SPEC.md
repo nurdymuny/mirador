@@ -4,7 +4,7 @@
 **Date:** 2026-03-26  
 **Status:** SPEC — ready for TDD implementation  
 **Docker:** `beerosadavis/gigi` (Docker Hub)  
-**Validation:** ✅ **579/579 PASS** — all 17 mathematical invariants verified (post-audit)
+**Validation:** **579/579 internal self-consistency checks pass** across 17 invariants (note: V2, V3, and the 316 V5 non-negativity checks are arithmetic/sign self-consistency, not external validation). Distinct from the Rust engine's 290 tests across 29 crates.
 
 ---
 
@@ -15,7 +15,7 @@ Script:   mirador_gigi_validation.py
 Results:  mirador_gigi_validation_results.json
 Run date: 2026-03-26 (post-audit re-run)
 
-TOTAL:  579 tests
+TOTAL:  579 internal consistency checks (not the Rust engine test suite)
 PASSED: 579
 FAILED: 0
 
@@ -58,7 +58,7 @@ upgraded to compare against Rust WASM output in Phase 5 of the TDD plan.
 | V2. K_pathway decomposition | 60 | ✅ PASS | All 60 sections: K = Σ components (**tautological**) |
 | V3. Coherence C = τ/K | 60 | ✅ PASS | All finite K_pathway sections (**tautological**) |
 | V4. K_biofilm (MRSA) | 6 | ✅ PASS | log₁₀(MBEC/MIC) matches stored |
-| V5. Non-negativity | 316 | ✅ PASS | τ≥0, K≥0, R>0, MIC>0, AUC>0 |
+| V5. Non-negativity (trivial sign checks) | 316 | ✅ PASS | τ≥0, K≥0, R>0, MIC>0, AUC>0 |
 | V6. Penetration bounds | 60 | ✅ PASS | 0 < R ≤ 10 (max R=3.50 TFV genital) |
 | V7. τ base-independent | 17 | ✅ PASS | Same τ across all compartments per drug |
 | V8. Cross-disease τ | 3 | ✅ PASS | RIF/LZD/VAN: different targets documented |
@@ -758,4 +758,4 @@ Plus: 12 threshold records, 8 regimen records = **80 total sections** across 3 b
 
 ---
 
-*"Every drug is a section on a fiber bundle. Every barrier is curvature. The cure is capacity."*
+*"Every drug is a section on a fiber bundle. Every barrier is curvature. Capacity is the target."*

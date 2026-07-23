@@ -2,7 +2,7 @@
 -- MIRADOR Unified Pharmacokinetic Geometry Warehouse
 -- ═══════════════════════════════════════════════════════════════════
 --
--- The world's first geometric pharmacokinetic warehouse.
+-- A geometric pharmacokinetic warehouse.
 -- Every number from every source lives at a unique
 -- (drug, pathogen, tissue, context) base point.
 --

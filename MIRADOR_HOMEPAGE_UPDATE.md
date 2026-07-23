@@ -18,7 +18,7 @@ All three confirmed by independent crystal structures...
 ```
 BRANCH XI · COMPARTMENT PK/PD
 
-The first computationally accurate terrain map for drug efficacy.
+A computational terrain map for site-specific drug efficacy across compartments.
 Validated across four diseases.
 
 Published tissue ratios in. Site-specific drug rankings out.
@@ -43,7 +43,7 @@ confirmed by crystal structure.    causes the largest C drop.
 161 tests · SEE DEMO →             52 tests · SEE DEMO →
 
 MENINGITIS                         HIV RESERVOIRS
-Computed the exact day steroids    Proved ART cannot cure from
+Computed the exact day steroids    Modeled why ART cannot clear HIV from
 lock antibiotics out of the brain. first principles. Identified one
 Matches published survival data.   reservoir already clearable.
 8+ tests · SEE DEMO →              83 tests · SEE DEMO →
@@ -51,7 +51,7 @@ Matches published survival data.   reservoir already clearable.
 
 Below the four cards, add one summary line:
 ```
-4 diseases · 37+ independent tests · 0 fitted parameters
+4 diseases · 290 passing tests across 29 crates · 0 fitted parameters
 ```
 
 ## 3. THE PROOF SECTION (edit, don't delete)
@@ -135,7 +135,7 @@ Keep the four feature badges (Editable patient, 3D viewer, Resistance radar, Sou
     Dynamic BBB barrier, Dex paradox, monotherapy derivation
     8+ tests · Time-varying K_barrier manifold
 
-1e  HIV Reservoir Module                 LIVE ← NEW
+1e  HIV Reservoir Module                 SPEC / IN PROGRESS
     5-reservoir pharmacology, catalytic LRA modification
     Cure impossibility theorem, genital tract clearability
     83 TDD tests specified · 10/10 Python validation

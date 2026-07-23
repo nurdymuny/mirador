@@ -1025,7 +1025,7 @@ export default function TbApp() {
           <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.7 }}>
             Five layers: patient pharmacokinetics → granuloma penetration geometry → bacterial subpopulation phenotypes
             → multi-reservoir anatomy → combination conductance. Each stage recomputes from patient inputs.
-            The <span style={{ color: "#f59e0b" }}>RIPE drug toggles in Stage 5</span> are the geometric proof that no three-drug subset covers all four reservoirs.
+            The <span style={{ color: "#f59e0b" }}>RIPE drug toggles in Stage 5</span> are the geometric demonstration that no three-drug subset covers all four reservoirs in this model.
           </div>
         </div>
       </div>
