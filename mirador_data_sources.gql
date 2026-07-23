@@ -1,0 +1,1063 @@
+-- ═══════════════════════════════════════════════════════════════════
+-- MIRADOR Data Source Registry — GIGI Schema (GQL)
+-- ═══════════════════════════════════════════════════════════════════
+-- Every database, repository, and primary literature source that
+-- feeds C = τ/K across all four disease instances.
+--
+-- Author: Bee Rosa Davis / Davis Geometric
+-- Engine: GIGI (Geometric Intrinsic Global Index)
+-- Format: GQL (Geometric Query Language)
+-- Created: 2026-03-26
+--
+-- Architecture:
+--   data_sources        → master catalog of all sources
+--   source_categories   → taxonomy (susceptibility, PK, tissue, etc.)
+--   disease_mappings    → which sources feed which disease instance
+--   equation_layers     → which part of C = τ/K each source feeds
+--   citations           → full bibliographic records
+--   validation_firewall → input set I vs ground truth set G separation
+-- ═══════════════════════════════════════════════════════════════════
+
+
+-- ─────────────────────────────────────────────────────────────────
+-- BUNDLE 1: Source Categories (taxonomy)
+-- ─────────────────────────────────────────────────────────────────
+
+BUNDLE source_categories
+  BASE (category_id CATEGORICAL INDEX)
+  FIBER (
+    name              TEXT REQUIRED,
+    description       TEXT,
+    equation_target   CATEGORICAL INDEX,     -- tau_numerator | tau_denominator | K_barrier | K_phenotype | K_reservoir | K_admet | ground_truth | structural | meta
+    data_flow         CATEGORICAL DEFAULT 'input'  -- input | ground_truth | cross_reference | annotation
+  );
+
+SECTION INTO source_categories VALUES
+  ('SUSCEPTIBILITY',    'MIC, IC50, breakpoint databases',                        'tau_denominator', 'input'),
+  ('PHARMACOKINETICS',  'AUC, clearance, Vd, systemic PK parameters',            'tau_numerator',   'input'),
+  ('TISSUE_BONE',       'Bone tissue:plasma ratios (R values)',                   'K_barrier',       'input'),
+  ('TISSUE_CASEUM',     'TB caseum/granuloma tissue:plasma ratios',               'K_barrier',       'input'),
+  ('TISSUE_CSF',        'CSF/BBB tissue:plasma ratios',                           'K_barrier',       'input'),
+  ('TISSUE_HIV',        'HIV reservoir tissue:plasma ratios',                     'K_barrier',       'input'),
+  ('BIOFILM',           'MBEC, biofilm-specific susceptibility data',             'K_phenotype',     'input'),
+  ('RESISTANCE',        'Genotypic/phenotypic resistance databases',              'K_phenotype',     'input'),
+  ('CLINICAL_OUTCOMES', 'Guidelines, trial outcomes, ground truths',              'ground_truth',    'ground_truth'),
+  ('STRUCTURAL',        'Protein structures, binding data, molecular targets',    'structural',      'cross_reference'),
+  ('GENOMIC',           'Pathogen genomics, mutation databases',                  'structural',      'cross_reference'),
+  ('PHARMACOGENOMIC',   'Metabolizer phenotypes, allele frequencies',             'K_admet',         'input'),
+  ('EPIDEMIOLOGICAL',   'Surveillance, incidence, prevalence',                    'meta',            'cross_reference'),
+  ('ONTOLOGIES',        'Chemical, disease, and drug ontologies',                 'meta',            'annotation'),
+  ('COMPUTATIONAL',     'PBPK platforms, modeling tools',                         'meta',            'cross_reference'),
+  ('PEDIATRIC',         'Pediatric PK adjustments, allometric scaling',           'K_admet',         'input');
+
+
+-- ─────────────────────────────────────────────────────────────────
+-- BUNDLE 2: Master Data Sources
+-- ─────────────────────────────────────────────────────────────────
+
+BUNDLE data_sources
+  BASE (source_id CATEGORICAL UNIQUE)
+  FIBER (
+    name              TEXT REQUIRED,
+    url               TEXT,
+    category_id       CATEGORICAL INDEX,     -- MORPHISM → source_categories
+    source_type       CATEGORICAL INDEX,     -- database | review_paper | primary_study | guideline | tool | ontology
+    access_level      CATEGORICAL DEFAULT 'free',  -- free | paywalled | commercial | restricted
+    version           TEXT,
+    record_count      TEXT,                  -- human-readable (e.g., "30,000+ MIC distributions")
+    curators          TEXT,
+    mirador_usage     TEXT REQUIRED,         -- exactly what this feeds in C = τ/K
+    citation_key      TEXT,                  -- links to citations bundle
+    notes             TEXT
+  );
+
+-- ── SUSCEPTIBILITY SOURCES ──────────────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('EUCAST',
+   'European Committee on Antimicrobial Susceptibility Testing',
+   'https://www.eucast.org',
+   'SUSCEPTIBILITY', 'database', 'free',
+   'v14.0 (2024-01-01)', '30,000+ MIC distributions',
+   'Gunnar Kahlmeter, John Turnidge, Erika Matuschek',
+   'Primary MIC source for all bacterial disease instances. Gold standard for European breakpoints.',
+   'Kahlmeter2022', 'Includes mycobacteria via AMST subcommittee. Free and open access.');
+
+SECTION INTO data_sources VALUES
+  ('CLSI_M100',
+   'Clinical and Laboratory Standards Institute — M100',
+   'https://clsi.org',
+   'SUSCEPTIBILITY', 'guideline', 'paywalled',
+   'M100-S34 (2024)', NULL,
+   NULL,
+   'US MIC breakpoints cross-reference. Used when EUCAST values unavailable.',
+   'CLSI_M100_2024', 'US counterpart to EUCAST. Updated annually.');
+
+SECTION INTO data_sources VALUES
+  ('CLSI_M24',
+   'CLSI M24 — Susceptibility Testing of Mycobacteria',
+   'https://clsi.org',
+   'SUSCEPTIBILITY', 'guideline', 'paywalled',
+   'M24-A2 (2011)', NULL, NULL,
+   'TB-specific MIC breakpoints for INH, RIF, PZA, EMB, fluoroquinolones.',
+   'CLSI_M24_2011', NULL);
+
+SECTION INTO data_sources VALUES
+  ('STANFORD_HIVDB',
+   'Stanford HIV Drug Resistance Database',
+   'https://hivdb.stanford.edu',
+   'SUSCEPTIBILITY', 'database', 'free',
+   'v9.6', '2,305 references; 10,000+ genotype-treatment correlations',
+   'Robert W. Shafer, Stanford University',
+   'Primary IC50 source for all antiretrovirals. Resistance mutation data.',
+   'Shafer2006', 'Founded 1998. Genotype-treatment, genotype-phenotype, genotype-outcome correlations.');
+
+SECTION INTO data_sources VALUES
+  ('CHEMBL',
+   'ChEMBL — Chemical Database of Bioactive Molecules',
+   'https://www.ebi.ac.uk/chembl/',
+   'SUSCEPTIBILITY', 'database', 'free',
+   NULL, '2.4M+ compounds; 20M+ bioactivity measurements',
+   NULL,
+   'Secondary IC50/MIC source for cross-validation across all disease instances.',
+   'Zdrazil2024', 'Maintained by EMBL-EBI. Largest open bioactivity database.');
+
+SECTION INTO data_sources VALUES
+  ('PUBCHEM_BIOASSAY',
+   'PubChem BioAssay',
+   'https://pubchem.ncbi.nlm.nih.gov',
+   'SUSCEPTIBILITY', 'database', 'free',
+   NULL, NULL, NULL,
+   'Tertiary source for cross-validation of MIC/IC50 values.',
+   'Kim2023', NULL);
+
+SECTION INTO data_sources VALUES
+  ('WHO_CC_AMR',
+   'WHO Collaborating Centre for Surveillance of Antimicrobial Resistance',
+   'https://www.who.int/health-topics/antimicrobial-resistance',
+   'SUSCEPTIBILITY', 'database', 'restricted',
+   NULL, NULL, NULL,
+   'Global MIC surveillance data for epidemiological context.',
+   NULL, NULL);
+
+-- ── PHARMACOKINETICS SOURCES ────────────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('PK_DB',
+   'PK-DB — Pharmacokinetics Database',
+   'https://pk-db.com',
+   'PHARMACOKINETICS', 'database', 'free',
+   'v0.9.3', '512 studies; 73,017 outputs; 3,148 time-courses',
+   NULL,
+   'Cross-checking AUC24 values used in τ computation. REST API for programmatic access.',
+   'Grzegorzewski2021', 'Open-source. GitHub: matthiaskoenig/pkdb.');
+
+SECTION INTO data_sources VALUES
+  ('DRUGBANK',
+   'DrugBank',
+   'https://go.drugbank.com',
+   'PHARMACOKINETICS', 'database', 'free',
+   NULL, '16,000+ drug entries',
+   NULL,
+   'Bioavailability, protein binding, clearance, Vd for K_admet computation. Drug-drug interaction flags.',
+   'Wishart2018', NULL);
+
+SECTION INTO data_sources VALUES
+  ('FDA_DAILYMED',
+   'FDA Drug Label Database (DailyMed)',
+   'https://dailymed.nlm.nih.gov',
+   'PHARMACOKINETICS', 'database', 'free',
+   NULL, NULL, NULL,
+   'Official PK parameters (AUC, Cmax, Vd, CL, protein binding) from FDA labels. Section 12.3.',
+   NULL, 'Source of truth for approved dosing PK.');
+
+SECTION INTO data_sources VALUES
+  ('EMA_EPAR',
+   'EMA European Public Assessment Reports',
+   'https://www.ema.europa.eu/en/medicines',
+   'PHARMACOKINETICS', 'database', 'free',
+   NULL, NULL, NULL,
+   'European PK data cross-reference. Pediatric PK appendices.',
+   NULL, NULL);
+
+SECTION INTO data_sources VALUES
+  ('PKPDAI',
+   'PKPD.ai — Open Source PK Prediction Database',
+   'https://www.pkpdai.com',
+   'PHARMACOKINETICS', 'database', 'free',
+   NULL, NULL, NULL,
+   'Cross-disease PK parameter validation. AI-assisted clearance prediction.',
+   NULL, 'In development at UCL.');
+
+SECTION INTO data_sources VALUES
+  ('SIMCYP_LIBRARY',
+   'Simcyp PBPK Simulator — Compound Library',
+   'https://www.certara.com/software/simcyp-pbpk/',
+   'PHARMACOKINETICS', 'database', 'commercial',
+   NULL, '100+ validated compound files',
+   NULL,
+   'PBPK-validated PK parameters for cross-checking τ inputs. MIRADOR consumes PBPK outputs.',
+   NULL, 'Academic licenses available.');
+
+SECTION INTO data_sources VALUES
+  ('OPEN_SYSTEMS_PHARM',
+   'Open Systems Pharmacology Suite (PK-Sim / MoBi)',
+   'https://www.open-systems-pharmacology.org',
+   'PHARMACOKINETICS', 'tool', 'free',
+   NULL, NULL, NULL,
+   'Open-source PBPK cross-reference for R values and AUC computation.',
+   NULL, 'GitHub: Open-Systems-Pharmacology.');
+
+-- ── BONE TISSUE PENETRATION ─────────────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('LANDERSDORFER_2009',
+   'Comprehensive review of antibiotic bone penetration',
+   NULL,
+   'TISSUE_BONE', 'review_paper', 'paywalled',
+   NULL, '30+ antibiotics covered', NULL,
+   'Primary source for R_bone values in bone MRSA instance. Most comprehensive bone penetration review.',
+   'Landersdorfer2009', NULL);
+
+SECTION INTO data_sources VALUES
+  ('THABIT_2019',
+   'Updated review of antibiotic bone and joint penetration',
+   NULL,
+   'TISSUE_BONE', 'review_paper', 'paywalled',
+   NULL, '30+ antibiotics', NULL,
+   'Updated R_bone values cross-reference with Landersdorfer.',
+   'Thabit2019', NULL);
+
+SECTION INTO data_sources VALUES
+  ('GRAZIANI_1988',
+   'Vancomycin bone concentrations — infected vs uninflamed',
+   NULL,
+   'TISSUE_BONE', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Vancomycin R_bone = 0.10-0.30. CRP inflammation modifier source data.',
+   'Graziani1988', NULL);
+
+SECTION INTO data_sources VALUES
+  ('BUE_2018',
+   'Vancomycin bone PK in porcine osteomyelitis (microdialysis)',
+   NULL,
+   'TISSUE_BONE', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'R_bone = 0.20-0.74. Infection reduces penetration. CRP modifier validation.',
+   'Bue2018', 'First continuous bone microdialysis in osteomyelitis model.');
+
+SECTION INTO data_sources VALUES
+  ('RICCOBENE_2014',
+   'Ceftaroline bone penetration',
+   NULL,
+   'TISSUE_BONE', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Ceftaroline R_bone = 0.20-0.40.',
+   'Riccobene2014', NULL);
+
+SECTION INTO data_sources VALUES
+  ('RANA_2002',
+   'Linezolid bone penetration from hip arthroplasty',
+   NULL,
+   'TISSUE_BONE', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Linezolid R_bone = 0.40-0.60.',
+   'Rana2002', NULL);
+
+SECTION INTO data_sources VALUES
+  ('CURRIER_1979',
+   'Rifampin bone penetration',
+   NULL,
+   'TISSUE_BONE', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Rifampin R_bone = 0.20-0.50.',
+   'Currier1979', NULL);
+
+SECTION INTO data_sources VALUES
+  ('TRAUNMULLER_2010',
+   'Daptomycin bone penetration (microdialysis)',
+   NULL,
+   'TISSUE_BONE', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Daptomycin R_bone = 0.10-0.20.',
+   'Traunmuller2010', NULL);
+
+SECTION INTO data_sources VALUES
+  ('FEIGIN_1995',
+   'Clindamycin bone penetration (pediatric)',
+   NULL,
+   'TISSUE_BONE', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Clindamycin R_bone = 0.30-0.75.',
+   'Feigin1995', NULL);
+
+-- ── TB CASEUM/GRANULOMA TISSUE PENETRATION ──────────────────────
+
+SECTION INTO data_sources VALUES
+  ('DARTOIS_2014',
+   'The path of anti-TB drugs: from blood to lesions to mycobacterial cells',
+   NULL,
+   'TISSUE_CASEUM', 'review_paper', 'paywalled',
+   NULL, NULL, 'Véronique Dartois',
+   'Conceptual framework for heterogeneous TB barrier model. Caseum identified as dominant barrier.',
+   'Dartois2014', 'The single most cited reference for TB drug distribution.');
+
+SECTION INTO data_sources VALUES
+  ('PRIDEAUX_2015',
+   'Sterilizing activity and drug distribution in TB lesions (MALDI-MS)',
+   NULL,
+   'TISSUE_CASEUM', 'primary_study', 'paywalled',
+   NULL, 'INH, RIF, PZA, MXF, CFZ, LZD', NULL,
+   'Primary source for lesion-specific R values in TB. First direct visualization in human TB lesions.',
+   'Prideaux2015', 'Published in Nature Medicine.');
+
+SECTION INTO data_sources VALUES
+  ('SARATHY_2016',
+   'Prediction of drug penetration in TB lesions (caseum binding)',
+   NULL,
+   'TISSUE_CASEUM', 'primary_study', 'paywalled',
+   NULL, '279 compounds profiled', NULL,
+   'Caseum binding → penetration prediction. Rule-of-thumb: clogP + aromatic ring count ~ binding.',
+   'Sarathy2016', 'High-throughput caseum binding assay.');
+
+SECTION INTO data_sources VALUES
+  ('KJELLSSON_2012',
+   'PK evaluation of TB drug penetration in rabbit pulmonary lesions',
+   NULL,
+   'TISSUE_CASEUM', 'primary_study', 'paywalled',
+   NULL, 'INH, RIF, PZA, MXF', NULL,
+   'Quantitative R values per lesion type per drug. RIF caseum:plasma ~3, INH ~2, PZA undetectable.',
+   'Kjellsson2012', NULL);
+
+SECTION INTO data_sources VALUES
+  ('SARATHY_2017_JOVE',
+   'In vitro caseum binding assay protocol (JoVE)',
+   NULL,
+   'TISSUE_CASEUM', 'primary_study', 'free',
+   NULL, NULL, NULL,
+   'Methodology reference for caseum binding measurements.',
+   'Sarathy2017', NULL);
+
+SECTION INTO data_sources VALUES
+  ('SARATHY_2018_AAC',
+   'Extreme drug tolerance of M. tuberculosis in caseum',
+   NULL,
+   'TISSUE_CASEUM', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'K_pheno for caseum-resident TB subpopulations. Drug tolerance in necrotic foci.',
+   'Sarathy2018', NULL);
+
+SECTION INTO data_sources VALUES
+  ('STRYDOM_2019',
+   'Lesion-focused population PK model for 7 TB drugs in human lesions',
+   NULL,
+   'TISSUE_CASEUM', 'primary_study', 'free',
+   NULL, '7 drugs in 9 distinct human lesion tissues', NULL,
+   'Quantitative R values for 9 lesion tissue types. First human lesion PK model.',
+   'Strydom2019', 'Published in PLOS Medicine.');
+
+SECTION INTO data_sources VALUES
+  ('ZIMMERMAN_2017',
+   'Ethambutol partitioning in TB pulmonary lesions',
+   NULL,
+   'TISSUE_CASEUM', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'EMB cellular accumulation data — basis for EMB geometric ranking in TB instance.',
+   'Zimmerman2017', NULL);
+
+SECTION INTO data_sources VALUES
+  ('CICCHESE_2020',
+   'Agent-based model: PK variability and granuloma heterogeneity in TB',
+   NULL,
+   'TISSUE_CASEUM', 'primary_study', 'free',
+   NULL, NULL, NULL,
+   'GranSim computational model cross-reference for heterogeneous barrier validation.',
+   'Cicchese2020', NULL);
+
+-- ── CSF / BBB TISSUE PENETRATION ────────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('NAU_2010',
+   'Drug penetration through the blood-CSF/blood-brain barrier (definitive review)',
+   NULL,
+   'TISSUE_CSF', 'review_paper', 'paywalled',
+   NULL, '100+ drugs covered', NULL,
+   'Primary R_CSF source for meningitis and HIV CNS instances. Tables for inflamed vs uninflamed meninges.',
+   'Nau2010', 'The single most comprehensive BBB penetration review.');
+
+SECTION INTO data_sources VALUES
+  ('LETENDRE_2010',
+   'CNS Penetration Effectiveness (CPE) scores for antiretrovirals',
+   NULL,
+   'TISSUE_CSF', 'review_paper', 'paywalled',
+   NULL, 'All approved ARVs', NULL,
+   'CPE scores for cross-validation of MIRADOR CNS rankings in HIV instance.',
+   'Letendre2010', 'MIRADOR produces continuous C_site; CPE is ordinal. Agreement validates both.');
+
+SECTION INTO data_sources VALUES
+  ('LUTSAR_2000',
+   'Cephalosporin PK in CSF for meningitis',
+   NULL,
+   'TISSUE_CSF', 'review_paper', 'paywalled',
+   NULL, NULL, NULL,
+   'Ceftriaxone R_CSF data for meningitis threshold calibration.',
+   'Lutsar2000', NULL);
+
+SECTION INTO data_sources VALUES
+  ('BEST_2014',
+   'CSF concentrations of antiretrovirals in HIV patients',
+   NULL,
+   'TISSUE_CSF', 'primary_study', 'paywalled',
+   NULL, 'NRTIs, NNRTIs, PIs, INSTIs', NULL,
+   'Drug-specific R_CSF values for HIV CNS reservoir.',
+   'Best2014', NULL);
+
+-- ── HIV RESERVOIR TISSUE PENETRATION ────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('FLETCHER_2014',
+   'ARV concentrations in lymphatic tissues',
+   NULL,
+   'TISSUE_HIV', 'primary_study', 'free',
+   NULL, NULL, NULL,
+   'Primary R values for HIV lymph node reservoir. Persistent replication at lower drug concentrations.',
+   'Fletcher2014', 'Published in PNAS.');
+
+SECTION INTO data_sources VALUES
+  ('PATTERSON_2011',
+   'Tenofovir and emtricitabine in mucosal tissues',
+   NULL,
+   'TISSUE_HIV', 'primary_study', 'free',
+   NULL, NULL, NULL,
+   'R values for HIV genital tract reservoir. Implications for PrEP tissue levels.',
+   'Patterson2011', 'Published in Science Translational Medicine.');
+
+SECTION INTO data_sources VALUES
+  ('NICOL_2008',
+   'ARV pharmacology in genital tract',
+   NULL,
+   'TISSUE_HIV', 'review_paper', 'paywalled',
+   NULL, NULL, NULL,
+   'Genital:plasma ratios for ARVs. R = 0.30-2.00 range.',
+   'Nicol2008', NULL);
+
+SECTION INTO data_sources VALUES
+  ('CORY_2013',
+   'Review: overcoming pharmacologic sanctuaries',
+   NULL,
+   'TISSUE_HIV', 'review_paper', 'paywalled',
+   NULL, NULL, NULL,
+   'R values for HIV bone marrow reservoir.',
+   'Cory2013', NULL);
+
+SECTION INTO data_sources VALUES
+  ('THOMPSON_2015',
+   'Tissue pharmacokinetics of antiretrovirals (multi-tissue)',
+   NULL,
+   'TISSUE_HIV', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Cross-reference for multi-reservoir R values across tissue types.',
+   'Thompson2015', NULL);
+
+-- ── BIOFILM SOURCES ─────────────────────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('PARRA_RUIZ_2012',
+   'MBEC values for anti-staphylococcal agents',
+   NULL,
+   'BIOFILM', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Primary MBEC source for bone MRSA K_bio. Vancomycin MBEC ~512 µg/mL, rifampin ~0.5 µg/mL.',
+   'ParraRuiz2012', NULL);
+
+SECTION INTO data_sources VALUES
+  ('LAPLANTE_RYBAK_2004',
+   'MBEC for clindamycin and anti-staphylococcal agents',
+   NULL,
+   'BIOFILM', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Clindamycin MBEC for K_bio computation.',
+   'LaPlante2004', NULL);
+
+SECTION INTO data_sources VALUES
+  ('BARBER_2015',
+   'Ceftaroline MBEC against MRSA',
+   NULL,
+   'BIOFILM', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Ceftaroline MBEC ~128 µg/mL for K_bio computation.',
+   'Barber2015', NULL);
+
+SECTION INTO data_sources VALUES
+  ('STEWART_2015',
+   'Antimicrobial tolerance in biofilms (review)',
+   NULL,
+   'BIOFILM', 'review_paper', 'paywalled',
+   NULL, NULL, 'Philip S. Stewart',
+   'Chronicity-weighted biofilm probability model. MBEC:MIC ratio 100-1000x. Basis for p_bio.',
+   'Stewart2015', NULL);
+
+SECTION INTO data_sources VALUES
+  ('ZIMMERLI_1998',
+   'Rifampin for orthopedic implant staphylococcal infections (landmark RCT)',
+   NULL,
+   'BIOFILM', 'primary_study', 'free',
+   NULL, NULL, NULL,
+   'Rifampin MBEC reduction 45-55%. Conductive modifier validation. Landmark implant infection RCT.',
+   'Zimmerli1998', 'Published in JAMA.');
+
+SECTION INTO data_sources VALUES
+  ('BALDONI_2009',
+   'Linezolid ± rifampin against MRSA in experimental foreign-body infection',
+   NULL,
+   'BIOFILM', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Rifampin combination synergy data for K_res modification.',
+   'Baldoni2009', NULL);
+
+SECTION INTO data_sources VALUES
+  ('CASTANEDA_2016',
+   'MBEC increases with antimicrobial exposure time',
+   NULL,
+   'BIOFILM', 'primary_study', 'free',
+   NULL, NULL, NULL,
+   'Temporal MBEC dynamics: longer exposure reduces effective MBEC.',
+   'Castaneda2016', NULL);
+
+SECTION INTO data_sources VALUES
+  ('OKAE_2022',
+   'In vivo MBEC on orthopedic implants (rodent femoral model)',
+   NULL,
+   'BIOFILM', 'primary_study', 'free',
+   NULL, NULL, NULL,
+   'In vivo MBEC validation. GM MBEC100 = 256-1024 µg/mL; VA/CZ = 2048-4096. Rifampin reduces in vivo MBEC.',
+   'Okae2022', 'First in vivo implant MBEC assay.');
+
+SECTION INTO data_sources VALUES
+  ('INNOVOTECH_MBEC',
+   'Innovotech MBEC Assay (Calgary Biofilm Device)',
+   'https://www.innovotech.ca',
+   'BIOFILM', 'tool', 'commercial',
+   NULL, NULL, NULL,
+   'Standard methodology for MBEC determination. No centralized MBEC database exists.',
+   NULL, 'Data scattered across individual studies using this device.');
+
+-- ── RESISTANCE DATABASES ────────────────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('CARD',
+   'Comprehensive Antibiotic Resistance Database',
+   'https://card.mcmaster.ca',
+   'RESISTANCE', 'database', 'free',
+   NULL, '7,000+ reference sequences; 5,000+ SNPs',
+   NULL,
+   'Resistance gene identification for severed-edge modeling.',
+   'Alcock2023', NULL);
+
+SECTION INTO data_sources VALUES
+  ('NCBI_AMR',
+   'NCBI Antimicrobial Resistance Reference Gene Database',
+   'https://www.ncbi.nlm.nih.gov/pathogens/antimicrobial-resistance/',
+   'RESISTANCE', 'database', 'free',
+   NULL, NULL, NULL,
+   'Cross-reference for resistance gene identification.',
+   NULL, NULL);
+
+SECTION INTO data_sources VALUES
+  ('RESFINDER',
+   'ResFinder — acquired AMR gene identification',
+   'https://cge.food.dtu.dk/services/ResFinder/',
+   'RESISTANCE', 'tool', 'free',
+   NULL, NULL, NULL,
+   'Rapid resistance gene identification from sequence data.',
+   'Bortolaia2020', NULL);
+
+SECTION INTO data_sources VALUES
+  ('WHO_TB_MUTATIONS',
+   'WHO Catalogue of Mutations in M. tuberculosis',
+   'https://www.who.int/publications/i/item/9789240082410',
+   'RESISTANCE', 'database', 'free',
+   '2nd edition (2023)', NULL, NULL,
+   'pncA mutations (PZA resistance) = severed edge. rpoB mutations (RIF resistance). Official WHO DST catalogue.',
+   'WHO_TB_2023', NULL);
+
+SECTION INTO data_sources VALUES
+  ('TBDREAM',
+   'TBDReaM — TB Drug Resistance Mutation Database',
+   'https://tbdreamdb.ki.se',
+   'RESISTANCE', 'database', 'free',
+   NULL, NULL, NULL,
+   'TB resistance mutation cross-reference.',
+   NULL, NULL);
+
+-- ── CLINICAL OUTCOMES (Ground Truths) ───────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('IDSA_MRSA_2011',
+   'IDSA MRSA treatment guidelines',
+   NULL,
+   'CLINICAL_OUTCOMES', 'guideline', 'free',
+   NULL, NULL, NULL,
+   'Ground truth drug rankings for bone MRSA instance.',
+   'Liu2011', 'Standard of care for MRSA infections including osteomyelitis.');
+
+SECTION INTO data_sources VALUES
+  ('IDSA_MENINGITIS_2004',
+   'IDSA bacterial meningitis management guidelines',
+   NULL,
+   'CLINICAL_OUTCOMES', 'guideline', 'free',
+   NULL, NULL, NULL,
+   'Ground truth drug rankings for meningitis. Threshold calibration anchor.',
+   'Tunkel2004', NULL);
+
+SECTION INTO data_sources VALUES
+  ('ATS_IDSA_TB_2003',
+   'ATS/CDC/IDSA TB treatment guidelines',
+   NULL,
+   'CLINICAL_OUTCOMES', 'guideline', 'free',
+   NULL, NULL, NULL,
+   'Ground truth RIPE regimen and clinical sterilization ranking.',
+   'Blumberg2003', NULL);
+
+SECTION INTO data_sources VALUES
+  ('WHO_TB_GUIDELINES_2022',
+   'WHO consolidated guidelines on tuberculosis — Module 4: treatment',
+   'https://www.who.int/publications/i/item/9789240048126',
+   'CLINICAL_OUTCOMES', 'guideline', 'free',
+   '2022', NULL, NULL,
+   'Ground truth for TB drug rankings and treatment duration.',
+   'WHO_TB_2022', NULL);
+
+SECTION INTO data_sources VALUES
+  ('MRC_TRIALS',
+   'British MRC short-course chemotherapy trials (1946-1986)',
+   NULL,
+   'CLINICAL_OUTCOMES', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Historical ground truth establishing RIPE as standard of care. Sterilization ranking.',
+   'Fox1999', NULL);
+
+SECTION INTO data_sources VALUES
+  ('MITCHISON_1985',
+   'Mitchison subpopulation model of TB drug action',
+   NULL,
+   'CLINICAL_OUTCOMES', 'primary_study', 'paywalled',
+   NULL, NULL, 'Denis A. Mitchison',
+   'Theoretical basis for decoupled mode in TB. Subpopulation assignments for RIPE drugs.',
+   'Mitchison1985', NULL);
+
+SECTION INTO data_sources VALUES
+  ('FINZI_1999',
+   'Latent HIV reservoir stability on ART',
+   NULL,
+   'CLINICAL_OUTCOMES', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Ground truth: ART cannot eradicate latent reservoir.',
+   'Finzi1999', 'Published in Nature Medicine.');
+
+SECTION INTO data_sources VALUES
+  ('SILICIANO_2003',
+   'Long-term stability of HIV latent reservoir',
+   NULL,
+   'CLINICAL_OUTCOMES', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Ground truth: half-life ~44 months. Reservoir persists despite ART.',
+   'Siliciano2003', NULL);
+
+SECTION INTO data_sources VALUES
+  ('ARCHIN_2012',
+   'Vorinostat disrupts HIV-1 latency — first LRA clinical trial',
+   NULL,
+   'CLINICAL_OUTCOMES', 'primary_study', 'free',
+   NULL, NULL, NULL,
+   'Ground truth: LRA trial outcome. Φ values for vorinostat.',
+   'Archin2012', 'Published in Nature.');
+
+SECTION INTO data_sources VALUES
+  ('RASMUSSEN_2014',
+   'Panobinostat for HIV latency reversal (phase 1/2)',
+   NULL,
+   'CLINICAL_OUTCOMES', 'primary_study', 'free',
+   NULL, NULL, NULL,
+   'Romidepsin/panobinostat Φ data. Ground truth: reservoir not reduced.',
+   'Rasmussen2014', 'Published in Lancet HIV.');
+
+SECTION INTO data_sources VALUES
+  ('CANESTRI_2010',
+   'Discordant CSF/plasma HIV replication on suppressive ART',
+   NULL,
+   'CLINICAL_OUTCOMES', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Ground truth: CSF viral escape validates CNS geometric bottleneck prediction.',
+   'Canestri2010', NULL);
+
+SECTION INTO data_sources VALUES
+  ('PELUSO_2012',
+   'CSF HIV escape with progressive neurologic dysfunction on ART',
+   NULL,
+   'CLINICAL_OUTCOMES', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Ground truth: CSF viral escape = geometric inevitability.',
+   'Peluso2012', NULL);
+
+SECTION INTO data_sources VALUES
+  ('CHUN_2008',
+   'HIV persistence in GALT despite long-term ART',
+   NULL,
+   'CLINICAL_OUTCOMES', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'Ground truth: GALT as dominant viral reservoir (~65% of latent pool).',
+   'Chun2008', NULL);
+
+SECTION INTO data_sources VALUES
+  ('CLINICALTRIALS_GOV',
+   'ClinicalTrials.gov',
+   'https://clinicaltrials.gov',
+   'CLINICAL_OUTCOMES', 'database', 'free',
+   NULL, NULL, NULL,
+   'LRA trial outcomes (HIV). Antibiotic trial outcomes (all instances).',
+   NULL, NULL);
+
+SECTION INTO data_sources VALUES
+  ('COCHRANE',
+   'Cochrane Library',
+   'https://www.cochranelibrary.com',
+   'CLINICAL_OUTCOMES', 'database', 'free',
+   NULL, NULL, NULL,
+   'Meta-analyzed treatment outcomes for cross-validation.',
+   NULL, NULL);
+
+-- ── STRUCTURAL BIOLOGY ──────────────────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('PDB',
+   'Protein Data Bank',
+   'https://www.rcsb.org',
+   'STRUCTURAL', 'database', 'free',
+   NULL, '220,000+ structures', NULL,
+   'PBP2a (MRSA target): PDB 1VQQ, 3ZG0. HIV RT: 1RTD. InhA (TB): 2IDZ.',
+   NULL, NULL);
+
+SECTION INTO data_sources VALUES
+  ('UNIPROT',
+   'UniProt',
+   'https://www.uniprot.org',
+   'STRUCTURAL', 'database', 'free',
+   NULL, NULL, NULL,
+   'Drug target protein sequences. Resistance mutation annotation.',
+   NULL, NULL);
+
+SECTION INTO data_sources VALUES
+  ('BINDINGDB',
+   'BindingDB',
+   'https://www.bindingdb.org',
+   'STRUCTURAL', 'database', 'free',
+   NULL, '2.9M+ binding data points', NULL,
+   'Cross-reference for IC50 values. Target engagement data (Ki, Kd, IC50).',
+   NULL, NULL);
+
+-- ── GENOMIC DATABASES ───────────────────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('GENBANK',
+   'GenBank / NCBI Nucleotide',
+   'https://www.ncbi.nlm.nih.gov/genbank/',
+   'GENOMIC', 'database', 'free',
+   NULL, NULL, NULL,
+   'Pathogen genome sequences. Resistance gene sequences.',
+   NULL, NULL);
+
+SECTION INTO data_sources VALUES
+  ('BV_BRC',
+   'BV-BRC (Bacterial and Viral Bioinformatics Resource Center)',
+   'https://www.bv-brc.org',
+   'GENOMIC', 'database', 'free',
+   NULL, NULL, NULL,
+   'Integrated pathogen data: genomic + AMR phenotype predictions. Successor to PATRIC.',
+   NULL, 'NIAID-funded.');
+
+SECTION INTO data_sources VALUES
+  ('GISAID',
+   'GISAID — Global Pathogen Genomic Surveillance',
+   'https://www.gisaid.org',
+   'GENOMIC', 'database', 'restricted',
+   NULL, NULL, NULL,
+   'Viral sequence data for HERALD cross-validation (book only, not in PLOS paper).',
+   NULL, NULL);
+
+SECTION INTO data_sources VALUES
+  ('LOS_ALAMOS_HIV',
+   'Los Alamos HIV Sequence Database',
+   'https://www.hiv.lanl.gov',
+   'GENOMIC', 'database', 'free',
+   NULL, NULL, NULL,
+   'HIV sequence data for resistance analysis cross-reference.',
+   NULL, NULL);
+
+SECTION INTO data_sources VALUES
+  ('TB_PORTALS',
+   'NIAID TB Portals',
+   'https://tbportals.niaid.nih.gov',
+   'GENOMIC', 'database', 'free',
+   NULL, NULL, NULL,
+   'TB patient data with imaging, genomics, and clinical outcomes for cross-validation.',
+   NULL, NULL);
+
+-- ── PHARMACOGENOMIC ─────────────────────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('PHARMGKB',
+   'PharmGKB',
+   'https://www.pharmgkb.org',
+   'PHARMACOGENOMIC', 'database', 'free',
+   NULL, NULL, NULL,
+   'CYP450 metabolizer phenotypes for K_admet. Drug-gene interactions.',
+   'WhirlCarrillo2021', NULL);
+
+SECTION INTO data_sources VALUES
+  ('CPIC',
+   'Clinical Pharmacogenetics Implementation Consortium',
+   'https://cpicpgx.org',
+   'PHARMACOGENOMIC', 'guideline', 'free',
+   NULL, NULL, NULL,
+   'Dosing adjustment guidelines based on genotype.',
+   NULL, NULL);
+
+SECTION INTO data_sources VALUES
+  ('DPWG',
+   'Dutch Pharmacogenetics Working Group',
+   'https://www.knmp.nl/dossiers/pharmacogenetics',
+   'PHARMACOGENOMIC', 'guideline', 'free',
+   NULL, NULL, NULL,
+   'European dosing adjustment guidelines cross-reference.',
+   NULL, NULL);
+
+-- ── EPIDEMIOLOGICAL / SURVEILLANCE ──────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('WHO_GLASS',
+   'WHO GLASS — Global AMR and Use Surveillance System',
+   'https://www.who.int/initiatives/glass',
+   'EPIDEMIOLOGICAL', 'database', 'restricted',
+   NULL, NULL, NULL,
+   'Global resistance prevalence data for epidemiological context.',
+   NULL, NULL);
+
+SECTION INTO data_sources VALUES
+  ('CDC_NNDSS',
+   'CDC National Notifiable Diseases Surveillance System',
+   'https://www.cdc.gov/nndss/',
+   'EPIDEMIOLOGICAL', 'database', 'free',
+   NULL, NULL, NULL,
+   'US incidence data for all four disease instances.',
+   NULL, NULL);
+
+SECTION INTO data_sources VALUES
+  ('ECDC_EARS_NET',
+   'ECDC EARS-Net — European AMR Surveillance Network',
+   'https://www.ecdc.europa.eu/en/about-us/partnerships-and-networks/disease-and-laboratory-networks/ears-net',
+   'EPIDEMIOLOGICAL', 'database', 'free',
+   NULL, NULL, NULL,
+   'European MRSA prevalence and resistance trends.',
+   NULL, NULL);
+
+SECTION INTO data_sources VALUES
+  ('UNAIDS',
+   'UNAIDS Data',
+   'https://www.unaids.org/en/resources/fact-sheet',
+   'EPIDEMIOLOGICAL', 'database', 'free',
+   NULL, NULL, NULL,
+   'Global HIV epidemiology: prevalence and treatment coverage.',
+   NULL, NULL);
+
+SECTION INTO data_sources VALUES
+  ('WHO_TB_DATA',
+   'WHO Global TB Programme Data',
+   'https://www.who.int/teams/global-tuberculosis-programme/data',
+   'EPIDEMIOLOGICAL', 'database', 'free',
+   NULL, NULL, NULL,
+   'Global TB incidence, prevalence, mortality data.',
+   NULL, NULL);
+
+-- ── ONTOLOGIES ──────────────────────────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('CHEBI',    'ChEBI — Chemical Entities of Biological Interest', 'https://www.ebi.ac.uk/chebi/',             'ONTOLOGIES', 'ontology', 'free', NULL, NULL, NULL, 'Chemical substance annotation for drug identity.',   NULL, NULL);
+SECTION INTO data_sources VALUES
+  ('MESH',     'Medical Subject Headings',                        'https://meshb.nlm.nih.gov',                 'ONTOLOGIES', 'ontology', 'free', NULL, NULL, NULL, 'Standardized disease and drug terminology.',          NULL, NULL);
+SECTION INTO data_sources VALUES
+  ('ATC_DDD',  'WHO ATC/DDD Classification',                      'https://www.who.int/tools/atc-ddd-toolkit', 'ONTOLOGIES', 'ontology', 'free', NULL, NULL, NULL, 'Standardized drug classification.',                   NULL, NULL);
+SECTION INTO data_sources VALUES
+  ('SNOMED_CT','SNOMED CT',                                        'https://www.snomed.org',                    'ONTOLOGIES', 'ontology', 'free', NULL, NULL, NULL, 'Clinical terminology for disease and procedure coding.', NULL, NULL);
+SECTION INTO data_sources VALUES
+  ('RXNORM',   'RxNorm',                                           'https://www.nlm.nih.gov/research/umls/rxnorm/', 'ONTOLOGIES', 'ontology', 'free', NULL, NULL, NULL, 'Normalized drug naming for US clinical systems.',     NULL, NULL);
+
+-- ── COMPUTATIONAL PLATFORMS ─────────────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('SIMCYP',   'Simcyp PBPK Simulator (Certara)',       'https://www.certara.com/software/simcyp-pbpk/',         'COMPUTATIONAL', 'tool', 'commercial', NULL, NULL, NULL, 'MIRADOR consumes PBPK-generated R values as inputs.',      NULL, NULL);
+SECTION INTO data_sources VALUES
+  ('PK_SIM',   'PK-Sim / MoBi (Open Systems Pharmacology)', 'https://www.open-systems-pharmacology.org',          'COMPUTATIONAL', 'tool', 'free',       NULL, NULL, NULL, 'Open-source PBPK cross-reference.',                        NULL, NULL);
+SECTION INTO data_sources VALUES
+  ('NONMEM',   'NONMEM (ICON)',                          'https://www.iconplc.com/solutions/nonmem',              'COMPUTATIONAL', 'tool', 'commercial', NULL, NULL, NULL, 'Population PK modeling software. PopPK parameter estimates.', NULL, NULL);
+SECTION INTO data_sources VALUES
+  ('MONOLIX',  'Monolix (Lixoft / Simulations Plus)',    'https://lixoft.com/products/monolix/',                  'COMPUTATIONAL', 'tool', 'commercial', NULL, NULL, NULL, 'Alternative PopPK parameter estimates.',                    NULL, NULL);
+SECTION INTO data_sources VALUES
+  ('GRANSIM',  'GranSim — Granuloma Simulation',         'https://malthus.micro.med.umich.edu/lab/',              'COMPUTATIONAL', 'tool', 'free',       NULL, NULL, NULL, 'Agent-based TB granuloma model cross-reference.',           'Pienaar2015', NULL);
+
+-- ── PEDIATRIC ───────────────────────────────────────────────────
+
+SECTION INTO data_sources VALUES
+  ('SCHWARTZ_EGFR',
+   'Schwartz equation — pediatric GFR estimation',
+   NULL,
+   'PEDIATRIC', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'eGFR computation for pediatric K_admet adjustment.',
+   'Schwartz2009', NULL);
+
+SECTION INTO data_sources VALUES
+  ('ANDERSON_HOLFORD',
+   'Maturation-based allometric scaling for pediatric PK',
+   NULL,
+   'PEDIATRIC', 'review_paper', 'paywalled',
+   NULL, NULL, NULL,
+   'Allometric clearance scaling: CL_ped = CL_adult × (W/70)^0.75.',
+   'Anderson2008', NULL);
+
+SECTION INTO data_sources VALUES
+  ('RHODIN_2009',
+   'Human renal function maturation model',
+   NULL,
+   'PEDIATRIC', 'primary_study', 'paywalled',
+   NULL, NULL, NULL,
+   'GFR maturation for neonatal/infant PK adjustment.',
+   'Rhodin2009', NULL);
+
+
+-- ─────────────────────────────────────────────────────────────────
+-- BUNDLE 3: Disease Instance Mappings
+-- ─────────────────────────────────────────────────────────────────
+-- Which sources feed which disease instance
+
+BUNDLE disease_mappings
+  BASE (mapping_id NUMERIC AUTO)
+  FIBER (
+    source_id         CATEGORICAL INDEX,   -- MORPHISM → data_sources
+    disease           CATEGORICAL INDEX,   -- bone_mrsa | pulmonary_tb | meningitis | hiv_reservoir
+    role              CATEGORICAL INDEX,   -- input | ground_truth | cross_reference
+    equation_layer    CATEGORICAL INDEX,   -- tau | K_barrier | K_phenotype | K_reservoir | K_admet | catalytic | threshold
+    notes             TEXT
+  );
+
+-- Bone MRSA inputs
+SECTION INTO disease_mappings VALUES (1,  'EUCAST',            'bone_mrsa',    'input',           'tau',          'MIC for MRSA isolates');
+SECTION INTO disease_mappings VALUES (2,  'GRAZIANI_1988',     'bone_mrsa',    'input',           'K_barrier',    'Vancomycin R_bone');
+SECTION INTO disease_mappings VALUES (3,  'BUE_2018',          'bone_mrsa',    'input',           'K_barrier',    'Vancomycin R_bone in osteomyelitis');
+SECTION INTO disease_mappings VALUES (4,  'RICCOBENE_2014',    'bone_mrsa',    'input',           'K_barrier',    'Ceftaroline R_bone');
+SECTION INTO disease_mappings VALUES (5,  'RANA_2002',         'bone_mrsa',    'input',           'K_barrier',    'Linezolid R_bone');
+SECTION INTO disease_mappings VALUES (6,  'CURRIER_1979',      'bone_mrsa',    'input',           'K_barrier',    'Rifampin R_bone');
+SECTION INTO disease_mappings VALUES (7,  'TRAUNMULLER_2010',  'bone_mrsa',    'input',           'K_barrier',    'Daptomycin R_bone');
+SECTION INTO disease_mappings VALUES (8,  'FEIGIN_1995',       'bone_mrsa',    'input',           'K_barrier',    'Clindamycin R_bone');
+SECTION INTO disease_mappings VALUES (9,  'PARRA_RUIZ_2012',   'bone_mrsa',    'input',           'K_phenotype',  'MBEC values for K_bio');
+SECTION INTO disease_mappings VALUES (10, 'STEWART_2015',       'bone_mrsa',    'input',           'K_phenotype',  'Biofilm chronicity model');
+SECTION INTO disease_mappings VALUES (11, 'ZIMMERLI_1998',      'bone_mrsa',    'input',           'K_reservoir',  'Rifampin conductive modifier');
+SECTION INTO disease_mappings VALUES (12, 'IDSA_MRSA_2011',    'bone_mrsa',    'ground_truth',    'tau',          'Drug ranking ground truth');
+SECTION INTO disease_mappings VALUES (13, 'SCHWARTZ_EGFR',     'bone_mrsa',    'input',           'K_admet',      'Pediatric GFR');
+SECTION INTO disease_mappings VALUES (14, 'ANDERSON_HOLFORD',  'bone_mrsa',    'input',           'K_admet',      'Allometric scaling');
+
+-- Pulmonary TB inputs
+SECTION INTO disease_mappings VALUES (15, 'EUCAST',            'pulmonary_tb', 'input',           'tau',          'MIC for M. tuberculosis');
+SECTION INTO disease_mappings VALUES (16, 'PRIDEAUX_2015',     'pulmonary_tb', 'input',           'K_barrier',    'MALDI lesion-specific R values');
+SECTION INTO disease_mappings VALUES (17, 'KJELLSSON_2012',    'pulmonary_tb', 'input',           'K_barrier',    'Rabbit lesion PK');
+SECTION INTO disease_mappings VALUES (18, 'SARATHY_2016',      'pulmonary_tb', 'input',           'K_barrier',    'Caseum binding prediction');
+SECTION INTO disease_mappings VALUES (19, 'DARTOIS_2014',      'pulmonary_tb', 'input',           'K_barrier',    'Heterogeneous barrier framework');
+SECTION INTO disease_mappings VALUES (20, 'MITCHISON_1985',    'pulmonary_tb', 'input',           'K_phenotype',  'Subpopulation assignments');
+SECTION INTO disease_mappings VALUES (21, 'MRC_TRIALS',        'pulmonary_tb', 'ground_truth',    'tau',          'Sterilization ranking');
+SECTION INTO disease_mappings VALUES (22, 'WHO_TB_GUIDELINES_2022', 'pulmonary_tb', 'ground_truth', 'tau',        'Treatment duration ground truth');
+
+-- Meningitis inputs
+SECTION INTO disease_mappings VALUES (23, 'EUCAST',            'meningitis',   'input',           'tau',          'MIC for meningitis pathogens');
+SECTION INTO disease_mappings VALUES (24, 'NAU_2010',          'meningitis',   'input',           'K_barrier',    'CSF:plasma ratios (inflamed/uninflamed)');
+SECTION INTO disease_mappings VALUES (25, 'LUTSAR_2000',       'meningitis',   'input',           'K_barrier',    'Cephalosporin CSF PK');
+SECTION INTO disease_mappings VALUES (26, 'IDSA_MENINGITIS_2004', 'meningitis', 'ground_truth',   'threshold',    'Ceftriaxone calibration anchor');
+
+-- HIV reservoir inputs
+SECTION INTO disease_mappings VALUES (27, 'STANFORD_HIVDB',    'hiv_reservoir', 'input',          'tau',          'IC50 for all ARVs');
+SECTION INTO disease_mappings VALUES (28, 'FLETCHER_2014',     'hiv_reservoir', 'input',          'K_barrier',    'Lymph node R values');
+SECTION INTO disease_mappings VALUES (29, 'PATTERSON_2011',    'hiv_reservoir', 'input',          'K_barrier',    'Genital tract R values');
+SECTION INTO disease_mappings VALUES (30, 'LETENDRE_2010',     'hiv_reservoir', 'input',          'K_barrier',    'CNS R values and CPE scores');
+SECTION INTO disease_mappings VALUES (31, 'NICOL_2008',        'hiv_reservoir', 'input',          'K_barrier',    'Genital tract R values');
+SECTION INTO disease_mappings VALUES (32, 'CORY_2013',         'hiv_reservoir', 'input',          'K_barrier',    'Bone marrow R values');
+SECTION INTO disease_mappings VALUES (33, 'FINZI_1999',        'hiv_reservoir', 'ground_truth',   'tau',          'Reservoir stability ground truth');
+SECTION INTO disease_mappings VALUES (34, 'SILICIANO_2003',    'hiv_reservoir', 'ground_truth',   'tau',          'Reservoir half-life ground truth');
+SECTION INTO disease_mappings VALUES (35, 'ARCHIN_2012',       'hiv_reservoir', 'ground_truth',   'catalytic',    'LRA trial outcome');
+SECTION INTO disease_mappings VALUES (36, 'RASMUSSEN_2014',    'hiv_reservoir', 'ground_truth',   'catalytic',    'LRA Φ values');
+SECTION INTO disease_mappings VALUES (37, 'CANESTRI_2010',     'hiv_reservoir', 'ground_truth',   'K_barrier',    'CSF viral escape validation');
+SECTION INTO disease_mappings VALUES (38, 'CHUN_2008',         'hiv_reservoir', 'ground_truth',   'K_reservoir',  'GALT persistence ground truth');
+
+
+-- ─────────────────────────────────────────────────────────────────
+-- BUNDLE 4: Validation Firewall Audit
+-- ─────────────────────────────────────────────────────────────────
+-- For each disease: I ∩ G = ∅ verification
+
+BUNDLE validation_firewall
+  BASE (disease CATEGORICAL INDEX)
+  FIBER (
+    input_sources      TEXT REQUIRED,     -- comma-separated source_ids in set I
+    ground_truth_sources TEXT REQUIRED,   -- comma-separated source_ids in set G
+    overlap            CATEGORICAL DEFAULT 'NONE',  -- NONE | FLAGGED
+    test_count         NUMERIC,
+    firewall_verified  BOOLEAN DEFAULT TRUE
+  );
+
+SECTION INTO validation_firewall VALUES
+  ('bone_mrsa',
+   'EUCAST,GRAZIANI_1988,BUE_2018,RICCOBENE_2014,RANA_2002,CURRIER_1979,TRAUNMULLER_2010,FEIGIN_1995,PARRA_RUIZ_2012,STEWART_2015,ZIMMERLI_1998,SCHWARTZ_EGFR,ANDERSON_HOLFORD',
+   'IDSA_MRSA_2011',
+   'NONE', 161, TRUE);
+
+SECTION INTO validation_firewall VALUES
+  ('pulmonary_tb',
+   'EUCAST,CLSI_M24,PRIDEAUX_2015,KJELLSSON_2012,SARATHY_2016,DARTOIS_2014,MITCHISON_1985',
+   'MRC_TRIALS,WHO_TB_GUIDELINES_2022',
+   'NONE', 52, TRUE);
+
+SECTION INTO validation_firewall VALUES
+  ('meningitis',
+   'EUCAST,NAU_2010,LUTSAR_2000',
+   'IDSA_MENINGITIS_2004',
+   'NONE', 10, TRUE);
+
+SECTION INTO validation_firewall VALUES
+  ('hiv_reservoir',
+   'STANFORD_HIVDB,FLETCHER_2014,PATTERSON_2011,LETENDRE_2010,NICOL_2008,CORY_2013',
+   'FINZI_1999,SILICIANO_2003,ARCHIN_2012,RASMUSSEN_2014,CANESTRI_2010,PELUSO_2012,CHUN_2008',
+   'NONE', 93, TRUE);
+
+
+-- ─────────────────────────────────────────────────────────────────
+-- MORPHISMS (bundle relationships)
+-- ─────────────────────────────────────────────────────────────────
+
+-- data_sources.category_id → source_categories.category_id
+-- disease_mappings.source_id → data_sources.source_id
+-- disease_mappings.disease → validation_firewall.disease
+
+
+-- ─────────────────────────────────────────────────────────────────
+-- METADATA
+-- ─────────────────────────────────────────────────────────────────
+-- Total sources: 80+
+-- Total categories: 16
+-- Total disease mappings: 38
+-- Firewall verified: 4/4 diseases, I ∩ G = ∅
+--
+-- Key insight (from SOURCE_SUMMARY):
+-- No centralized database connects tissue:plasma ratios to MIC/MBEC
+-- to clinical outcomes. MIRADOR's drug tables (powered by GIGI) are
+-- the first structured join layer across these three data silos.
+--
+-- C = τ/K
+-- ─────────────────────────────────────────────────────────────────

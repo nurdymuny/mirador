@@ -1,0 +1,30 @@
+{
+  "analysis": "MIRADOR Sensitivity Analysis",
+  "date": "2026-03-29",
+  "k_admet_perturbation_range": "\u00b150%",
+  "r_perturbation_range": "\u00b130%",
+  "summary": {
+    "k_admet": {
+      "stable_panels": 12,
+      "total_panels": 14,
+      "rank_changes": 3,
+      "total_tests": 84
+    },
+    "r_values": {
+      "stable_panels": 10,
+      "total_panels": 14,
+      "rank_changes": 6,
+      "total_tests": 84
+    }
+  },
+  "sensitive_panels_k_admet": [
+    "MRSA_bone",
+    "TB_caseum"
+  ],
+  "sensitive_panels_r": [
+    "HIV_cns",
+    "HIV_galt",
+    "TB_caseum",
+    "TB_cellular"
+  ]
+}

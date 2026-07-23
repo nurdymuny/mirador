@@ -22,6 +22,39 @@ mirador-frontend/dist-ssr/
 # Rust
 mirador_rs/target/
 
+# Large local datasets — NEVER commit (ChEMBL / BindingDB / PharmGKB / ClinicalTrials dumps)
+data/
+*.tar.gz
+*.sqlite
+*.sqlite3
+*.sdf
+*.npz
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.bbl
+*.blg
+
+# OneDrive / editor conflict copies
+*-LAPTOP-*
+*-DESKTOP-*
+* - Copy.*
+
+# Local test scratch
+test-output.txt
+mirador-frontend/test_out.json
+mirador-frontend/live_wasm_test.mjs
+
+# Private grant / application materials — never publish
+grant/
+GRANT_*.md
+
 # Environment / secrets
 .env
 .env.*
@@ -53,3 +86,5 @@ Thumbs.db
 .idea/
 *.suo
 *.sw?
+.vercel
+.env*.local
