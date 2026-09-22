@@ -17,6 +17,7 @@ members = [
     "crates/mirador-biofilm",
     "crates/mirador-reservoir",
     "crates/mirador-combo-bone",
+    "crates/mirador-combo-bone-wasm",
     "crates/mirador-tb-patient",
     "crates/mirador-granuloma",
     "crates/mirador-tb-phenotype",

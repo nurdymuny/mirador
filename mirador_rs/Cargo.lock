@@ -117,9 +117,24 @@ dependencies = [
  "approx",
  "mirador-biofilm",
  "mirador-bone",
+ "mirador-combination",
  "mirador-reservoir",
  "serde",
  "thiserror",
+]
+
+[[package]]
+name = "mirador-combo-bone-wasm"
+version = "0.1.0"
+dependencies = [
+ "mirador-biofilm",
+ "mirador-bone",
+ "mirador-combination",
+ "mirador-combo-bone",
+ "mirador-reservoir",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
 ]
 
 [[package]]

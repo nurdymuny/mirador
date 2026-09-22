@@ -1,0 +1,18 @@
+[package]
+name = "mirador-combo-bone-wasm"
+version = "0.1.0"
+edition = "2021"
+description = "WASM bridge — exposes the full Keske bone pathway + interaction-typed combination to the frontend (JSON in / JSON out, no math in JSX)"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+mirador-bone        = { path = "../mirador-bone" }
+mirador-biofilm     = { path = "../mirador-biofilm" }
+mirador-reservoir   = { path = "../mirador-reservoir" }
+mirador-combo-bone  = { path = "../mirador-combo-bone" }
+mirador-combination = { path = "../mirador-combination" }

@@ -20,6 +20,10 @@
 use mirador_biofilm::BiofilmError;
 use thiserror::Error;
 
+use mirador_combination::{CombinationSection, DrugSection};
+// Re-export so callers get the interaction vocabulary straight from this crate.
+pub use mirador_combination::InteractionType;
+
 #[derive(Debug, Error)]
 pub enum ComboBoneError {
     #[error("At least two drugs are required for combination therapy")]
@@ -130,6 +134,120 @@ pub fn monotherapy(drug: &DrugBonePathway) -> Result<f64, ComboBoneError> {
     Ok(drug.tau / k)
 }
 
+/// Result of combining two bone pathways via an explicit, evidence-typed
+/// interaction model (Bliss synergy / antagonism / additivity), composed
+/// through the `mirador-combination` engine.
+///
+/// Each drug is reduced to its bone coherence `C_bone = τ / K_pathway` (the
+/// same in-series K-decomposition used everywhere else), then combined by the
+/// caller-supplied [`InteractionType`]. This is the alternative to
+/// [`combine_two`]'s parallel-resistor model: instead of a fixed synergy
+/// multiplier that always raises the score, the interaction type and magnitude
+/// come from data (FICI / checkerboard / Bliss), so antagonism and additivity
+/// are representable — not only super-additivity.
+#[derive(Debug, Clone)]
+pub struct InteractionComboResult {
+    /// Bone coherence of drug A alone (τ_A / K_pathway_A)
+    pub c_bone_a: f64,
+    /// Bone coherence of drug B alone (τ_B / K_pathway_B)
+    pub c_bone_b: f64,
+    /// Combined bone coherence under the supplied interaction model
+    pub c_bone_combo: f64,
+}
+
+/// Combine two bone pathways under an explicit [`InteractionType`].
+///
+/// Reduces each drug to `C_bone = τ / K_pathway` and applies the Bliss-style
+/// interaction from `mirador-combination`. Setting `DrugSection.k = k_pathway()`
+/// makes `DrugSection::coherence()` equal `C_bone` by construction.
+///
+/// # Errors
+/// Returns an error if either τ or K_pathway is non-positive, or if both drugs
+/// are rifampin (rpoB monotherapy is contraindicated).
+pub fn combine_two_interaction(
+    drug_a: &DrugBonePathway,
+    drug_b: &DrugBonePathway,
+    interaction: InteractionType,
+) -> Result<InteractionComboResult, ComboBoneError> {
+    for d in [drug_a, drug_b] {
+        if d.tau <= 0.0 {
+            return Err(ComboBoneError::InvalidTau(d.tau, d.drug_name.clone()));
+        }
+        if d.k_pathway() <= 0.0 {
+            return Err(ComboBoneError::InvalidKPathway(d.k_pathway(), d.drug_name.clone()));
+        }
+    }
+
+    // Same hard block as combine_two: two rifampins = rpoB monotherapy.
+    let drugs_with_rif = [drug_a, drug_b].iter().filter(|d| d.is_rifampin).count();
+    if drugs_with_rif == 2 {
+        return Err(ComboBoneError::RifampinMonotherapy(
+            BiofilmError::RifampinMonotherapyContraindicated,
+        ));
+    }
+
+    let sec_a = DrugSection { tau: drug_a.tau, k: drug_a.k_pathway() };
+    let sec_b = DrugSection { tau: drug_b.tau, k: drug_b.k_pathway() };
+    let c_bone_a = sec_a.coherence();
+    let c_bone_b = sec_b.coherence();
+
+    let combo = CombinationSection { drug1: sec_a, drug2: sec_b, interaction };
+    Ok(InteractionComboResult {
+        c_bone_a,
+        c_bone_b,
+        c_bone_combo: combo.combined_coherence(),
+    })
+}
+
+/// Canonical bone pathways for the Steven Keske scenario (chronic MRSA AHO).
+///
+/// The same illustrative, spec-derived parameters the test suite uses —
+/// promoted to the public API so tests, examples, and report tooling share
+/// ONE definition (no divergent copies). τ and the K-components follow
+/// KESKE_METHOD_SPEC; they are model inputs, not patient data.
+pub mod scenarios {
+    use super::DrugBonePathway;
+
+    /// Ceftaroline — τ=12 (β=4, rings=3, chiral=+1; JACS 2014, PDB 3ZG0)
+    pub fn ceftaroline() -> DrugBonePathway {
+        DrugBonePathway {
+            drug_name: "ceftaroline".into(),
+            tau: 12.0,
+            k_admet: 0.67,
+            k_pen: (1.0 / 0.30) - 1.0,
+            k_bio: 0.95 * (128_f64 / 1.0).log10(),
+            k_res: 0.10 + (1.0 - 0.70) * ((1.0 / 0.30) - 1.0) + 0.48,
+            is_rifampin: false,
+        }
+    }
+
+    /// Rifampin — τ=8 (3 rings × ~2.67 Betti); intracellular modifier applied
+    pub fn rifampin() -> DrugBonePathway {
+        DrugBonePathway {
+            drug_name: "rifampin".into(),
+            tau: 8.0,
+            k_admet: 0.50,
+            k_pen: (1.0 / 0.35) - 1.0,
+            k_bio: 0.95 * (0.5_f64 / 0.008).log10(),
+            k_res: 0.10 + (1.0 - 0.70) * ((1.0 / 0.35) - 1.0) + 0.192,
+            is_rifampin: true,
+        }
+    }
+
+    /// Vancomycin — very poor bone penetration (R=0.20)
+    pub fn vancomycin() -> DrugBonePathway {
+        DrugBonePathway {
+            drug_name: "vancomycin".into(),
+            tau: 12.0,
+            k_admet: 0.50,
+            k_pen: (1.0 / 0.20) - 1.0,
+            k_bio: 0.95 * (512_f64 / 1.0).log10(),
+            k_res: 0.10 + (1.0 - 0.70) * ((1.0 / 0.20) - 1.0) + 0.48,
+            is_rifampin: false,
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // TDD — 9 tests matching the updated spec
 // ---------------------------------------------------------------------------
@@ -139,43 +257,9 @@ mod tests {
     use super::*;
     use approx::assert_relative_eq;
 
-    // Published ceftaroline τ = 12 (β=4, rings=3, chiral=+1 — JACS 2014, PDB 3ZG0)
-    fn ceftaroline() -> DrugBonePathway {
-        DrugBonePathway {
-            drug_name: "ceftaroline".into(),
-            tau: 12.0,
-            k_admet: 0.67,
-            k_pen: (1.0 / 0.30) - 1.0,    // R=0.30 → 2.33
-            k_bio: 0.95 * (128_f64 / 1.0).log10(), // chronic, K_bio_eff
-            k_res: 0.10 + (1.0 - 0.70) * ((1.0/0.30)-1.0) + 0.48, // Steven's SAC+mat+intra
-            is_rifampin: false,
-        }
-    }
-
-    // Rifampin τ estimated as 8 for spec illustration (pyridine + piperazine + ansamycin = 3 rings × ~2.67 Betti)
-    fn rifampin() -> DrugBonePathway {
-        DrugBonePathway {
-            drug_name: "rifampin".into(),
-            tau: 8.0,
-            k_admet: 0.50,
-            k_pen: (1.0 / 0.35) - 1.0,    // R=0.35 → 1.857
-            k_bio: 0.95 * (0.5_f64 / 0.008).log10(), // chronic, K_bio_eff
-            k_res: 0.10 + (1.0 - 0.70) * ((1.0/0.35)-1.0) + 0.192, // rifampin intracellular modifier applied
-            is_rifampin: true,
-        }
-    }
-
-    fn vancomycin() -> DrugBonePathway {
-        DrugBonePathway {
-            drug_name: "vancomycin".into(),
-            tau: 12.0, // same pharmacophore topology as ceftaroline vs PBP2a
-            k_admet: 0.50,
-            k_pen: (1.0 / 0.20) - 1.0,    // R=0.20 → 4.0
-            k_bio: 0.95 * (512_f64 / 1.0).log10(), // chronic K_bio_eff
-            k_res: 0.10 + (1.0 - 0.70) * ((1.0/0.20)-1.0) + 0.48, // Steven's reservoir
-            is_rifampin: false,
-        }
-    }
+    // Steven's bone pathways now live in the public `scenarios` module so tests,
+    // examples, and report tooling all share one definition (no divergent copy).
+    use super::scenarios::{ceftaroline, rifampin, vancomycin};
 
     const SYNERGY: f64 = 1.2;
 
@@ -310,5 +394,66 @@ mod tests {
         let result = combine_two(&cef, &rif, SYNERGY).unwrap();
         assert!(result.c_bone_combo > 10.0,
             "Steven's cef+rif C_bone must exceed 10.0, got {:.2}", result.c_bone_combo);
+    }
+
+    // ---------------------------------------------------------------------
+    // Interaction-typed (Bliss) combination — the evidence-typed alternative
+    // to the parallel-resistor model. Composes each drug's C_bone = τ/K_pathway
+    // through mirador-combination. Unlike combine_two, this CAN express
+    // antagonism (e.g. strain-dependent rifampin, Barber 2015) and does not
+    // assume a fixed multiplier that always helps.
+    // ---------------------------------------------------------------------
+
+    // Additivity (Bliss independence): C_combo = C_bone_A + C_bone_B
+    #[test]
+    fn interaction_additivity_is_sum_of_bone_coherences() {
+        let cef = ceftaroline();
+        let rif = rifampin();
+        let r = combine_two_interaction(&cef, &rif, InteractionType::Additivity).unwrap();
+        assert_relative_eq!(r.c_bone_a, cef.tau / cef.k_pathway(), epsilon = 1e-10);
+        assert_relative_eq!(r.c_bone_b, rif.tau / rif.k_pathway(), epsilon = 1e-10);
+        assert_relative_eq!(r.c_bone_combo, r.c_bone_a + r.c_bone_b, epsilon = 1e-10);
+    }
+
+    // Synergy: exceeds the better single agent by δ
+    #[test]
+    fn interaction_synergy_exceeds_best_single_agent() {
+        let cef = ceftaroline();
+        let rif = rifampin();
+        let r = combine_two_interaction(&cef, &rif, InteractionType::Synergy { bliss_delta: 1.0 }).unwrap();
+        assert!(r.c_bone_combo > r.c_bone_a.max(r.c_bone_b),
+            "synergy combo {:.3} must exceed best single {:.3}", r.c_bone_combo, r.c_bone_a.max(r.c_bone_b));
+    }
+
+    // Antagonism: falls BELOW the weaker single agent — the capability the
+    // parallel-resistor model structurally cannot represent.
+    #[test]
+    fn interaction_antagonism_falls_below_weakest_single_agent() {
+        let cef = ceftaroline();
+        let rif = rifampin();
+        let r = combine_two_interaction(&cef, &rif, InteractionType::Antagonism { bliss_delta: 0.5 }).unwrap();
+        assert!(r.c_bone_combo < r.c_bone_a.min(r.c_bone_b),
+            "antagonism combo {:.3} must fall below weakest single {:.3}", r.c_bone_combo, r.c_bone_a.min(r.c_bone_b));
+    }
+
+    // Contrast: Bliss additivity is far more conservative than the
+    // parallel-resistor model for the same two drugs.
+    #[test]
+    fn interaction_additivity_is_more_conservative_than_parallel_resistor() {
+        let cef = ceftaroline();
+        let rif = rifampin();
+        let bliss = combine_two_interaction(&cef, &rif, InteractionType::Additivity).unwrap().c_bone_combo;
+        let parallel = combine_two(&cef, &rif, SYNERGY).unwrap().c_bone_combo;
+        assert!(bliss < parallel,
+            "Bliss additivity ({:.2}) must be below parallel-resistor ({:.2})", bliss, parallel);
+    }
+
+    // Rifampin pair still hard-blocked in the interaction path
+    #[test]
+    fn interaction_rifampin_pair_is_blocked() {
+        let rif_a = rifampin();
+        let rif_b = rifampin();
+        assert!(combine_two_interaction(&rif_a, &rif_b, InteractionType::Additivity).is_err(),
+            "two rifampins must be blocked (rpoB monotherapy)");
     }
 }

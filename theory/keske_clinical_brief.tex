@@ -1,0 +1,488 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+
+\definecolor{dkred}{RGB}{180,30,30}
+\definecolor{dkblue}{RGB}{20,60,140}
+\definecolor{dkgreen}{RGB}{20,110,60}
+\definecolor{muted}{RGB}{80,80,95}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=dkblue,
+  urlcolor=dkblue,
+  citecolor=dkblue
+}
+
+\titleformat{\section}{\large\bfseries\color{dkblue}}{}{0em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\color{muted}MIRADOR Clinical Brief · September 2026}
+\lhead{\small\color{muted}The Keske Method — Pediatric AHO}
+\rfoot{\small\color{muted}\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries The Keske Method}\\[6pt]
+  {\large A Geometric Framework for Antibiotic Selection\\
+  in Pediatric MRSA Acute Hematogenous Osteomyelitis}\\[10pt]
+  {\color{muted}\small
+  Bee Rosa Davis, MS (Digital Forensics, Brown University) · Applied Mathematics ·
+  Independent Researcher \\
+  ORCID: 0009-0009-8034-4308 · \href{mailto:bee_davis@alumni.brown.edu}{bee\_davis@alumni.brown.edu} ·
+  \href{https://doi.org/10.5281/zenodo.18511755}{doi:10.5281/zenodo.18511755}}\\[4pt]
+  {\color{dkred}\small\itshape
+  Named for Steven Keske — 6 years, 5 antibiotics, 4 surgeries, still fighting.}
+\end{center}
+
+\vspace{6pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Clinical Gap}
+
+Acute hematogenous osteomyelitis (AHO) caused by community-associated MRSA
+(USA300 pulsotype) remains one of the most clinically treacherous pediatric
+infections. The United States sees approximately 70,000 pediatric musculoskeletal
+infections annually, with MRSA-AHO driving the most severe complications:
+septic shock, toxic shock syndrome (TSS), septic pulmonary emboli, pathologic
+fractures, and chronic relapsing disease requiring multi-year antibiotic courses.
+
+The literature documents a reproducible failure mode: patients cycle through
+five or more antibiotic regimens over months to years, each serologically
+adequate, each clinically insufficient. Treatment guidelines remain empirical,
+and chronic biofilm-associated MRSA-AHO is widely regarded as refractory to
+standard antimicrobial therapy.
+
+\textbf{The Keske Method proposes that this failure is not primarily
+microbiological — it is geometric. The drugs exist. The standard pharmacokinetic
+models used to deploy them were built for blood, not bone. The math to deploy
+them correctly in deep-tissue sanctuaries is not part of routine clinical
+practice.}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Governing Equation}
+
+The central question in antibiotic selection is: \textit{will this drug reach a
+concentration high enough at the site of infection to kill the bacteria there?}
+The Keske Method formalizes that question as a single score, $C_{\text{bone}}$,
+computed from every known barrier between the IV bag and the bacteria inside
+bone. Higher $C$ means fewer barriers, better penetration, higher probability of
+cure. The working cure threshold $C_{\text{bone}} \geq 5$ corresponds to
+achieving a bone concentration at or above the published MBEC for the dominant
+pathogen — the concentration required to eradicate biofilm, not merely suppress
+planktonic growth (Zimmerli et al., NEJM 2004; Stewart, Microbiol Mol Biol Rev
+2015). This threshold is a modeling anchor derived from published data; it is
+not itself prospectively validated (see \S\ref{sec:validation}).
+
+The Keske Method derives from the MIRADOR framework (Manifold-Informed Rational
+Architecture for Drug-Organism Response). The governing equation is:
+\[
+  C = \frac{\tau}{K}
+\]
+$\tau$ (pharmacophoric potential) captures the drug's intrinsic activity: its
+binding affinity to the target (PBP2a for MRSA), aqueous solubility, oral or IV
+bioavailability, and protein binding. Clinically, $\tau$ is proportional to the
+drug's theoretical AUC$_{0-24}$/MIC under ideal distribution conditions — the
+ceiling of what the drug can achieve if all barriers are removed.
+
+$K$ (total curvature) is the sum of all impedance factors that reduce the drug's
+effective concentration at the infection site. Clinically, $K$ is what separates
+adequate serum levels from adequate bone levels. A drug with $K = 1$ loses 50\%
+of its activity to barriers; a drug with $K = 9$ loses 90\%.
+
+For standard bacteremia, $K = K_{\text{ADMET}}$ (absorption, distribution,
+metabolism, excretion, toxicity). For pediatric AHO, three additional terms
+dominate:
+\[
+  \boxed{K_{\text{bone}} = K_{\text{ADMET}} + K_{\text{penetration}} + K_{\text{biofilm}} + K_{\text{reservoir}}}
+\]
+
+Each term is clinically grounded, computationally specified, and sourced from
+published pharmacokinetic and microbiological literature. Every number in this
+brief is produced by the open-source MIRADOR engine and is reproducible from the
+inputs shown (\S\ref{sec:whatis}).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{The Four Curvature Layers}
+
+\subsection{Layer 1: Pediatric Patient Manifold}
+
+Children are not small adults. The Keske Method replaces adult pharmacokinetic
+assumptions with pediatric-specific models:
+
+\begin{align}
+  \text{GFR}_{\text{ped}} &= \frac{0.413 \times h_{\text{cm}}}{S_{\text{cr}}} \quad
+    \text{(Schwartz equation)} \\[4pt]
+  \text{CL}_{\text{ped}} &= \text{CL}_{\text{adult}} \cdot
+    \left(\frac{W}{70}\right)^{0.75} \quad
+    \text{(allometric scaling)} \\[4pt]
+  V_d &= V_{d,\text{adult}} \cdot \left(\frac{W}{70}\right)^{1.0}
+    \cdot \bigl[1 + 0.003 \cdot \max(\text{CRP} - 100, 0)\bigr]
+\end{align}
+
+The CRP-dependent $V_d$ expansion (20--40\% at CRP $>100$ mg/L) reflects
+capillary leak in systemic inflammation (Graziani et al., JAC 1988).
+
+\subsection{Layer 2: Bone Penetration Curvature}
+
+The critical barrier that standard dosing models ignore is the serum-to-bone
+partitioning ratio $R_{\text{bone}}$. Published bone:serum ratios are
+drug-specific and non-trivial:
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{lccl}
+\toprule
+\textbf{Drug} & \textbf{Bone:Serum} & \textbf{$K_{\text{penetration}}$} & \textbf{Source} \\
+\midrule
+Vancomycin   & 0.10--0.30 & 2.33--9.00 & Graziani et al., JAC 1988 \\
+Ceftaroline  & 0.20--0.40 & 1.50--4.00 & Riccobene et al., AAC 2014 \\
+Linezolid    & 0.40--0.60 & 0.67--1.50 & Rana et al., JAC 2002 \\
+Clindamycin  & 0.30--0.75 & 0.33--2.33 & Feigin et al., Pediatr Infect 1995 \\
+Rifampin     & 0.20--0.50 & 1.00--4.00 & Currier et al., JBJS 1979 \\
+Daptomycin   & 0.10--0.20 & 4.00--9.00 & Traunmuller et al., AAC 2010 \\
+\bottomrule
+\end{tabular}
+\caption{Bone penetration ratios and resulting curvature contributions.
+$K_{\text{penetration}} = (1/R_{\text{bone}}) - 1$.}
+\end{table}
+
+The penetration curvature is:
+\[
+  K_{\text{penetration}} = \frac{1}{R_{\text{bone,eff}}} - 1
+\]
+
+Inflamed bone is more vascular; CRP $> 100$ mg/L increases $R_{\text{bone}}$:
+\[
+  R_{\text{bone,eff}} = R_{\text{bone}} \cdot
+    \bigl[1 + 0.006 \cdot \max(\text{CRP} - 100,\, 0)\bigr], \quad
+    \text{capped at } 2 \times R_{\text{bone}}
+\]
+
+This is why vancomycin attains adequate serum levels — AUC/MIC $>400$ in many
+patients — and still fails in chronic osteomyelitis: the serum target and the
+bone target are not the same target.
+
+\subsection{Layer 3: Biofilm Resistance Curvature}
+
+MRSA in established osteomyelitis forms biofilm — structured communities of
+phenotypically dormant bacteria embedded in extracellular matrix. Biofilm MICs
+are 100- to 1000-fold higher than planktonic MICs (Stewart, 2015). The minimum
+biofilm eradication concentration (MBEC) determines effective drug activity:
+
+\[
+  K_{\text{biofilm}} = \log_{10}\!\left(\frac{\text{MBEC}}{\text{MIC}}\right)
+\]
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{lcccl}
+\toprule
+\textbf{Drug} & \textbf{MIC ($\mu$g/mL)} & \textbf{MBEC ($\mu$g/mL)} & \textbf{$K_{\text{biofilm}}$} & \textbf{Source} \\
+\midrule
+Vancomycin   & 1.0   & 512  & 2.71 & Parra-Ruiz et al., 2012 \\
+Clindamycin  & 0.25  & 64   & 2.41 & LaPlante \& Rybak, 2004 \\
+Ceftaroline  & 1.0   & 128  & 2.11 & Barber et al., AAC 2015 \\
+Linezolid    & 2.0   & 256  & 2.11 & Parra-Ruiz et al., 2012 \\
+Daptomycin   & 0.5   & 32   & 1.81 & Stewart, 2015 \\
+Rifampin     & 0.008 & 0.5  & 1.80 & Zimmerli et al., NEJM 2004 \\
+\bottomrule
+\end{tabular}
+\caption{MIC, MBEC, and biofilm curvature by drug. Rifampin has the lowest
+$K_{\text{biofilm}}$ of any anti-staphylococcal agent — the geometric basis
+for its role in combination therapy for chronic AHO.}
+\end{table}
+
+Biofilm probability is inferred from the clinical timeline:
+\[
+  p_{\text{biofilm}} =
+  \begin{cases}
+    0.20 & \text{acute} \;(<\!2\;\text{weeks}) \\
+    0.60 & \text{subacute} \;(2\;\text{weeks–}3\;\text{months}) \\
+    0.95 & \text{chronic} \;(>\!3\;\text{months})
+  \end{cases}
+  \qquad
+  K_{\text{biofilm,eff}} = p_{\text{biofilm}} \cdot K_{\text{biofilm}}
+\]
+
+The MIC reported on an antibiogram is the planktonic MIC. The bacteria causing
+chronic osteomyelitis are in biofilm, with an effective MIC 100- to 1000-fold
+higher. The Keske Method computes this from published MBEC data and weights it
+by the probability that biofilm is present.
+
+\subsection{Layer 4: Multi-Reservoir Geometry}
+
+MRSA-AHO distributes across three anatomically distinct reservoirs with
+different antibiotic accessibility:
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{p{3.2cm} p{2.8cm} p{2.8cm} p{3.5cm}}
+\toprule
+\textbf{Reservoir} & \textbf{Location} & \textbf{Accessibility} & \textbf{Intervention} \\
+\midrule
+Soft tissue abscess & Periosteal / subperiosteal & High (vascularized) & Surgical drainage \\
+Bone matrix biofilm & Cortical / cancellous surfaces & Moderate (penetration-limited) & Debridement \\
+Intracellular SCVs & Inside osteocytes & Very low & Rifampin; no surgical access \\
+\bottomrule
+\end{tabular}
+\caption{Three-reservoir model. Small colony variants (SCVs) inside osteocytes
+drive relapse in chronic AHO. They are not reached by surgery and are accessible
+only to drugs with intracellular penetration — principally rifampin.}
+\end{table}
+
+The reservoir curvature term, per drug:
+\[
+  K_{\text{reservoir}} = (1 - D_{\text{drain}}) \cdot w_{\text{SAC}}
+    + (1 - D_{\text{debride}}) \cdot K_{\text{penetration}}
+    + 0.8 \cdot f_{\text{intra}} \cdot m_{\text{rif}}
+\]
+where $D_{\text{drain}}$, $D_{\text{debride}}$ are surgical clearance fractions
+(0–1), $f_{\text{intra}}$ is the intracellular bacterial fraction,
+$w_{\text{SAC}} = 0.5$, and $m_{\text{rif}} = 0.4$ when rifampin is present in
+the regimen (reflecting its documented osteoblast penetration; Zimmerli 2004),
+else $m_{\text{rif}} = 1.0$.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Applied to a Clinical Scenario}
+
+\textbf{Patient:} 10-year-old, 32 kg. MRSA-AHO of the hip, femur, and knee.
+Sepsis and TSS on presentation; chronic recurrent course. Multiple antibiotics
+trialed without durable remission.
+
+\textbf{Input parameters:}
+\[
+  \text{CRP} = 250 \;\text{mg/L}, \quad
+  p_{\text{biofilm}} = 0.95, \quad
+  f_{\text{intra}} = 0.40, \quad
+  D_{\text{drain}} = 0.90, \quad
+  D_{\text{debride}} = 0.80
+\]
+
+\textbf{Computed $C_{\text{bone}}$ for each drug — monotherapy.} Every column is
+produced by the engine; $K_{\text{total}} = K_{\text{ADMET}} + K_{\text{pen}} +
+K_{\text{bio}} + K_{\text{res}}$ and $C_{\text{bone}} = \tau / K_{\text{total}}$.
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{lccccccc}
+\toprule
+\textbf{Drug} & \textbf{$\tau$} & \textbf{$K_{\text{ADMET}}$} & \textbf{$K_{\text{pen}}$} & \textbf{$K_{\text{bio}}$} & \textbf{$K_{\text{res}}$} & \textbf{$K_{\text{total}}$} & \textbf{$C_{\text{bone}}$} \\
+\midrule
+Linezolid    & 12 & 0.40 & 0.05 & 2.00 & 0.38 & 2.84 & 4.23 \\
+Daptomycin   & 24 & 0.60 & 2.51 & 1.72 & 0.87 & 5.70 & 4.21 \\
+Ceftaroline  & 12 & 0.67 & 0.75 & 2.00 & 0.52 & 3.95 & 3.04 \\
+Rifampin$^\dagger$ &  8 & 0.50 & 0.50 & 1.71 & 0.28 & 2.99 & 2.68 \\
+Clindamycin  &  8 & 0.50 & 0.00 & 2.29 & 0.37 & 3.16 & 2.53 \\
+Vancomycin   & 12 & 0.50 & 1.63 & 2.57 & 0.70 & 5.40 & 2.22 \\
+\bottomrule
+\end{tabular}
+\caption{Cure threshold: $C_{\text{bone}} \geq 5.0$. \textbf{No monotherapy
+achieves it} in chronic MRSA-AHO with confirmed biofilm — the best single agent
+reaches only $4.23$. This matches the documented clinical course for chronic AHO,
+in which serologically adequate monotherapy fails. $^\dagger$Rifampin is never
+used as monotherapy (rpoB resistance emerges in $\sim$80\% of cases); its value
+is shown only as a combination component.}
+\end{table}
+
+\subsection*{Combination therapy}
+
+No single agent reaches threshold, so the method scores a two-drug regimen. Each
+drug is first reduced to its own bone coherence $C = \tau / K_{\text{pathway}}$;
+the two are then combined by their \emph{measured pharmacodynamic interaction} —
+not by a fixed multiplier that always helps. Three interaction types are
+representable, so an unfavorable pairing is not silently rewarded:
+\[
+  C_{\text{combo}} =
+  \begin{cases}
+    C_A + C_B & \text{additivity (Bliss independence)} \\
+    \max(C_A, C_B) + \delta & \text{synergy} \\
+    \min(C_A, C_B) \cdot (1 - \delta) & \text{antagonism}
+  \end{cases}
+\]
+The interaction type and its magnitude $\delta$ are \emph{evidence inputs}
+(checkerboard / FICI / Bliss), supplied per isolate rather than assumed.
+
+For \textbf{ceftaroline + rifampin} at this geometry — with rifampin's
+intracellular reservoir term reduced ($m_{\text{rif}} = 0.4$) — the per-drug bone
+coherences are $C_{\text{ceftaroline}} = 3.20$ and $C_{\text{rifampin}} = 2.68$.
+Under Bliss independence:
+\[
+  C_{\text{bone}}(\text{cef} + \text{rif}) = 3.20 + 2.68 =
+  {\color{dkgreen}\mathbf{5.87}} \;\geq\; 5.
+\]
+
+\textbf{This is the first regimen in this patient's geometry to cross the cure
+threshold} — where vancomycin, the standard-of-care agent, scores $2.22$. The
+result is a $2.6\times$ improvement in therapeutic coherence, and it comes from
+the two barriers no single agent overcomes: bone penetration and rifampin's
+access to the intracellular reservoir.
+
+The result is explicitly \emph{contingent on the interaction}: additivity or
+synergy places the regimen at or above threshold, while strain-level antagonism
+— which has been reported for rifampin combinations in some isolates (Barber et
+al., AAC 2015) — would place it below. Determining the interaction for a given
+isolate, by checkerboard or FICI, is therefore the decisive measurement. For
+reference, an earlier ``parallel-conductance'' combination heuristic is retired
+in favor of this evidence-typed model, which cannot manufacture benefit from an
+inactive or antagonistic partner.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Clinical Implication: What the Math Tells Us}
+
+\begin{enumerate}[leftmargin=1.4em]
+  \item \textbf{Serum adequacy is not bone adequacy.} Vancomycin achieving
+        AUC/MIC $> 400$ in serum is the wrong target when $R_{\text{bone}}$ is
+        low and $p_{\text{biofilm}} = 0.95$. That target was derived from
+        bacteremia data, not osteomyelitis data. The Keske Method quantifies the
+        bone-specific deficit prospectively rather than inferring it
+        retrospectively from treatment failure.
+
+  \item \textbf{Biofilm is the dominant curvature term in chronic disease, and
+        antibiograms do not measure it.} At $p_{\text{biofilm}} \geq 0.8$, no
+        monotherapy crosses the cure threshold; a combination is what brings a
+        regimen across it. Rifampin's low $K_{\text{biofilm}}$ and unique
+        intracellular access make it the natural partner — consistent with its
+        established role in refractory staphylococcal bone and implant infection
+        (Zimmerli 2004). Whether a specific pairing reaches threshold depends on
+        the measured drug-drug interaction, which the model takes as an input
+        rather than assuming.
+
+  \item \textbf{Surgical intervention has a quantifiable pharmacodynamic effect.}
+        Drainage and debridement reduce $K_{\text{reservoir}}$ and secondarily
+        raise $R_{\text{bone,eff}}$ by reducing inflammatory mass. The model
+        computes the specific $D_{\text{drain}}$ and $D_{\text{debride}}$ values
+        that, in combination with a given drug pair, bring $C_{\text{bone}}$ to
+        $\geq 5$ — an operable, patient-specific surgical target rather than a
+        generic recommendation.
+
+  \item \textbf{Intracellular reservoirs are the remission barrier.} At high
+        $f_{\text{intra}}$, a regimen cannot hold threshold without a drug that
+        has documented intracellular penetration; rifampin and linezolid are the
+        principal anti-MRSA agents in that class. Sequential design — a
+        cell-wall-active agent first to reduce biofilm mass, then a rifampin
+        combination to address SCVs — is the direction the geometry supports.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{What This Is — and What It Is Not}\label{sec:whatis}
+
+The Keske Method is an \textbf{investigational mathematical framework}. It is not
+an FDA-cleared diagnostic, dosing calculator, or prescribing tool. It is
+presented strictly for theoretical evaluation, retrospective study, and
+hypothesis generation by qualified clinical researchers. It does not replace
+susceptibility testing, infectious disease consultation, or clinical judgment. It
+takes no action autonomously and makes no therapeutic recommendation.
+
+What it provides: a systematic, patient-specific, mathematically grounded answer
+to \textit{``why didn't that antibiotic work?''} — and a directional answer to
+\textit{``what geometry do we need to reach threshold?''} Every figure in this
+brief is computed by the open engine and is reproducible from the stated inputs.
+
+The live interactive tool (MIRADOR — Keske Edition) is publicly available at:\\
+\url{https://mirador.vercel.app/\#keske}\\[2pt]
+Repository and validation results: \href{https://doi.org/10.5281/zenodo.18511755}{doi:10.5281/zenodo.18511755}
+
+\vspace{6pt}
+\textbf{Medical and clinical patent applications} (selected; Davis, B.R., sole
+inventor; serial numbers as filed):
+
+\begin{enumerate}[leftmargin=1.6em, itemsep=2pt]
+  \item Davis, B.R.\ \textit{MIRADOR: Manifold-Informed Rational Architecture for
+        Drug-Organism Response — Geometric Optimization of Therapeutic Coherence
+        with Resistance Prediction via Escape Geodesics on Drug-Target Fiber
+        Bundles.} U.S.\ non-provisional application (serial no.\ on file with the
+        USPTO), 2026; claiming priority to a related provisional.
+
+  \item Davis, B.R.\ \textit{TESSERA: Transfer-Enabled Segmented Surveillance of
+        Emergent Resistance in Antimicrobials.}
+        U.S.\ Provisional Patent Application No.~63/933,236.
+
+  \item Davis, B.R.\ \textit{Genomic Evolution on Davis-Embedded Surfaces for
+        Integrated Cancer Detection.}
+        U.S.\ Provisional Patent Application No.~63/931,845.
+
+  \item Davis, B.R.\ \textit{HERALD: High-Resolution Early Recognition of
+        Antigenic Landscape Divergence.}
+        U.S.\ Provisional Patent Application No.~63/919,595.
+
+  \item Davis, B.R.\ \textit{Geometric Phase Transition Detection and
+        Curvature-Based Resistance Emergence Threshold Identification.}
+        U.S.\ Provisional Patent Application No.~63/926,936.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Proposed Retrospective Validation}\label{sec:validation}
+
+The $C_{\text{bone}} \geq 5$ threshold and the curvature weights used throughout
+this model are derived from published pharmacokinetic, microbiological, and
+clinical data. They have not been prospectively validated in a clinical cohort.
+We propose the following validation design for researchers with access to
+institutional records:
+
+\textbf{Study design:} Multi-center retrospective cohort of $\geq 100$ cases of
+pediatric MRSA-AHO (age $< 18$, culture-confirmed MRSA, minimum 12-month
+follow-up), classified as treatment success (remission at 12 months) or failure
+(relapse, recurrence, or chronic suppression).
+
+\textbf{Primary analysis:} For each historical case, input the available clinical
+variables (admission CRP, infection duration, surgical interventions, antibiotic
+sequence) into the MIRADOR engine to compute $C_{\text{bone}}$ for the regimen
+actually used. Test whether $C_{\text{bone}} < 5$ predicts clinical failure
+better than standard metrics (vancomycin AUC/MIC; $\text{MIC} \leq 1\;\mu$g/mL
+cutoff).
+
+\textbf{Hypothesis:} Logistic regression will show the geometric impedance term
+$K_{\text{pathway}}$ is a significant predictor of relapse independent of serum
+drug exposure, with AUROC $> 0.80$ against clinical outcome.
+
+\textbf{Data requirements:} Admission CRP, weight, estimated GFR, antibiotic(s)
+used, surgical records, infection duration, and 12-month outcome — all available
+in standard EHR exports, requiring no additional testing or prospective
+enrollment. The engine accepts structured CSV input and is freely accessible at
+\url{https://mirador.vercel.app/\#keske}.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Invitation}
+
+If this framework is of interest for clinical validation, collaborative study, or
+integration into pediatric AHO research protocols, I welcome the conversation.
+
+\medskip
+\noindent
+\textbf{Bee Rosa Davis}\\
+Applied Mathematician · Independent Researcher\\
+\href{mailto:bee_davis@alumni.brown.edu}{bee\_davis@alumni.brown.edu}\\
+ORCID: \href{https://orcid.org/0009-0009-8034-4308}{0009-0009-8034-4308}\\
+LinkedIn: \href{https://www.linkedin.com/in/msbeedavis/}{msbeedavis}
+
+\vspace{10pt}
+{\small\color{muted}
+The Keske Method is named for Steven Keske, who was diagnosed with sepsis,
+toxic shock syndrome, and acute hematogenous osteomyelitis in April 2020 at age
+10. He survived 10 days in the PICU, 4 surgeries, and 2 months on a PICC line.
+He has experienced recurrent infections for six years. He is still fighting.
+His mother Barbara shared his story publicly so that other families would know
+what to look for. That story became this framework.
+}
+
+\end{document}
