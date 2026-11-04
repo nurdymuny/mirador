@@ -77,7 +77,12 @@ S_{\text{Jump}}(r,t) &= \operatorname{p90}\{\|z_i - z_{\text{anchor}}(t-1)\|_2 :
 \end{align}
 
 \subsection{PIT Normalization and Z-Scores}
-For each signal $S$ and region $r$, we estimate a leakage-free empirical CDF $F_r(s)$ on an 8-week rolling window ending at $t-1$. The probability integral transform yields:
+% EDIT 2026-11-04: was "an 8-week rolling window". Changed to 26-week for
+% consistency with the abstract, Key Findings, the protocol table
+% (Tab. config), the Discussion, and the reproducibility parameters
+% (null_window=26 weeks) -- five places all stating 26. Revert if the
+% reported run genuinely used an 8-week window.
+For each signal $S$ and region $r$, we estimate a leakage-free empirical CDF $F_r(s)$ on a 26-week rolling window ending at $t-1$. The probability integral transform yields:
 \[
 U_r(t) = F_r(S(r,t)), \quad Z_r(t) = \Phi^{-1}(U_r(t)).
 \]
@@ -130,6 +135,16 @@ Alpha (B.1.1.7) & 2020-12-18 & \textbf{95} & \textbf{Direct (B.1.1.7)} & $D_{\te
   \item \textbf{N501Y mutation:} Alpha's key RBD mutation (N501Y at position 501) differs from ancestral sequences by a single amino acid, demonstrating HERALD's sensitivity to biologically meaningful changes.
 \end{itemize}
 
+% ==== UNRESOLVED 2026-11-04 (needs the run outputs; do not guess) ====
+% The caption says 26 episodes but the rows sum to 16 (UK 2+0, USA 6+8),
+% and the "Total" row reads 8 & 8 = 16. Two candidate causes:
+%   (a) a missing South Africa row -- Methods lists three countries
+%       (USA, UK, South Africa) while this table has only two, and the
+%       abstract/protocol table say the replay covered USA + UK only; or
+%   (b) 26 is stale and the real count is 16.
+% Note the abstract also says "26 alert episodes", so whichever way this
+% resolves, fix it in the abstract and the summary table too.
+% =====================================================================
 \subsection{Alert Episode Distribution}
 \begin{table}[H]
 \centering
@@ -149,6 +164,18 @@ USA (2021--2023) & 6 & 8 \\
 
 \paragraph{Note.} The UK alerts in 2020 include the Alpha detection (2020-W38). USA alerts span 2021--2023, capturing Delta and Omicron emergence periods, though direct lineage matching for these variants requires expanded data coverage.
 
+% ==== UNRESOLVED 2026-11-04 (needs the run outputs; do not guess) ====
+% This table and the zscore_distributions figure caption (see
+% fig:distribution below) report DIFFERENT moments for the same signals:
+%   here:            D_Wuhan mean -0.14 / std 1.39 ; D_Jump mean 0.12 / std 1.26
+%   figure caption:  D_Jump  mean -0.04 / std 1.61 ; D_Wuhan mean +0.64
+% The two also tell opposite stories about D_Wuhan: this section calls a
+% mean of -0.14 "near-ideal", while the caption calls +0.64 "expected
+% positive drift due to cumulative antigenic evolution" -- which is the
+% more mechanistically plausible claim for a fixed Wuhan anchor.
+% Likely two different runs (or different null windows). Regenerate both
+% from the validation outputs and keep one set.
+% =====================================================================
 \subsection{Z-Score Calibration}
 \begin{table}[H]
 \centering
@@ -180,6 +207,16 @@ $D_{\text{Jump}}$ & 0.12 & 1.26 \\
   \label{fig:timeline}
 \end{figure}
 
+% ==== UNRESOLVED 2026-11-04 (needs the run outputs; do not guess) ====
+% "Mean lead time across all VOCs is 73 days" cannot be reconstructed from
+% this paper: Tab. leadtime reports a lead time for Alpha only (95 days),
+% and the mean of a single value is 95, not 73. So either (a) the caption
+% is stale from a run in which more VOCs were lineage-matched, or (b) other
+% VOCs had lead times that this paper does not report. Until it is checked,
+% quoting 73 days anywhere invites a reader to look for the arithmetic and
+% not find it. Also note the figure files themselves (./output/*.png) are
+% not present in this repo, so neither figure currently builds.
+% =====================================================================
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.85\linewidth]{./output/lead_times.png}
